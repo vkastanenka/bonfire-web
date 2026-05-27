@@ -2,3 +2,93 @@
 @plugin "daisyui" {
   themes: coffee --default;
 }
+
+@font-face {
+  font-family: "Quicksand";
+  src: url("./assets/fonts/Quicksand/Quicksand-VariableFont_wght.ttf")
+    format("truetype-variations");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  /**
+   * Typography Design System
+   * Scale: Fluid 640px -> 1280px
+   */
+
+  /* Fonts */
+  --font-quicksand: "Quicksand", sans-serif;
+
+  /* Headline 1: 48px -> 98px */
+  --text-6xl: clamp(3rem, 1.25rem + 4.375vw, 6.125rem);
+  --text-6xl--letter-spacing: -0.015em;
+  --text-6xl--font-weight: 800;
+  --text-6xl--line-height: 1.1;
+
+  /* Headline 2: 36px -> 61px */
+  --text-5xl: clamp(2.25rem, 1.3125rem + 2.34vw, 3.8125rem);
+  --text-5xl--letter-spacing: -0.008em;
+  --text-5xl--font-weight: 800;
+  --text-5xl--line-height: 1.1;
+
+  /* Headline 3: 30px -> 49px */
+  --text-4xl: clamp(1.875rem, 1.15rem + 1.8vw, 3.0625rem);
+  --text-4xl--letter-spacing: 0em;
+  --text-4xl--font-weight: 700;
+  --text-4xl--line-height: 1.1;
+
+  /* Headline 4: 26px -> 35px */
+  --text-3xl: clamp(1.625rem, 1.15rem + 0.9vw, 2.1875rem);
+  --text-3xl--letter-spacing: 0.007em;
+  --text-3xl--font-weight: 700;
+
+  /* Headline 5: 20px -> 24px */
+  --text-2xl: clamp(1.25rem, 1rem + 0.625vw, 1.5rem);
+  --text-2xl--letter-spacing: 0em;
+  --text-2xl--font-weight: 600;
+
+  /* Headline 6: 18px -> 20px */
+  --text-xl: clamp(1.125rem, 1rem + 0.3125vw, 1.25rem);
+  --text-xl--letter-spacing: 0.0075em;
+  --text-xl--font-weight: 600;
+
+  /* --- Subtitles --- */
+  /* 16px */
+  /* --text-subtitle1: 1rem;
+  --text-subtitle1--letter-spacing: 0.009em; */
+
+  /* 14px */
+  /* --text-subtitle2: 0.875rem; */
+  /* --text-subtitle2--letter-spacing: 0.007em; */
+
+  /* --- Body & UI --- */
+  --text-lg: 1.125rem; /* 18px */
+  --text-lg--letter-spacing: 0.031em;
+
+  --text-md: 1rem; /* 16px */
+  --text-md--letter-spacing: 0.031em;
+
+  --text-sm: 0.875rem; /* 14px */
+  --text-sm--letter-spacing: 0.017em;
+
+  /* 14px */
+  /* --text-button: 0.875rem;
+  --text-button--letter-spacing: 0.089em; */
+
+  --text-xs: 0.75rem; /* 12px */
+  --text-xs--letter-spacing: 0.033em;
+
+  /* 10px */
+  /* --text-overline: 0.625rem;
+  --text-overline--letter-spacing: 0.15em; */
+}
+
+@layer base {
+  html,
+  body {
+    font-family: var(--font-quicksand);
+    min-height: 100svh;
+  }
+}

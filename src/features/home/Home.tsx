@@ -1,7 +1,10 @@
+import { Text } from "@/components";
+
 export const HomePage = () => {
   return (
     <div className="p-2">
-      <h3>Welcome Bonfire Home!</h3>
+      <Text.Heading>Welcome!</Text.Heading>
+      <Text.Body>Bonfire home!</Text.Body>
     </div>
   );
 };
