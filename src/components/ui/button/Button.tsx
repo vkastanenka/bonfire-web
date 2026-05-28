@@ -4,11 +4,8 @@ import type { ButtonProps, ButtonVariantProps } from "./Button.types";
 import { getButtonStyles } from "./Button.utils";
 import { cn } from "@/utils";
 
-const ButtonBase = forwardRef(
-  (
-    { children, isLoading, disabled, onClick, ...props }: ButtonProps,
-    ref: React.Ref<HTMLButtonElement | null> | undefined,
-  ) => {
+const ButtonBase = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ children, isLoading, disabled, onClick, ...props }, ref) => {
     const { styles, rest } = getButtonStyles(props);
     const isComponentDisabled = disabled || isLoading;
 

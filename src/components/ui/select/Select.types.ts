@@ -31,3 +31,5 @@ export interface SelectProps extends Omit<
   color?: SelectColorsKey;
   variant?: SelectVariantsKey;
 }
+
+export type SelectVariantProps = Omit<SelectProps, "variant">;

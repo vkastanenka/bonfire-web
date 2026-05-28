@@ -38,3 +38,5 @@ export interface TextInputProps extends Omit<
   suggestions?: { id: string; collection: string[] };
   onClear?: () => void;
 }
+
+export type TextInputVariantProps = Omit<TextInputProps, "variant">;

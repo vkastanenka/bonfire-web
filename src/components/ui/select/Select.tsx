@@ -5,9 +5,9 @@ import {
   SELECT_COLORS,
   SELECT_VARIANTS,
 } from "./Select.constants";
-import { type SelectProps } from "./Select.types";
+import { type SelectProps, type SelectVariantProps } from "./Select.types";
 
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(
+export const SelectBase = forwardRef<HTMLSelectElement, SelectProps>(
   ({ size, color, variant, className, children, ...props }, ref) => {
     const styles = cn(
       "select",
@@ -24,4 +24,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     );
   },
 );
-Select.displayName = "Select";
+SelectBase.displayName = "Select";
+
+const SelectGhost = forwardRef<HTMLSelectElement, SelectVariantProps>(
+  (props, ref) => <SelectBase ref={ref} {...props} variant="ghost" />,
+);
+SelectGhost.displayName = "Select.Ghost";
+
+export const Select = Object.assign(SelectBase, {
+  Ghost: SelectGhost,
+});
