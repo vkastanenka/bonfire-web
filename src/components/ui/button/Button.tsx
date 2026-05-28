@@ -42,7 +42,7 @@ const ButtonBase = forwardRef(
 
 ButtonBase.displayName = "Button";
 
-const createVariantButton = (variant: NonNullable<ButtonProps["variant"]>) => {
+const createButtonVariant = (variant: NonNullable<ButtonProps["variant"]>) => {
   const Component = forwardRef<HTMLButtonElement, ButtonVariantProps>(
     (props, ref) => <ButtonBase ref={ref} {...props} variant={variant} />,
   );
@@ -51,10 +51,10 @@ const createVariantButton = (variant: NonNullable<ButtonProps["variant"]>) => {
 };
 
 export const Button = Object.assign(ButtonBase, {
-  Soft: createVariantButton("soft"),
-  Outline: createVariantButton("outline"),
-  Dash: createVariantButton("dash"),
-  Active: createVariantButton("active"),
-  Ghost: createVariantButton("ghost"),
-  Link: createVariantButton("link"),
+  Soft: createButtonVariant("soft"),
+  Outline: createButtonVariant("outline"),
+  Dash: createButtonVariant("dash"),
+  Active: createButtonVariant("active"),
+  Ghost: createButtonVariant("ghost"),
+  Link: createButtonVariant("link"),
 });

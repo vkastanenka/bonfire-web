@@ -15,7 +15,7 @@ export const getButtonStyles = <T extends ButtonStyleProps>(props: T) => {
   const styles = !unstyled
     ? cn(
         "btn",
-        size && resolveResponsiveValues(size, BUTTON_SIZES),
+        size ? resolveResponsiveValues(size, BUTTON_SIZES) : "btn-lg",
         color && BUTTON_COLORS[color],
         variant && BUTTON_VARIANTS[variant],
         shape && BUTTON_SHAPES[shape],
