@@ -28,7 +28,7 @@ export type TextInputTypesValue = MapValue<typeof TEXT_INPUT_TYPES>;
  */
 
 export interface TextInputProps extends Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
+  React.ComponentPropsWithoutRef<"input">,
   "size" | "color" | "type"
 > {
   size?: ResponsiveValue<TextInputSizesKey>;
