@@ -39,22 +39,43 @@ const ButtonBase = forwardRef(
     );
   },
 );
-
 ButtonBase.displayName = "Button";
 
-const createButtonVariant = (variant: NonNullable<ButtonProps["variant"]>) => {
-  const Component = forwardRef<HTMLButtonElement, ButtonVariantProps>(
-    (props, ref) => <ButtonBase ref={ref} {...props} variant={variant} />,
-  );
-  Component.displayName = `Button.${variant.charAt(0).toUpperCase() + variant.slice(1)}`;
-  return Component;
-};
+const ButtonSoft = forwardRef<HTMLButtonElement, ButtonVariantProps>(
+  (props, ref) => <ButtonBase ref={ref} {...props} variant="soft" />,
+);
+ButtonSoft.displayName = "Button.Soft";
+
+const ButtonOutline = forwardRef<HTMLButtonElement, ButtonVariantProps>(
+  (props, ref) => <ButtonBase ref={ref} {...props} variant="outline" />,
+);
+ButtonOutline.displayName = "Button.Outline";
+
+const ButtonDash = forwardRef<HTMLButtonElement, ButtonVariantProps>(
+  (props, ref) => <ButtonBase ref={ref} {...props} variant="dash" />,
+);
+ButtonDash.displayName = "Button.Dash";
+
+const ButtonActive = forwardRef<HTMLButtonElement, ButtonVariantProps>(
+  (props, ref) => <ButtonBase ref={ref} {...props} variant="active" />,
+);
+ButtonActive.displayName = "Button.Active";
+
+const ButtonGhost = forwardRef<HTMLButtonElement, ButtonVariantProps>(
+  (props, ref) => <ButtonBase ref={ref} {...props} variant="ghost" />,
+);
+ButtonGhost.displayName = "Button.Ghost";
+
+const ButtonLink = forwardRef<HTMLButtonElement, ButtonVariantProps>(
+  (props, ref) => <ButtonBase ref={ref} {...props} variant="link" />,
+);
+ButtonLink.displayName = "Button.Link";
 
 export const Button = Object.assign(ButtonBase, {
-  Soft: createButtonVariant("soft"),
-  Outline: createButtonVariant("outline"),
-  Dash: createButtonVariant("dash"),
-  Active: createButtonVariant("active"),
-  Ghost: createButtonVariant("ghost"),
-  Link: createButtonVariant("link"),
+  Soft: ButtonSoft,
+  Outline: ButtonOutline,
+  Dash: ButtonDash,
+  Active: ButtonActive,
+  Ghost: ButtonGhost,
+  Link: ButtonLink,
 });
