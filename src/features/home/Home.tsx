@@ -1,4 +1,11 @@
-import { Button, BfLogotype, Text, TextInput, Select } from "@/components";
+import {
+  Button,
+  BfLogotype,
+  Text,
+  TextInput,
+  Select,
+  Checkbox,
+} from "@/components";
 
 export const HomePage = () => {
   return (
@@ -14,6 +21,7 @@ export const HomePage = () => {
         <option>Amber</option>
         <option>Velvet</option>
       </Select>
+      <Checkbox size={{ base: "xs", sm: "lg" }} />
       <Button className="w-full">Create Account</Button>
     </div>
   );
