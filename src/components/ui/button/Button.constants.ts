@@ -56,7 +56,6 @@ export const BUTTON_VARIANTS = {
   soft: "btn-soft",
   outline: "btn-outline",
   dash: "btn-dash",
-  neutral: "btn-neutral",
   active: "btn-active",
   ghost: "btn-ghost",
   link: "btn-link",
@@ -75,13 +74,5 @@ export const BUTTON_DISPLAYS = {
     lg: "lg:btn-wide",
     xl: "xl:btn-wide",
     "2xl": "2xl:btn-wide",
-  },
-  block: {
-    base: "btn-block",
-    sm: "sm:btn-block",
-    md: "md:btn-block",
-    lg: "lg:btn-block",
-    xl: "xl:btn-block",
-    "2xl": "2xl:btn-block",
   },
 } as const;

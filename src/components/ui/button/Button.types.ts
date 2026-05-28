@@ -47,3 +47,5 @@ export type BaseButtonProps = {
 } & ButtonStyleProps;
 
 export type ButtonProps = BaseButtonProps & React.ComponentProps<"button">;
+
+export type ButtonVariantProps = Omit<ButtonProps, "variant">;

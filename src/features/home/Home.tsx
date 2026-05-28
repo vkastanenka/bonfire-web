@@ -1,21 +1,20 @@
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, ZodiacAquarius } from "lucide-react";
 import { Button, BfLogotype, BfLogomark, Text } from "@/components";
-import { ZodiacAquarius } from "lucide-react";
 
 export const HomePage = () => {
   return (
     <div className="p-2">
       <Text.Heading>Welcome!</Text.Heading>
-      <Text.Body>Bonfire home!</Text.Body>
-      {/* <BfLogotype /> */}
-      <BfLogomark />
-      <Button
-        size={{ base: "xs", sm: "xl" }}
-        display={{ sm: "block" }}
-      >
-        {/* <ZodiacAquarius /> */}
-        Click Here
+      <Button color="primary" shape="circle">
+        <ZodiacAquarius />
       </Button>
+      <Button>Base</Button>
+      <Button.Soft>Soft</Button.Soft>
+      <Button.Outline disabled>Outline</Button.Outline>
+      <Button.Dash>Dash</Button.Dash>
+      <Button.Active>Active</Button.Active>
+      <Button.Ghost>Ghost</Button.Ghost>
+      <Button.Link>Link</Button.Link>
     </div>
   );
 };

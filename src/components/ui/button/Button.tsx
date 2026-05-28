@@ -1,75 +1,60 @@
-import { Children, forwardRef, isValidElement } from "react";
+import { forwardRef } from "react";
 import { LoaderCircle } from "lucide-react";
-import type { ButtonProps } from "./Button.types";
+import type { ButtonProps, ButtonVariantProps } from "./Button.types";
 import { getButtonStyles } from "./Button.utils";
 import { cn } from "@/utils";
 
-export const Button = forwardRef(
+const ButtonBase = forwardRef(
   (
-    { children, isLoading, onClick, ...props }: ButtonProps,
+    { children, isLoading, disabled, onClick, ...props }: ButtonProps,
     ref: React.Ref<HTMLButtonElement | null> | undefined,
   ) => {
     const { styles, rest } = getButtonStyles(props);
-
-    const isSvgOnly = (() => {
-      // 1. Safe conversion to an array (handles text, fragments, arrays, and empty states gracefully)
-      const childrenArray = Children.toArray(children);
-
-      // 2. If there isn't exactly one child item, it's not an icon-only button
-      if (childrenArray.length !== 1) return false;
-
-      const child = childrenArray[0];
-
-      console.log("child", child);
-
-      // 3. Make sure it's actually a valid React Element (not a plain text string)
-      if (!isValidElement(child)) return false;
-
-      // 4. Matches native <svg> tags
-      if (child.type === "svg") return true;
-
-      if (
-        typeof child.type === "object" &&
-        child.type !== null &&
-        "render" in child.type
-      ) {
-        const componentName = (child.type as any).displayName || "";
-
-        // Lucide explicitly sets a displayName on every single icon component
-        if (componentName) {
-          return true;
-        }
-      }
-
-      return false;
-    })();
-
-    console.log(isSvgOnly);
-
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (isLoading) {
-        e.preventDefault();
-        return;
-      }
-      onClick?.(e);
-    };
+    const isComponentDisabled = disabled || isLoading;
 
     return (
       <button
         ref={ref}
-        aria-disabled={isLoading ? true : undefined}
+        aria-disabled={isComponentDisabled ? true : undefined}
         aria-live="polite"
-        onClick={handleClick}
+        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+          if (isComponentDisabled) {
+            e.preventDefault();
+            return;
+          }
+          onClick?.(e);
+        }}
         className={cn(
           styles,
-          isLoading && "btn-disabled",
+          isComponentDisabled && "btn-disabled",
           "[&>svg]:w-[1.25em] [&>svg]:h-[1.25em]",
         )}
         {...rest}
       >
-        {isLoading && <LoaderCircle className="animate-spin" />}
-        {isSvgOnly ? !isLoading && children : children}
+        {isLoading && (
+          <LoaderCircle className="animate-spin" aria-hidden="true" />
+        )}
+        {children}
       </button>
     );
   },
 );
+
+ButtonBase.displayName = "Button";
+
+const createVariantButton = (variant: NonNullable<ButtonProps["variant"]>) => {
+  const Component = forwardRef<HTMLButtonElement, ButtonVariantProps>(
+    (props, ref) => <ButtonBase ref={ref} {...props} variant={variant} />,
+  );
+  Component.displayName = `Button.${variant.charAt(0).toUpperCase() + variant.slice(1)}`;
+  return Component;
+};
+
+export const Button = Object.assign(ButtonBase, {
+  Soft: createVariantButton("soft"),
+  Outline: createVariantButton("outline"),
+  Dash: createVariantButton("dash"),
+  Active: createVariantButton("active"),
+  Ghost: createVariantButton("ghost"),
+  Link: createVariantButton("link"),
+});
