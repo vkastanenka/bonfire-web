@@ -1,9 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Typography } from "@mui/material";
-
-export const HomePage = () => {
-  return <Typography>Bonfire</Typography>;
-};
+import { HomePage } from "@/features";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
