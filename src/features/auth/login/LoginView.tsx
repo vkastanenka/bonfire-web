@@ -1,23 +1,19 @@
-import { Controller } from "react-hook-form";
-import {
-  TextField,
-  Button,
-  Typography,
-  Stack,
-  Link,
-  InputLabel,
-  SvgIcon,
-} from "@mui/material";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import Link from "@mui/material/Link";
+import SvgIcon from "@mui/material/SvgIcon";
 import RawBfLogotype from "@/assets/icons/bonfire/logotype.svg?react";
 import { useLoginForm } from "./useLoginForm";
 import { LABELS } from "./login.constants";
+import { LoginTextField } from "./LoginTextField";
 
 type LoginViewProps = ReturnType<typeof useLoginForm>;
 
 export const LoginView = ({
   control,
   handleSubmit,
-  errors,
+  // errors,
   isSubmitting,
 }: LoginViewProps) => {
   return (
@@ -44,52 +40,25 @@ export const LoginView = ({
         onSubmit={handleSubmit}
         sx={{ width: "100%" }}
       >
-        <Controller
+        <LoginTextField
           name="email"
+          id="email-input"
+          label={LABELS.email}
           control={control}
-          render={({ field }) => (
-            <Stack spacing={1}>
-              <InputLabel
-                htmlFor="email-input"
-                sx={{ fontWeight: "bold", color: "text.primary" }}
-              >
-                {LABELS.email}
-              </InputLabel>
-              <TextField
-                {...field}
-                id="email-input"
-                variant="outlined"
-                fullWidth
-                error={!!errors.email}
-                helperText={errors.email?.message}
-              />
-            </Stack>
-          )}
         />
-        <Controller
+        <LoginTextField
           name="password"
+          id="password-input"
+          type="password"
+          label={LABELS.password}
           control={control}
-          render={({ field }) => (
-            <Stack spacing={1}>
-              <InputLabel
-                htmlFor="password-input"
-                sx={{ fontWeight: "bold", color: "text.primary" }}
-              >
-                {LABELS.password}
-              </InputLabel>
-              <TextField
-                {...field}
-                id="password-input"
-                type="password"
-                variant="outlined"
-                fullWidth
-                error={!!errors.password}
-                helperText={errors.password?.message}
-              />
-            </Stack>
-          )}
         />
-        <Button type="submit" variant="contained" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          variant="contained"
+          loading={isSubmitting}
+          aria-busy={isSubmitting}
+        >
           {LABELS.submit}
         </Button>
       </Stack>
