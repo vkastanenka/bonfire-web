@@ -1,7 +1,5 @@
-import { Link as RouterLink } from "@tanstack/react-router";
 import Button from "@mui/material/Button";
-import Link from "@mui/material/Link";
-import { Form } from "@/components";
+import { Form, Link } from "@/components";
 import { AuthLayout } from "../auth-layout";
 import { useLoginForm } from "./useLoginForm";
 import { LABELS } from "./login.constants";
@@ -31,9 +29,7 @@ export const LoginView = ({
           label={LABELS.password}
           control={control}
         />
-        <Link component={RouterLink} to="/forgot-password">
-          {LABELS.forgotPassword}
-        </Link>
+        <Link.Text to="/forgot-password">{LABELS.forgotPassword}</Link.Text>
         <Button
           type="submit"
           variant="contained"
@@ -43,9 +39,7 @@ export const LoginView = ({
           {LABELS.submit}
         </Button>
       </Form>
-      <Link component={RouterLink} to="/register">
-        {LABELS.register}
-      </Link>
+      <Link.Text to="/register">{LABELS.register}</Link.Text>
     </AuthLayout>
   );
 };
