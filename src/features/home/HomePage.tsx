@@ -3,13 +3,13 @@ import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import Link from "@mui/material/Link";
 import SvgIcon from "@mui/material/SvgIcon";
-import RawBfLogotype from "@/assets/icons/bonfire/logotype.svg?react";
+import BfLogotype from "@/assets/icons/bf-logotype.svg?react";
 
 export const HomePage = () => {
   return (
     <Stack spacing={2.5}>
       <SvgIcon
-        component={RawBfLogotype}
+        component={BfLogotype}
         inheritViewBox
         sx={{
           fontSize: "inherit",

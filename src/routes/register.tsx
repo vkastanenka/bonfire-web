@@ -12,7 +12,7 @@ import {
   InputLabel,
   SvgIcon,
 } from "@mui/material";
-import RawBfLogotype from "@/assets/icons/bonfire/logotype.svg?react";
+import BfLogotype from "@/assets/icons/bf-logotype.svg?react";
 
 const formSchema = z.object({
   email: z.email(),
@@ -49,7 +49,7 @@ const RegisterPage = () => {
   return (
     <Stack spacing={2.5}>
       <SvgIcon
-        component={RawBfLogotype}
+        component={BfLogotype}
         inheritViewBox
         sx={{
           fontSize: "inherit", // Prevents the default 1em/24px constraint
