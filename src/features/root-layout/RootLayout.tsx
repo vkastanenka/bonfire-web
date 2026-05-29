@@ -5,6 +5,8 @@ import CssBaseline from "@mui/material/CssBaseline";
 
 import { AppLayout } from "@/components";
 
+console.log("RootLayout.tsx TODO: find better directory")
+
 const theme = createTheme({
   typography: {
     fontFamily: "Quicksand, sans-serif",
