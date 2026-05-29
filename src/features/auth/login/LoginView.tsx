@@ -1,3 +1,4 @@
+import { Link as RouterLink } from "@tanstack/react-router";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
@@ -22,9 +23,9 @@ export const LoginView = ({
         component={RawBfLogotype}
         inheritViewBox
         sx={{
-          fontSize: "inherit", // Prevents the default 1em/24px constraint
-          height: "40px", // Set your desired height
-          width: "auto", // Allows the aspect ratio from the viewBox to do its job
+          fontSize: "inherit",
+          height: "40px",
+          width: "auto",
         }}
       />
       <Typography
@@ -62,7 +63,12 @@ export const LoginView = ({
           {LABELS.submit}
         </Button>
       </Stack>
-      <Link underline="none" variant="body2">
+      <Link
+        component={RouterLink}
+        to="/register"
+        underline="none"
+        variant="body2"
+      >
         {LABELS.register}
       </Link>
     </Stack>
