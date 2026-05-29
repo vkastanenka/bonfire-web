@@ -3,6 +3,8 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 
+import { AppLayout } from "@/components";
+
 const theme = createTheme({
   typography: {
     fontFamily: "Quicksand, sans-serif",
@@ -12,7 +14,9 @@ const theme = createTheme({
 export const RootLayout = () => (
   <ThemeProvider theme={theme}>
     <CssBaseline />
-    <Outlet />
+    <AppLayout>
+      <Outlet />
+    </AppLayout>
     <TanStackRouterDevtools />
   </ThemeProvider>
 );
