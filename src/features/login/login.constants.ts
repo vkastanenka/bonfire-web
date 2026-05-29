@@ -3,6 +3,7 @@ export const LABELS = {
   email: "Email Address",
   password: "Password",
   submit: "Log In",
+  forgotPassword: "Forgot your password?",
   register: "Need an account? Register",
 } as const;
 

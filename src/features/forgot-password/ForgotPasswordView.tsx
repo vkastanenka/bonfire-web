@@ -5,18 +5,18 @@ import Stack from "@mui/material/Stack";
 import Link from "@mui/material/Link";
 import SvgIcon from "@mui/material/SvgIcon";
 import BfLogotype from "@/assets/icons/bf-logotype.svg?react";
-import { useLoginForm } from "./useLoginForm";
-import { LABELS } from "./login.constants";
-import { LoginTextField } from "./LoginTextField";
+import { useForgotPasswordForm } from "./useForgotPasswordForm";
+import { LABELS } from "./forgot-password.constants";
+import { ForgotPasswordTextField } from "./ForgotPasswordTextField";
 
-type LoginViewProps = ReturnType<typeof useLoginForm>;
+type ForgotPasswordViewProps = ReturnType<typeof useForgotPasswordForm>;
 
-export const LoginView = ({
+export const ForgotPasswordView = ({
   control,
   handleSubmit,
   // errors,
   isSubmitting,
-}: LoginViewProps) => {
+}: ForgotPasswordViewProps) => {
   return (
     <Stack spacing={2.5}>
       <SvgIcon
@@ -41,24 +41,12 @@ export const LoginView = ({
         onSubmit={handleSubmit}
         sx={{ width: "100%" }}
       >
-        <LoginTextField
+        <ForgotPasswordTextField
           name="email"
           id="email-input"
           label={LABELS.email}
           control={control}
         />
-        <Stack spacing={1}>
-          <LoginTextField
-            name="password"
-            id="password-input"
-            type="password"
-            label={LABELS.password}
-            control={control}
-          />
-          <Link component={RouterLink} to="/forgot-password" variant="body2">
-            {LABELS.forgotPassword}
-          </Link>
-        </Stack>
         <Button
           type="submit"
           variant="contained"
@@ -68,8 +56,8 @@ export const LoginView = ({
           {LABELS.submit}
         </Button>
       </Stack>
-      <Link component={RouterLink} to="/register" variant="body2">
-        {LABELS.register}
+      <Link component={RouterLink} to="/login" variant="body2">
+        {LABELS.login}
       </Link>
     </Stack>
   );
