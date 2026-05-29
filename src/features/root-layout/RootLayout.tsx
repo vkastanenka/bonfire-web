@@ -2,10 +2,7 @@ import { Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-
-import { AppLayout } from "@/components";
-
-console.log("RootLayout.tsx TODO: find better directory")
+import { AppLayout } from "./AppLayout";
 
 const theme = createTheme({
   typography: {
