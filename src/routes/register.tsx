@@ -10,11 +10,15 @@ import {
   Stack,
   Link,
   InputLabel,
+  SvgIcon,
 } from "@mui/material";
+import RawBfLogotype from "@/assets/icons/bonfire/logotype.svg?react";
 
 const formSchema = z.object({
   email: z.email(),
-  displayName: z.string().min(6, "Display Name must be at least 6 characters long"),
+  displayName: z
+    .string()
+    .min(6, "Display Name must be at least 6 characters long"),
   username: z.string().min(6, "Username must be at least 6 characters long"),
   password: z.string().min(6, "Password must be at least 6 characters long"),
 });
@@ -44,6 +48,15 @@ const RegisterPage = () => {
 
   return (
     <Stack spacing={2.5}>
+      <SvgIcon
+        component={RawBfLogotype}
+        inheritViewBox
+        sx={{
+          fontSize: "inherit", // Prevents the default 1em/24px constraint
+          height: "40px", // Set your desired height
+          width: "auto", // Allows the aspect ratio from the viewBox to do its job
+        }}
+      />
       <Typography
         variant="h5"
         component="h1"
