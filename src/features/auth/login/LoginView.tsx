@@ -63,12 +63,7 @@ export const LoginView = ({
           {LABELS.submit}
         </Button>
       </Stack>
-      <Link
-        component={RouterLink}
-        to="/register"
-        underline="none"
-        variant="body2"
-      >
+      <Link component={RouterLink} to="/register" variant="body2">
         {LABELS.register}
       </Link>
     </Stack>
