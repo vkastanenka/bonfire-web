@@ -1,5 +1,6 @@
 export const LABELS = {
   title: "Welcome back!",
+  subtitle: "Come get warm around the fire!",
   email: "Email Address",
   password: "Password",
   submit: "Log In",

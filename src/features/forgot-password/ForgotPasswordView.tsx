@@ -28,13 +28,12 @@ export const ForgotPasswordView = ({
           width: "auto",
         }}
       />
-      <Typography
-        variant="h5"
-        component="h1"
-        sx={{ fontWeight: "bold", textAlign: "center" }}
-      >
-        {LABELS.title}
-      </Typography>
+      <Stack spacing={1} sx={{ textAlign: "center" }}>
+        <Typography variant="h5" component="h1" sx={{ fontWeight: "bold" }}>
+          {LABELS.title}
+        </Typography>
+        <Typography>{LABELS.subtitle}</Typography>
+      </Stack>
       <Stack
         component="form"
         spacing={2.5}
