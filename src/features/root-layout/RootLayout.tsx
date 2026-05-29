@@ -4,6 +4,12 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { AppLayout } from "./AppLayout";
 
+console.log("RootLayout.tsx TODO: add customSpacings to the theme somehow");
+// const customSpacings = {
+//   group: "8px",
+//   stack: "20px",
+// };
+
 const theme = createTheme({
   typography: {
     fontFamily: "Quicksand, sans-serif",
