@@ -1,15 +1,22 @@
 import Stack from "@mui/material/Stack";
 import SvgIcon from "@mui/material/SvgIcon";
-import { Typography } from "@/components";
 import BfLogotype from "@/assets/icons/bf-logotype.svg?react";
+import { Link, Typography } from "@/components";
+import type { AppRoute } from "@/types";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
   subtitle?: string;
+  footerLink?: AppRoute;
 }
 
-export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
+export const AuthLayout = ({
+  children,
+  title,
+  subtitle,
+  footerLink,
+}: AuthLayoutProps) => {
   console.log("AuthLayout.tsx TODO: Refactor SvgIcon");
   return (
     <Stack spacing={2.5}>
@@ -28,6 +35,9 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
         {subtitle && <Typography>{subtitle}</Typography>}
       </Stack>
       {children}
+      {footerLink && (
+        <Link.Text to={footerLink.path}>{footerLink.label}</Link.Text>
+      )}
     </Stack>
   );
 };

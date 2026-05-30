@@ -5,7 +5,13 @@ export const LABELS = {
   password: "Password",
   submit: "Log In",
   forgotPassword: "Forgot your password?",
-  register: "Need an account? Register",
+} as const;
+
+export const PATHS = {
+  register: {
+    label: "Need an account? Register",
+    path: "/register",
+  },
 } as const;
 
 export const VALIDATION_LABELS = {

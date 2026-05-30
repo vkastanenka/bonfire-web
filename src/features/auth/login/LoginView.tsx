@@ -1,28 +1,30 @@
 import Button from "@mui/material/Button";
-import { Form, Link } from "@/components";
+import { Form, Link, TextInput } from "@/components";
 import { AuthLayout } from "../auth-layout";
 import { useLoginForm } from "./useLoginForm";
-import { LABELS } from "./login.constants";
-import { LoginTextField } from "./LoginTextField";
+import { LABELS, PATHS } from "./login.constants";
 
 type LoginViewProps = ReturnType<typeof useLoginForm>;
 
 export const LoginView = ({
   control,
   handleSubmit,
-  // errors,
   isSubmitting,
 }: LoginViewProps) => {
   return (
-    <AuthLayout title={LABELS.title} subtitle={LABELS.subtitle}>
+    <AuthLayout
+      title={LABELS.title}
+      subtitle={LABELS.subtitle}
+      footerLink={PATHS.register}
+    >
       <Form onSubmit={handleSubmit}>
-        <LoginTextField
+        <TextInput
           name="email"
           id="email-input"
           label={LABELS.email}
           control={control}
         />
-        <LoginTextField
+        <TextInput
           name="password"
           id="password-input"
           type="password"
@@ -39,7 +41,6 @@ export const LoginView = ({
           {LABELS.submit}
         </Button>
       </Form>
-      <Link.Text to="/register">{LABELS.register}</Link.Text>
     </AuthLayout>
   );
 };

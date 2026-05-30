@@ -6,3 +6,10 @@ export const LABELS = {
   submit: "Send password reset email",
   login: "Don't need to reset your password? Log in",
 } as const;
+
+export const PATHS = {
+  login: {
+    label: "Don't need to reset your password? Log in",
+    path: "/login",
+  },
+} as const;

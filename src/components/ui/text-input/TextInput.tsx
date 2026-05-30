@@ -1,25 +1,32 @@
-import { type Control, Controller, type FieldPath } from "react-hook-form";
+import {
+  type Control,
+  Controller,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 import {
   Stack,
   InputLabel,
   TextField,
   type TextFieldProps,
 } from "@mui/material";
-import { type RegisterInputs } from "./register.validation";
 
-interface RegisterTextFieldProps extends Omit<TextFieldProps, "name"> {
-  name: FieldPath<RegisterInputs>;
-  control: Control<RegisterInputs>;
+interface TextInputProps<TFieldValues extends FieldValues> extends Omit<
+  TextFieldProps,
+  "name"
+> {
+  name: FieldPath<TFieldValues>;
+  control: Control<TFieldValues>;
   label: string;
 }
 
-export const RegisterTextField = ({
+export const TextInput = <TFieldValues extends FieldValues>({
   name,
   control,
   label,
   id,
   ...props
-}: RegisterTextFieldProps) => (
+}: TextInputProps<TFieldValues>) => (
   <Controller
     name={name}
     control={control}
