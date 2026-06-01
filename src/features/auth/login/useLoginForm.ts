@@ -21,19 +21,17 @@ export const useLoginForm = () => {
       // Fake API Call
       await new Promise((resolve) => setTimeout(resolve, 1000));
       console.log("Logged in successfully:", data);
-      
+
       // Handle your routing / state hydration here
     } catch (err) {
       setApiError(err instanceof Error ? err.message : "Login failed");
+      console.log(apiError);
     }
   };
 
   return {
-    control: methods.control,
-    // Use React Hook Form's native isSubmitting to completely remove your duplicate 'isLoading' state
-    isSubmitting: methods.formState.isSubmitting,
-    errors: methods.formState.errors,
-    apiError,
-    handleSubmit: methods.handleSubmit(onSubmit),
+    formMethods: methods,
+    formState: methods.formState,
+    onSubmit,
   };
 };
