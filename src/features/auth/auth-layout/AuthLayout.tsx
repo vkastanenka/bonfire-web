@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Stack from "@mui/material/Stack";
-import { BfLogotype, Typography } from "@/components";
+import { BfLogotype, Text } from "@/components";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -28,14 +28,14 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
         <BfLogotype />
 
         {typeof title === "string" ? (
-          <Typography.Heading>{title}</Typography.Heading>
+          <Text.Heading>{title}</Text.Heading>
         ) : (
           title
         )}
 
         {subtitle &&
           (typeof subtitle === "string" ? (
-            <Typography color="text.secondary">{subtitle}</Typography>
+            <Text color="text.secondary">{subtitle}</Text>
           ) : (
             subtitle
           ))}
