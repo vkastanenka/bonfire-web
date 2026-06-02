@@ -1,7 +1,15 @@
-import { useLoginForm } from "./useLoginForm";
-import { LoginView } from "./LoginView";
+import { AuthLayout } from "../auth-layout";
+import { LABELS, PATHS } from "./login.constants";
+import { LoginForm } from "./LoginForm";
 
 export const LoginPage = () => {
-  const formProps = useLoginForm();
-  return <LoginView {...formProps} />;
+  return (
+    <AuthLayout
+      title={LABELS.title}
+      subtitle={LABELS.subtitle}
+      footerLink={PATHS.register}
+    >
+      <LoginForm />
+    </AuthLayout>
+  );
 };

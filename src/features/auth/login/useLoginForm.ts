@@ -30,8 +30,7 @@ export const useLoginForm = () => {
   };
 
   return {
-    formMethods: methods,
-    formState: methods.formState,
+    methods,
     onSubmit,
   };
 };
