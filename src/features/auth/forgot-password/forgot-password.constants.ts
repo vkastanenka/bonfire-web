@@ -13,3 +13,11 @@ export const PATHS = {
     path: "/login",
   },
 } as const;
+
+export const FORM_FIELDS = {
+  email: {
+    name: "email",
+    id: "email-input",
+    label: LABELS.email,
+  },
+} as const;
