@@ -1,6 +1,6 @@
 import { Link } from "@/components";
 import Alert from "@mui/material/Alert";
-import { AuthLayout } from "../auth-layout";
+import { AuthLayout } from "../components";
 import { LABELS, PATHS } from "./verify.constants";
 
 export const VerifyPage = () => {

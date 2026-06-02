@@ -1,5 +1,5 @@
 import { Link } from "@/components";
-import { AuthLayout } from "../auth-layout";
+import { AuthLayout } from "../components";
 import { LABELS, PATHS } from "./register.constants";
 import { RegisterForm } from "./RegisterForm";
 
