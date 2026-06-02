@@ -20,6 +20,7 @@ export const ButtonLink = React.forwardRef<HTMLAnchorElement, ButtonLinkProps>(
     );
   },
 );
+
 ButtonLink.displayName = "Link.Button";
 
 type TextLinkProps = Omit<MuiLinkProps, "href" | "to"> & RouterLinkProps;
@@ -29,6 +30,7 @@ export const TextLink = React.forwardRef<HTMLAnchorElement, TextLinkProps>(
     return <MuiLink ref={ref} component={RouterLink} {...props} />;
   },
 );
+
 TextLink.displayName = "Link.Text";
 
 export const Link = Object.assign(

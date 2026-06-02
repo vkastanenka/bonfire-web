@@ -20,6 +20,7 @@ export const FormTextField = <TFieldValues extends FieldValues>({
   name,
   id,
   label,
+  helperText,
   ...props
 }: FormTextFieldProps<TFieldValues>) => {
   const { control } = useFormContext();
@@ -37,7 +38,7 @@ export const FormTextField = <TFieldValues extends FieldValues>({
             {...props}
             id={id}
             error={!!error}
-            helperText={error ? error.message : props.helperText}
+            helperText={error ? error.message : helperText}
           />
         </FormField>
       )}
