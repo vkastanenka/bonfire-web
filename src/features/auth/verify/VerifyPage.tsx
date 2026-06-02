@@ -1,7 +1,7 @@
 import { Link } from "@/components";
 import Alert from "@mui/material/Alert";
 import { PATHS } from "@/constants";
-import { AuthLayout } from "../../components";
+import { AuthLayout } from "../auth-layout";
 import { LABELS } from "./verify.constants";
 
 export const VerifyPage = () => {

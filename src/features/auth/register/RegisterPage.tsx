@@ -1,6 +1,6 @@
 import { Link } from "@/components";
 import { PATHS } from "@/constants";
-import { AuthLayout } from "../../components";
+import { AuthLayout } from "../auth-layout";
 import { LABELS } from "./register.constants";
 import { RegisterForm } from "./RegisterForm";
 

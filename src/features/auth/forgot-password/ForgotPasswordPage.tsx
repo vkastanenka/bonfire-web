@@ -1,13 +1,13 @@
 import { Link } from "@/components";
 import { PATHS } from "@/constants";
-import { AuthLayout } from "../../components";
-import { LABELS } from "./reset-password.constants";
-import { ResetPasswordForm } from "./ResetPasswordForm";
+import { AuthLayout } from "../auth-layout";
+import { LABELS } from "./forgot-password.constants";
+import { ForgotPasswordForm } from "./ForgotPasswordForm";
 
-export const ResetPasswordPage = () => {
+export const ForgotPasswordPage = () => {
   return (
     <AuthLayout title={LABELS.title} subtitle={LABELS.subtitle}>
-      <ResetPasswordForm />
+      <ForgotPasswordForm />
       <Link.Text to={PATHS.login}>{LABELS.login}</Link.Text>
     </AuthLayout>
   );
