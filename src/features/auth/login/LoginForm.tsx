@@ -1,6 +1,6 @@
 import { Form, Link } from "@/components";
-import { useLoginForm } from "./useLoginForm";
 import { LABELS, FORM_FIELDS, PATHS } from "./login.constants";
+import { useLoginForm } from "./useLoginForm";
 
 export const LoginForm = () => {
   const { methods, onSubmit } = useLoginForm();

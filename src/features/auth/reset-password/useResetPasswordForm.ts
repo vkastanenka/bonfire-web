@@ -24,18 +24,14 @@ export const useResetPasswordForm = () => {
       console.log("Reset password successfully:", data);
     } catch (err) {
       setApiError(
-        err instanceof Error
-          ? err.message
-          : "Failed to reset password",
+        err instanceof Error ? err.message : "Failed to reset password",
       );
+      console.log(apiError);
     }
   };
 
   return {
-    control: methods.control,
-    isSubmitting: methods.formState.isSubmitting,
-    errors: methods.formState.errors,
-    apiError,
-    handleSubmit: methods.handleSubmit(onSubmit),
+    methods,
+    onSubmit,
   };
 };

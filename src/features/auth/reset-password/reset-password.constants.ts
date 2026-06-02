@@ -15,3 +15,11 @@ export const PATHS = {
 export const VALIDATION_LABELS = {
   password: "Password must be at least 6 characters long",
 } as const;
+
+export const FORM_FIELDS = {
+  password: {
+    name: "password",
+    id: "password-input",
+    label: LABELS.password,
+  },
+} as const;
