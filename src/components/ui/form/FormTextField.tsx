@@ -36,8 +36,8 @@ export const FormTextField = <TFieldValues extends FieldValues>({
             {...field}
             {...props}
             id={id}
-            label={label}
             error={!!error}
+            helperText={error ? error.message : props.helperText}
           />
         </FormField>
       )}

@@ -9,7 +9,7 @@ export const LoginForm = () => {
       <Form.TextField {...FORM_FIELDS.email} />
       <Form.TextField {...FORM_FIELDS.password} type="password" />
       <Link.Text to={PATHS.forgotPassword.path}>
-        {PATHS.forgotPassword.path}
+        {PATHS.forgotPassword.label}
       </Link.Text>
       <Form.SubmitButton>{LABELS.submit}</Form.SubmitButton>
     </Form>
