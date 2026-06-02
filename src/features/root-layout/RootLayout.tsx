@@ -8,6 +8,10 @@ const theme = createTheme({
   typography: {
     fontFamily: "Quicksand, sans-serif",
   },
+  spacingTokens: {
+    group: 1,
+    stack: 2.5,
+  },
 });
 
 export const RootLayout = () => (

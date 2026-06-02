@@ -10,8 +10,21 @@ interface AuthLayoutProps {
 
 export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
   return (
-    <Stack spacing={2.5} sx={{ width: "100%", maxWidth: 400, mx: "auto" }}>
-      <Stack spacing={1} sx={{ alignItems: "center", textAlign: "center" }}>
+    <Stack
+      sx={{
+        width: "100%",
+        maxWidth: 400,
+        mx: "auto",
+        gap: (t) => t.spacingTokens.stack,
+      }}
+    >
+      <Stack
+        sx={{
+          alignItems: "center",
+          textAlign: "center",
+          gap: (t) => t.spacingTokens.group,
+        }}
+      >
         <BfLogotype />
 
         {typeof title === "string" ? (
