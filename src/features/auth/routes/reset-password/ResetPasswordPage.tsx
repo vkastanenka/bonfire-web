@@ -1,13 +1,14 @@
 import { Link } from "@/components";
-import { AuthLayout } from "../components";
-import { LABELS, PATHS } from "./reset-password.constants";
+import { PATHS } from "@/constants";
+import { AuthLayout } from "../../components";
+import { LABELS } from "./reset-password.constants";
 import { ResetPasswordForm } from "./ResetPasswordForm";
 
 export const ResetPasswordPage = () => {
   return (
     <AuthLayout title={LABELS.title} subtitle={LABELS.subtitle}>
       <ResetPasswordForm />
-      <Link.Text to={PATHS.login.path}>{PATHS.login.label}</Link.Text>
+      <Link.Text to={PATHS.login}>{LABELS.login}</Link.Text>
     </AuthLayout>
   );
 };

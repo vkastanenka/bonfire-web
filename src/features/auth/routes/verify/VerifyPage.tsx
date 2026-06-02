@@ -1,13 +1,14 @@
 import { Link } from "@/components";
 import Alert from "@mui/material/Alert";
-import { AuthLayout } from "../components";
-import { LABELS, PATHS } from "./verify.constants";
+import { PATHS } from "@/constants";
+import { AuthLayout } from "../../components";
+import { LABELS } from "./verify.constants";
 
 export const VerifyPage = () => {
   return (
     <AuthLayout title={LABELS.title}>
       <Alert severity="success">{LABELS.success}</Alert>
-      <Link.Text to={PATHS.login.path}>{PATHS.login.label}</Link.Text>
+      <Link.Text to={PATHS.login}>{LABELS.login}</Link.Text>
     </AuthLayout>
   );
 };

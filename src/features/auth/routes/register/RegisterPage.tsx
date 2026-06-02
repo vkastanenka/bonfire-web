@@ -1,13 +1,14 @@
 import { Link } from "@/components";
-import { AuthLayout } from "../components";
-import { LABELS, PATHS } from "./register.constants";
+import { PATHS } from "@/constants";
+import { AuthLayout } from "../../components";
+import { LABELS } from "./register.constants";
 import { RegisterForm } from "./RegisterForm";
 
 export const RegisterPage = () => {
   return (
     <AuthLayout title={LABELS.title}>
       <RegisterForm />
-      <Link.Text to={PATHS.login.path}>{PATHS.login.label}</Link.Text>
+      <Link.Text to={PATHS.login}>{LABELS.login}</Link.Text>
     </AuthLayout>
   );
 };

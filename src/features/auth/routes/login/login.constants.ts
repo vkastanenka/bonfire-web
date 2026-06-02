@@ -1,15 +1,11 @@
 export const LABELS = {
-  title: "Reset your password",
-  subtitle: "Enter a new password for your account.",
+  title: "Welcome back!",
+  subtitle: "Come get warm around the fire!",
+  email: "Email Address",
   password: "Password",
-  submit: "Reset password",
-} as const;
-
-export const PATHS = {
-  login: {
-    label: "Don't need to reset your password? Log in",
-    path: "/login",
-  },
+  submit: "Log In",
+  forgotPassword: "Forgot your password?",
+  register: "Need an account? Register",
 } as const;
 
 export const VALIDATION_LABELS = {
@@ -17,6 +13,11 @@ export const VALIDATION_LABELS = {
 } as const;
 
 export const FORM_FIELDS = {
+  email: {
+    name: "email",
+    id: "email-input",
+    label: LABELS.email,
+  },
   password: {
     name: "password",
     id: "password-input",

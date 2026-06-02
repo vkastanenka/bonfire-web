@@ -5,18 +5,12 @@ export const LABELS = {
   username: "Username",
   password: "Password",
   submit: "Create Account",
-} as const;
-
-export const PATHS = {
-  login: {
-    label: "Already have an account? Log in",
-    path: "/login",
-  },
+  login: "Already have an account? Log in",
 } as const;
 
 export const VALIDATION_LABELS = {
-  displayName: "Password must be at least 6 characters long",
-  username: "Password must be at least 6 characters long",
+  displayName: "Display name must be at least 6 characters long",
+  username: "Username must be at least 6 characters long",
   password: "Password must be at least 6 characters long",
 } as const;
 
