@@ -1,7 +1,15 @@
-import { useForgotPasswordForm } from "./useForgotPasswordForm";
-import { ForgotPasswordView } from "./ForgotPasswordView";
+import { AuthLayout } from "../auth-layout";
+import { LABELS, PATHS } from "./forgot-password.constants";
+import { ForgotPasswordForm } from "./ForgotPasswordForm";
 
 export const ForgotPasswordPage = () => {
-  const formProps = useForgotPasswordForm();
-  return <ForgotPasswordView {...formProps} />;
+  return (
+    <AuthLayout
+      title={LABELS.title}
+      subtitle={LABELS.subtitle}
+      footerLink={PATHS.login}
+    >
+      <ForgotPasswordForm />
+    </AuthLayout>
+  );
 };

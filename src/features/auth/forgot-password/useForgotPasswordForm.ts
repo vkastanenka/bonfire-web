@@ -28,14 +28,12 @@ export const useForgotPasswordForm = () => {
           ? err.message
           : "Failed to send password reset email",
       );
+      console.log(apiError);
     }
   };
 
   return {
-    control: methods.control,
-    isSubmitting: methods.formState.isSubmitting,
-    errors: methods.formState.errors,
-    apiError,
-    handleSubmit: methods.handleSubmit(onSubmit),
+    methods,
+    onSubmit,
   };
 };
