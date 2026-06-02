@@ -1,31 +1,34 @@
+import type { ReactNode } from "react";
 import Stack from "@mui/material/Stack";
-import { BfLogotype, Link, Typography } from "@/components";
-import type { AppRoute } from "@/types";
+import { BfLogotype, Typography } from "@/components";
 
 interface AuthLayoutProps {
-  children: React.ReactNode;
-  title: string;
-  subtitle?: string;
-  footerLink?: AppRoute;
+  children: ReactNode;
+  title: ReactNode;
+  subtitle?: ReactNode;
 }
 
-export const AuthLayout = ({
-  children,
-  title,
-  subtitle,
-  footerLink,
-}: AuthLayoutProps) => {
+export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
   return (
-    <Stack spacing={2.5}>
-      <BfLogotype sx={{ alignSelf: "center" }} />
-      <Stack spacing={1} sx={{ textAlign: "center" }}>
-        <Typography.Heading>{title}</Typography.Heading>
-        {subtitle && <Typography>{subtitle}</Typography>}
+    <Stack spacing={2.5} sx={{ width: "100%", maxWidth: 400, mx: "auto" }}>
+      <Stack spacing={1} sx={{ alignItems: "center", textAlign: "center" }}>
+        <BfLogotype />
+
+        {typeof title === "string" ? (
+          <Typography.Heading>{title}</Typography.Heading>
+        ) : (
+          title
+        )}
+
+        {subtitle &&
+          (typeof subtitle === "string" ? (
+            <Typography color="text.secondary">{subtitle}</Typography>
+          ) : (
+            subtitle
+          ))}
       </Stack>
+
       {children}
-      {footerLink && (
-        <Link.Text to={footerLink.path}>{footerLink.label}</Link.Text>
-      )}
     </Stack>
   );
 };
