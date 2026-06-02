@@ -19,3 +19,26 @@ export const VALIDATION_LABELS = {
   username: "Password must be at least 6 characters long",
   password: "Password must be at least 6 characters long",
 } as const;
+
+export const FORM_FIELDS = {
+  email: {
+    name: "email",
+    id: "email-input",
+    label: LABELS.email,
+  },
+  displayName: {
+    name: "displayName",
+    id: "displayName-input",
+    label: LABELS.displayName,
+  },
+  username: {
+    name: "username",
+    id: "username-input",
+    label: LABELS.username,
+  },
+  password: {
+    name: "password",
+    id: "password-input",
+    label: LABELS.password,
+  },
+} as const;

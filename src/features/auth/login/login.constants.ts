@@ -8,6 +8,10 @@ export const LABELS = {
 } as const;
 
 export const PATHS = {
+  forgotPassword: {
+    label: LABELS.forgotPassword,
+    path: "/forgot-password",
+  },
   register: {
     label: "Need an account? Register",
     path: "/register",
@@ -16,4 +20,17 @@ export const PATHS = {
 
 export const VALIDATION_LABELS = {
   password: "Password must be at least 6 characters long",
+} as const;
+
+export const FORM_FIELDS = {
+  email: {
+    name: "email",
+    id: "email-input",
+    label: LABELS.email,
+  },
+  password: {
+    name: "password",
+    id: "password-input",
+    label: LABELS.password,
+  },
 } as const;

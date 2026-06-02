@@ -24,14 +24,12 @@ export const useRegisterForm = () => {
       console.log("Registered successfully:", data);
     } catch (err) {
       setApiError(err instanceof Error ? err.message : "Register failed");
+      console.log(apiError);
     }
   };
 
   return {
-    control: methods.control,
-    isSubmitting: methods.formState.isSubmitting,
-    errors: methods.formState.errors,
-    apiError,
-    handleSubmit: methods.handleSubmit(onSubmit),
+    methods,
+    onSubmit,
   };
 };

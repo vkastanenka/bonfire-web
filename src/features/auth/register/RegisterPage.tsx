@@ -1,7 +1,11 @@
-import { useRegisterForm } from "./useRegisterForm";
-import { RegisterView } from "./RegisterView";
+import { AuthLayout } from "../auth-layout";
+import { LABELS, PATHS } from "./register.constants";
+import { RegisterForm } from "./RegisterForm";
 
 export const RegisterPage = () => {
-  const formProps = useRegisterForm();
-  return <RegisterView {...formProps} />;
+  return (
+    <AuthLayout title={LABELS.title} footerLink={PATHS.login}>
+      <RegisterForm />
+    </AuthLayout>
+  );
 };
