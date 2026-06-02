@@ -11,12 +11,14 @@ interface AuthLayoutProps {
 export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
   return (
     <Stack
-      sx={{
+      sx={(t) => ({
         width: "100%",
         maxWidth: 400,
         mx: "auto",
-        gap: (t) => t.spacingTokens.stack,
-      }}
+        px: 2,
+        py: t.spacingTokens.stack,
+        gap: t.spacingTokens.stack,
+      })}
     >
       <Stack
         sx={{

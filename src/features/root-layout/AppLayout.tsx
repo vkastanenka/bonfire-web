@@ -12,7 +12,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
       }}
     >
       {/* <Header /> */}
-      <Box component="main" sx={{ flexGrow: 1, px: 2, py: 2.5 }}>
+      <Box component="main" sx={{ flexGrow: 1 }}>
         {children}
       </Box>
       {/* <Footer /> */}
