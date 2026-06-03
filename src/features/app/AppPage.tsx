@@ -14,7 +14,7 @@ export const AppPage = () => {
           direction="row"
           sx={{
             minHeight: "calc(100vh - 32px)",
-            boxShadow: 2,
+            boxShadow: 1,
           }}
         >
           <AppSideNav />
