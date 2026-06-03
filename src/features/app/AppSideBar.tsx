@@ -8,6 +8,7 @@ export const AppSideBar = () => {
         borderWidth: "1px",
         borderLeftStyle: "solid",
         borderTopStyle: "solid",
+        borderColor: "divider",
         bgcolor: "grey.50",
       }}
     >

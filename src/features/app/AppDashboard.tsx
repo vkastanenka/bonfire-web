@@ -7,6 +7,7 @@ export const AppDashboard = () => {
         border: "inherit",
         borderWidth: "1px",
         borderTopStyle: "solid",
+        borderColor: "divider",
         width: "100%",
       }}
     >
