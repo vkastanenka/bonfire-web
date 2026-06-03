@@ -1,4 +1,11 @@
-import { Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import {
+  Avatar,
+  Button,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import EmojiPeopleIcon from "@mui/icons-material/EmojiPeople";
 import AddIcon from "@mui/icons-material/Add";
 
@@ -22,7 +29,7 @@ const AppDirectMessagesHeader = () => {
         {"Direct Messages"}
       </Typography>
       <Tooltip placement="top" title="Create Message">
-        <IconButton color="inherit">
+        <IconButton>
           <AddIcon fontSize="small" />
         </IconButton>
       </Tooltip>
@@ -30,10 +37,34 @@ const AppDirectMessagesHeader = () => {
   );
 };
 
+const AppDirectMessagesButton = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  return (
+    <Button sx={{ justifyContent: "start" }}>
+      <Stack direction={"row"} sx={{ alignItems: "center", gap: 1 }}>
+        <Avatar sx={{ bgcolor: "primary.main" }} />
+        <Stack>
+          <Typography sx={{ fontWeight: 500 }}>{children}</Typography>
+        </Stack>
+      </Stack>
+    </Button>
+  );
+};
+
 const AppDirectMessages = () => {
   return (
     <Stack sx={{ gap: (t) => t.spacingTokens.tight }}>
       <AppDirectMessagesHeader />
+      <AppDirectMessagesButton>{"Potato Princess"}</AppDirectMessagesButton>
+      <AppDirectMessagesButton>{"Hexaclover"}</AppDirectMessagesButton>
+      <AppDirectMessagesButton>{"Snowybot"}</AppDirectMessagesButton>
+      <AppDirectMessagesButton>{"EradonsRival"}</AppDirectMessagesButton>
+      <AppDirectMessagesButton>{"Afrii"}</AppDirectMessagesButton>
+      <AppDirectMessagesButton>{"Sparkplug"}</AppDirectMessagesButton>
+      <AppDirectMessagesButton>{"Blue Panda"}</AppDirectMessagesButton>
     </Stack>
   );
 };

@@ -23,7 +23,6 @@ const AppSideNavButtonWrapper = ({
             p: 0,
             width: 40,
             height: 40,
-            color: "inherit",
             bgcolor: "grey.200",
             "&:hover": {
               bgcolor: "grey.300",
@@ -45,7 +44,7 @@ interface AppSideNavButtonProps {
 export const AppSideNavButton = ({ src, Icon }: AppSideNavButtonProps) => {
   return (
     <AppSideNavButtonWrapper>
-      {src && <Avatar src={src} />}
+      {src && <Avatar src={src} sx={{ bgcolor: "grey.400" }} />}
       {Icon && Icon}
     </AppSideNavButtonWrapper>
   );

@@ -36,12 +36,12 @@ export const AppNav = () => {
         }}
       >
         <Tooltip title="Inbox">
-          <IconButton color="inherit">
+          <IconButton>
             <InboxIcon fontSize="small" aria-label="inbox" />
           </IconButton>
         </Tooltip>
         <Tooltip title="Help">
-          <IconButton color="inherit">
+          <IconButton>
             <HelpIcon fontSize="small" aria-label="help" />
           </IconButton>
         </Tooltip>

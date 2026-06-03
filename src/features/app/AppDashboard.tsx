@@ -11,7 +11,7 @@ export const AppDashboard = () => {
         width: "100%",
       }}
     >
-      AppDashboard
+      {/* AppDashboard */}
     </Stack>
   );
 };
