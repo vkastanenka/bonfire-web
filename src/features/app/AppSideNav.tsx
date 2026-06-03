@@ -8,7 +8,7 @@ export const AppSideNav = () => {
   return (
     <Stack sx={{ bgcolor: "grey.50", gap: (t) => t.spacingTokens.group }}>
       <AppSideNavButton src="/" />
-      <Divider />
+      <Divider sx={{ width: "75%", alignSelf: "center" }} />
       <AppSideNavButton src="/" />
       <AppSideNavButton src="/" />
       <AppSideNavButton src="/" />

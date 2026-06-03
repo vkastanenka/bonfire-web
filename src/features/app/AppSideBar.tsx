@@ -1,5 +1,6 @@
-import { Button, Stack } from "@mui/material";
+import { Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import EmojiPeopleIcon from "@mui/icons-material/EmojiPeople";
+import AddIcon from "@mui/icons-material/Add";
 
 const AppSearchButton = () => {
   return (
@@ -11,6 +12,32 @@ const AppSearchButton = () => {
   );
 };
 
+const AppDirectMessagesHeader = () => {
+  return (
+    <Stack
+      direction="row"
+      sx={{ alignItems: "center", justifyContent: "space-between" }}
+    >
+      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+        {"Direct Messages"}
+      </Typography>
+      <Tooltip placement="top" title="Create Message">
+        <IconButton color="inherit">
+          <AddIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </Stack>
+  );
+};
+
+const AppDirectMessages = () => {
+  return (
+    <Stack sx={{ gap: (t) => t.spacingTokens.tight }}>
+      <AppDirectMessagesHeader />
+    </Stack>
+  );
+};
+
 interface AppSideBarItemProps {
   children: React.ReactNode;
 }
@@ -19,9 +46,6 @@ const AppSideBarItem = ({ children }: AppSideBarItemProps) => {
   return (
     <Stack
       sx={{
-        borderWidth: "1px",
-        borderBottomStyle: "solid",
-        borderColor: "divider",
         p: (t) => t.spacingTokens.group,
       }}
     >
@@ -40,6 +64,11 @@ export const AppSideBar = () => {
         borderColor: "divider",
         bgcolor: "grey.50",
         width: 280,
+        "& > :not(:last-of-type)": {
+          borderWidth: "1px",
+          borderBottomStyle: "solid",
+          borderColor: "divider",
+        },
       }}
     >
       <AppSideBarItem>
@@ -52,6 +81,9 @@ export const AppSideBar = () => {
         >
           {"Friends"}
         </Button>
+      </AppSideBarItem>
+      <AppSideBarItem>
+        <AppDirectMessages />
       </AppSideBarItem>
     </Stack>
   );
