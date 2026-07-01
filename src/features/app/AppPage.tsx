@@ -1,9 +1,10 @@
-import { Stack } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 
 import { AppNav } from "./AppNav";
 import { AppSideNav } from "./AppSideNav";
 import { AppSideBar } from "./AppSideBar";
 import { AppDashboard } from "./AppDashboard";
+import { AppUserNav } from "./AppUserNav";
 
 export const AppPage = () => {
   return (
@@ -15,10 +16,14 @@ export const AppPage = () => {
           sx={{
             minHeight: "calc(100vh - 32px)",
             boxShadow: 1,
+            position: "relative",
           }}
         >
           <AppSideNav />
           <AppSideBar />
+          <Box sx={{ position: "absolute", bottom: 100, left: 8, right: 8 }}>
+            <AppUserNav />
+          </Box>
         </Stack>
         <AppDashboard />
       </Stack>
