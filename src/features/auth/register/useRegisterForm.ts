@@ -1,10 +1,13 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterInputs } from "./register.validation";
+import { useRegister } from "./hooks"; // Import your mutation hook
+import { type AxiosError } from "axios";
+import { type ApiErrorResponse } from "@/lib/api/types";
 
 export const useRegisterForm = () => {
-  const [apiError, setApiError] = useState<string | null>(null);
+  // 1. Destructure the mutation methods and state from your hook
+  const { mutate, isPending, error } = useRegister();
 
   const methods = useForm<RegisterInputs>({
     resolver: zodResolver(registerSchema),
@@ -16,20 +19,20 @@ export const useRegisterForm = () => {
     },
   });
 
-  const onSubmit = async (data: RegisterInputs) => {
-    setApiError(null);
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Registered successfully:", data);
-    } catch (err) {
-      setApiError(err instanceof Error ? err.message : "Register failed");
-      console.log(apiError);
-    }
+  // 2. Simply trigger the mutation
+  const onSubmit = (data: RegisterInputs) => {
+    mutate(data);
   };
+
+  // 3. Derive the error message for the UI
+  // Cast error to the expected type so we can access the backend message
+  const axiosError = error as AxiosError<ApiErrorResponse> | null;
+  const apiError = axiosError?.response?.data?.message ?? null;
 
   return {
     methods,
     onSubmit,
+    isSubmitting: isPending, // Use this to disable your button
+    apiError, // Use this to display the error text in your UI
   };
 };
