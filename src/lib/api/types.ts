@@ -10,10 +10,10 @@ export interface ApiErrorResponse {
   type: string;
   title: string;
   status: number;
-  detail: string; // This is the main human-readable error message
+  detail: string;
   code: string;
   instance: string;
-  invalid_params?: InvalidParam[]; // Matches your Go struct
+  invalid_params?: InvalidParam[];
   req_id: string;
   trace_id: string;
   timestamp: string;
