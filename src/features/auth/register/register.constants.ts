@@ -20,9 +20,9 @@ export const FORM_FIELDS = {
     id: "email-input",
     label: LABELS.email,
   },
-  displayName: {
-    name: "displayName",
-    id: "displayName-input",
+  display_name: {
+    name: "display_name",
+    id: "display_name-input",
     label: LABELS.displayName,
   },
   username: {

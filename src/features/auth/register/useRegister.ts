@@ -8,7 +8,6 @@ import {
 } from "./register.validation";
 import { type ApiErrorResponse } from "@/lib/api/types";
 
-// Encapsulated mutation options configuration matching getLocationsByNameOptions style
 export const registerMutationOptions = (
   options?: Partial<
     UseMutationOptions<

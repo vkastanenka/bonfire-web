@@ -7,10 +7,11 @@ export const RegisterForm = () => {
   return (
     <Form methods={methods} onSubmit={onSubmit}>
       <Form.TextField {...FORM_FIELDS.email} />
-      <Form.TextField {...FORM_FIELDS.displayName} />
+      <Form.TextField {...FORM_FIELDS.display_name} />
       <Form.TextField {...FORM_FIELDS.username} />
       <Form.TextField {...FORM_FIELDS.password} type="password" />
       <Form.SubmitButton>{LABELS.submit}</Form.SubmitButton>
     </Form>
   );
 };
+ 
