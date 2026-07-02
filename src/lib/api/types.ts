@@ -1,9 +1,22 @@
 import type { AxiosInstance, AxiosRequestConfig } from "axios";
 import { z } from "zod";
 
+export interface InvalidParam {
+  name: string;
+  reason: string;
+}
+
 export interface ApiErrorResponse {
-  reason?: string;
-  message?: string;
+  type: string;
+  title: string;
+  status: number;
+  detail: string; // This is the main human-readable error message
+  code: string;
+  instance: string;
+  invalid_params?: InvalidParam[]; // Matches your Go struct
+  req_id: string;
+  trace_id: string;
+  timestamp: string;
 }
 
 export interface CustomAxiosInstance extends AxiosInstance {

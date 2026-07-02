@@ -24,7 +24,7 @@ export const createApiClient = (
       }
 
       const status = error.response?.status;
-      const message = error.response?.data?.reason || error.message;
+      const message = error.response?.data?.detail || error.message;
 
       // TODO: Sentry error handling
       console.error(

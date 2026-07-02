@@ -1,38 +1,52 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterInputs } from "./register.validation";
-import { useRegister } from "./hooks"; // Import your mutation hook
+import { useRegister } from "./hooks";
 import { type AxiosError } from "axios";
 import { type ApiErrorResponse } from "@/lib/api/types";
 
 export const useRegisterForm = () => {
-  // 1. Destructure the mutation methods and state from your hook
-  const { mutate, isPending, error } = useRegister();
+  const { mutate, isPending } = useRegister();
+  const [globalError, setGlobalError] = useState<string | null>(null);
 
   const methods = useForm<RegisterInputs>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      email: "",
-      displayName: "",
-      username: "",
-      password: "",
-    },
+    defaultValues: { email: "", displayName: "", username: "", password: "" },
   });
 
-  // 2. Simply trigger the mutation
   const onSubmit = (data: RegisterInputs) => {
-    mutate(data);
-  };
+    setGlobalError(null);
 
-  // 3. Derive the error message for the UI
-  // Cast error to the expected type so we can access the backend message
-  const axiosError = error as AxiosError<ApiErrorResponse> | null;
-  const apiError = axiosError?.response?.data?.message ?? null;
+    mutate(data, {
+      onError: (err) => {
+        const axiosError = err as AxiosError<ApiErrorResponse>;
+        const responseData = axiosError.response?.data;
+
+        if (responseData) {
+          // 1. Handle Field-Specific Errors (e.g., "email already taken")
+          if (responseData.invalid_params) {
+            responseData.invalid_params.forEach((param) => {
+              methods.setError(param.name as keyof RegisterInputs, {
+                type: "manual",
+                message: param.reason,
+              });
+            });
+          }
+
+          // 2. Handle Global Error (e.g., "Internal Server Error")
+          setGlobalError(responseData.detail || "An unknown error occurred.");
+        } else {
+          setGlobalError("Network error. Please try again.");
+        }
+      },
+    });
+  };
 
   return {
     methods,
     onSubmit,
-    isSubmitting: isPending, // Use this to disable your button
-    apiError, // Use this to display the error text in your UI
+    isSubmitting: isPending,
+    apiError: globalError, // Display this in your UI
   };
 };

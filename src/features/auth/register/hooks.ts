@@ -9,10 +9,10 @@ export const useRegister = () => {
     onSuccess: (data) => {
       console.log("Registration successful", data);
     },
-    // 3. Use the generic type here
     onError: (error: AxiosError<ApiErrorResponse>) => {
-      // TypeScript now knows error.response.data exists and has a 'message' property
-      console.error("Registration failed", error.response?.data?.message);
+      // Now this will correctly print the server's error message
+      const message = error.response?.data.detail || "Registration failed";
+      console.error("Registration failed:", message);
     },
   });
 };
