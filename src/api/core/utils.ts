@@ -2,24 +2,19 @@ import axios, { type AxiosRequestConfig, AxiosError, isCancel } from "axios";
 import { z } from "zod";
 import type { CustomAxiosInstance, ApiErrorResponse } from "./types";
 import { ApiNetworkError, ApiResponseValidationError } from "./errors";
+import { type AppConfig } from "./config";
 
-interface ClientOptions {
-  serviceName: string;
-  baseURL: string;
-}
-
-export const createApiClient = (
-  options: ClientOptions,
-  config?: AxiosRequestConfig,
+export const newClient = (
+  name: string,
+  config: AppConfig,
 ): CustomAxiosInstance => {
   const instance = axios.create({
-    baseURL: options.baseURL,
-    timeout: 15000,
+    baseURL: config.baseURL,
+    timeout: config.timeout,
     headers: {
       "Content-Type": "application/json",
     },
     withCredentials: true,
-    ...config,
   });
 
   instance.interceptors.response.use(
@@ -62,7 +57,7 @@ export const createApiClient = (
       }
 
       console.error(
-        `[${options.serviceName} Network Error ${status}]: ${normalizedDetails.detail} (ReqID: ${normalizedDetails.req_id})`,
+        `[${name} Network Error ${status}]: ${normalizedDetails.detail} (ReqID: ${normalizedDetails.req_id})`,
       );
 
       return Promise.reject(
@@ -84,14 +79,14 @@ export const createApiClient = (
 
     if (!result.success) {
       console.error(
-        `[${options.serviceName}] Schema Validation Failed at ${axiosConfig.url || ""}:`,
+        `[${name}] Schema Validation Failed at ${axiosConfig.url || ""}:`,
         result.error.format(),
       );
       throw new ApiResponseValidationError(
-        options.serviceName,
+        name,
         axiosConfig.url || "",
         result.error,
-        `Contract mismatch identified at service: ${options.serviceName}`,
+        `Contract mismatch identified at service: ${name}`,
       );
     }
 

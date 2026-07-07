@@ -1,14 +1,12 @@
-import { createApiClient } from "./utils";
+import { resolveConfig } from "./config";
 import { AuthService } from "./services";
+import { newClient } from "./utils";
 
-const API_BASE_URL = "http://localhost:8080/api/v1";
+const config = resolveConfig();
 
-const coreClient = createApiClient({
-  serviceName: "DiscordGateway",
-  baseURL: API_BASE_URL,
-});
+const client = newClient("BonfireService", config);
 
-export const authService = new AuthService(coreClient, {
+export const authService = new AuthService(client, {
   name: "AuthService",
   basePath: "/auth",
 });

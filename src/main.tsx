@@ -30,12 +30,6 @@ declare module "@tanstack/react-query" {
 
 const handleGlobalError = (error: unknown) => {
   if (error instanceof ApiNetworkError) {
-    // if (
-    //   (error.status === 400 || error.status === 422) &&
-    //   error.details.invalid_params?.length
-    // ) {
-    //   return;
-    // }
     toast.error(error.details.detail || error.message);
   } else if (error instanceof Error) {
     toast.error(error.message);
