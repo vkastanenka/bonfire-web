@@ -1,19 +1,10 @@
 import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
-import { authService } from "../core";
-import { type ApiNetworkError } from "../core/errors";
+import { authService, type ApiNetworkError } from "../core";
 import type { RegisterRequest, RegisterResponse } from "../core/schema";
-import { authKeys } from "./keys";
 
-export const registerMutationOptions = (
-  options?: Partial<
-    UseMutationOptions<RegisterResponse, ApiNetworkError, RegisterRequest>
-  >,
-) => {
-  return {
-    mutationKey: authKeys.register(),
-    mutationFn: (data: RegisterRequest) => authService.register(data),
-    ...options,
-  };
+export const authKeys = {
+  all: ["auth"] as const,
+  register: () => [...authKeys.all, "register"] as const,
 };
 
 export const useRegister = (
@@ -21,5 +12,9 @@ export const useRegister = (
     UseMutationOptions<RegisterResponse, ApiNetworkError, RegisterRequest>
   >,
 ) => {
-  return useMutation(registerMutationOptions(options));
+  return useMutation({
+    mutationKey: authKeys.register(),
+    mutationFn: (data: RegisterRequest) => authService.register(data),
+    ...options,
+  });
 };

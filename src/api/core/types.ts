@@ -1,4 +1,4 @@
-import type { AxiosInstance, AxiosRequestConfig } from "axios";
+import type { AxiosRequestConfig } from "axios";
 import { z } from "zod";
 
 export interface InvalidParam {
@@ -6,26 +6,27 @@ export interface InvalidParam {
   reason: string;
 }
 
-export interface ApiErrorResponse {
+export interface ProblemDetails {
   type: string;
   title: string;
   status: number;
   detail: string;
-  code: string;
   instance: string;
+  code: string;
   invalid_params?: InvalidParam[];
   req_id: string;
   trace_id: string;
   timestamp: string;
 }
 
-export interface CustomAxiosInstance extends AxiosInstance {
-  safeRequest<T extends z.ZodTypeAny>(
-    config: AxiosRequestConfig & { schema: T },
-  ): Promise<z.infer<T>>;
+export interface ValidatedRequestConfig<
+  T extends z.ZodTypeAny,
+> extends AxiosRequestConfig {
+  schema: T;
 }
 
-export interface ApiServiceConfig {
-  name: string;
-  basePath: string;
+export interface ApiClient {
+  request<T extends z.ZodTypeAny>(
+    config: ValidatedRequestConfig<T>,
+  ): Promise<z.infer<T>>;
 }

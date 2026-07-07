@@ -1,27 +1,29 @@
 import type { AxiosRequestConfig } from "axios";
-import type { CustomAxiosInstance, ApiServiceConfig } from "./types";
+import type { ApiClient } from "./types";
 import {
   registerResponseSchema,
   type RegisterRequest,
   type RegisterResponse,
 } from "./schema";
 
-export class AuthService {
-  private readonly client: CustomAxiosInstance;
-  private readonly config: ApiServiceConfig;
+export abstract class BaseApiService {
+  protected readonly client: ApiClient;
+  protected readonly basePath: string;
 
-  constructor(client: CustomAxiosInstance, config: ApiServiceConfig) {
+  constructor(client: ApiClient, basePath: string) {
     this.client = client;
-    this.config = config;
+    this.basePath = basePath;
   }
+}
 
+export class AuthService extends BaseApiService {
   public register = (
     data: RegisterRequest,
     config?: AxiosRequestConfig,
   ): Promise<RegisterResponse> => {
-    return this.client.safeRequest({
+    return this.client.request({
       method: "POST",
-      url: `${this.config.basePath}/register`,
+      url: `${this.basePath}/register`,
       data,
       schema: registerResponseSchema,
       ...config,

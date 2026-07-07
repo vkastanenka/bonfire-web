@@ -1,15 +1,15 @@
-import { resolveConfig } from "./config";
+import { createConfig } from "./config";
+import { BonfireHttpClient } from "./client";
 import { AuthService } from "./services";
-import { newClient } from "./utils";
 
-const config = resolveConfig();
-
-const client = newClient("BonfireService", config);
-
-export const authService = new AuthService(client, {
-  name: "AuthService",
-  basePath: "/auth",
+const coreConfig = createConfig({
+  baseURL: (import.meta.env.VITE_API_BASE_URL as string) || undefined,
 });
+
+const coreClient = new BonfireHttpClient("BonfireService", coreConfig);
+
+export const authService = new AuthService(coreClient, "/auth");
 
 export * from "./errors";
 export * from "./schema";
+export type { ProblemDetails, InvalidParam } from "./types";

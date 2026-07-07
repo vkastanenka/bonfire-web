@@ -1,44 +1,40 @@
 import { ZodError } from "zod";
-import type { ApiErrorResponse } from "./types";
+import type { ProblemDetails } from "./types";
 
 export class ApiNetworkError extends Error {
   public readonly status: number;
-  public readonly details: ApiErrorResponse;
+  public readonly code: string;
+  public readonly details: ProblemDetails;
 
-  constructor(status: number, details: ApiErrorResponse, message: string) {
-    super(message);
+  constructor(details: ProblemDetails) {
+    super(details.detail);
     this.name = "ApiNetworkError";
-    this.status = status;
+    this.status = details.status;
+    this.code = details.code;
     this.details = details;
   }
 
   public isValidationFailure(): boolean {
     return (
-      Array.isArray(this.details.invalid_params) &&
-      this.details.invalid_params.length > 0
+      this.code === "INVALID_INPUT" ||
+      (Array.isArray(this.details.invalid_params) &&
+        this.details.invalid_params.length > 0)
     );
   }
 
-  public getParamError(fieldName: string): string | undefined {
+  public getFieldError(fieldName: string): string | undefined {
     return this.details.invalid_params?.find((p) => p.name === fieldName)
       ?.reason;
   }
 }
 
-export class ApiResponseValidationError extends Error {
-  public readonly serviceName: string;
+export class ResponseValidationError extends Error {
   public readonly url: string;
   public readonly zodError: ZodError;
 
-  constructor(
-    serviceName: string,
-    url: string,
-    zodError: ZodError,
-    message: string,
-  ) {
+  constructor(url: string, zodError: ZodError, message: string) {
     super(message);
-    this.name = "ApiResponseValidationError";
-    this.serviceName = serviceName;
+    this.name = "ResponseValidationError";
     this.url = url;
     this.zodError = zodError;
   }
