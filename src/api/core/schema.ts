@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+export const emptyToUndefined = <T extends z.ZodString>(stringSchema: T) =>
+  z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    stringSchema.optional(),
+  );
+
 export const VALIDATION_LABELS = {
   email: {
     invalid: "Must be a valid email address.",
@@ -10,9 +16,10 @@ export const VALIDATION_LABELS = {
     max: "Cannot be longer than 32 characters.",
   },
   username: {
-    min: "Must be at least 4 characters.",
+    min: "Must be at least 3 characters.",
     max: "Cannot be longer than 32 characters.",
-    pattern: "Must contain only letters, numbers, underscores, or periods.",
+    pattern:
+      "Must start and end with a letter or number. May contain only letters, numbers, and non-consecutive underscores or periods.",
   },
   password: {
     min: "Must be at least 12 characters.",
@@ -25,17 +32,16 @@ export const registerRequestSchema = z.object({
     .email(VALIDATION_LABELS.email.invalid)
     .max(255, VALIDATION_LABELS.email.max),
 
-  display_name: z
-    .string()
-    .max(32, VALIDATION_LABELS.displayName.max)
-    .refine((val) => val === "" || val.length >= 3, {
-      message: VALIDATION_LABELS.displayName.min,
-    })
-    .optional(),
+  display_name: emptyToUndefined(
+    z
+      .string()
+      .min(3, VALIDATION_LABELS.displayName.min)
+      .max(32, VALIDATION_LABELS.displayName.max),
+  ),
 
   username: z
     .string()
-    .min(8, VALIDATION_LABELS.username.min)
+    .min(3, VALIDATION_LABELS.username.min)
     .max(32, VALIDATION_LABELS.username.max)
     .regex(
       /^[a-zA-Z0-9]([a-zA-Z0-9_.]?[a-zA-Z0-9])+$/,
