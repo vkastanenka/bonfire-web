@@ -2,22 +2,21 @@ import { z } from "zod";
 
 export const VALIDATION_LABELS = {
   email: {
-    invalid: "Please enter a valid email address.",
-    max: "Email address cannot exceed 255 characters.",
+    invalid: "Must be a valid email address.",
+    max: "Cannot be longer than 255 characters.",
   },
   displayName: {
-    min: "Display name must be at least 3 characters long.",
-    max: "Display name cannot exceed 32 characters.",
+    min: "Must be at least 3 characters.",
+    max: "Cannot be longer than 32 characters.",
   },
   username: {
-    min: "Username must be at least 4 characters long.",
-    max: "Username cannot exceed 32 characters.",
-    pattern:
-      "Username must start and end with a letter or number, and can only contain dots or underscores in between.",
+    min: "Must be at least 4 characters.",
+    max: "Cannot be longer than 32 characters.",
+    pattern: "Must contain only letters, numbers, underscores, or periods.",
   },
   password: {
-    min: "Password must be at least 12 characters long.",
-    max: "Password cannot exceed 128 characters.",
+    min: "Must be at least 12 characters.",
+    max: "Cannot be longer than 128 characters.",
   },
 } as const;
 

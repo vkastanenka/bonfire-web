@@ -35,6 +35,7 @@ export const useRegisterForm = () => {
         });
       },
       onError: (err) => {
+        console.log("Full Problem Details:", err.details);
         if (err instanceof ApiNetworkError) {
           if (err.isValidationFailure()) {
             err.details.invalid_params?.forEach((param) => {
