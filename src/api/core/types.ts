@@ -20,25 +20,12 @@ export interface ApiErrorResponse {
 }
 
 export interface CustomAxiosInstance extends AxiosInstance {
-  validatedGet<T extends z.ZodTypeAny>(
-    url: string,
-    schema: T,
-    config?: AxiosRequestConfig,
-  ): Promise<z.infer<T>>;
-  validatedPost<T extends z.ZodTypeAny>(
-    url: string,
-    data: unknown,
-    schema: T,
-    config?: AxiosRequestConfig,
+  safeRequest<T extends z.ZodTypeAny>(
+    config: AxiosRequestConfig & { schema: T },
   ): Promise<z.infer<T>>;
 }
 
-export interface BaseApiConfig {
+export interface ApiServiceConfig {
   name: string;
-  baseUrl: string;
-  endpoints: Record<string, string>;
-}
-
-export interface BaseApiServiceConfig<T extends BaseApiConfig> {
-  endpoints: T["endpoints"];
+  basePath: string;
 }
