@@ -1,5 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+// import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { theme } from "@/theme";
@@ -11,6 +11,6 @@ export const RootLayout = () => (
     <AppLayout>
       <Outlet />
     </AppLayout>
-    <TanStackRouterDevtools />
+    {/* <TanStackRouterDevtools /> */}
   </ThemeProvider>
 );
