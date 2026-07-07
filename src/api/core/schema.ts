@@ -35,7 +35,7 @@ export const registerRequestSchema = z.object({
 
   username: z
     .string()
-    .min(4, VALIDATION_LABELS.username.min)
+    .min(8, VALIDATION_LABELS.username.min)
     .max(32, VALIDATION_LABELS.username.max)
     .regex(
       /^[a-zA-Z0-9]([a-zA-Z0-9_.]?[a-zA-Z0-9])+$/,
@@ -45,7 +45,7 @@ export const registerRequestSchema = z.object({
   password: z
     .string()
     .min(12, VALIDATION_LABELS.password.min)
-    .max(128, VALIDATION_LABELS.password.max),
+    .max(255, VALIDATION_LABELS.password.max),
 });
 
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;
