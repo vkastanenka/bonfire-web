@@ -12,4 +12,3 @@ export const authService = new AuthService(coreClient, "/auth");
 
 export * from "./errors";
 export * from "./schema";
-export type { ProblemDetails, InvalidParam } from "./types";

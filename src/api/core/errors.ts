@@ -1,16 +1,35 @@
 import { ZodError } from "zod";
-import type { ProblemDetails } from "./types";
+
+export interface InvalidParam {
+  name: string;
+  reason: string;
+}
+
+export interface ProblemDetails {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  instance: string;
+  code: string;
+  invalid_params?: InvalidParam[];
+  req_id: string;
+  trace_id: string;
+  timestamp: string;
+}
 
 export class ApiNetworkError extends Error {
   public readonly status: number;
   public readonly code: string;
+  public readonly serviceContext: string;
   public readonly details: ProblemDetails;
 
-  constructor(details: ProblemDetails) {
+  constructor(serviceContext: string, details: ProblemDetails) {
     super(details.detail);
     this.name = "ApiNetworkError";
     this.status = details.status;
     this.code = details.code;
+    this.serviceContext = serviceContext;
     this.details = details;
   }
 
@@ -29,12 +48,19 @@ export class ApiNetworkError extends Error {
 }
 
 export class ResponseValidationError extends Error {
+  public readonly serviceContext: string;
   public readonly url: string;
   public readonly zodError: ZodError;
 
-  constructor(url: string, zodError: ZodError, message: string) {
+  constructor(
+    serviceContext: string,
+    url: string,
+    zodError: ZodError,
+    message: string,
+  ) {
     super(message);
     this.name = "ResponseValidationError";
+    this.serviceContext = serviceContext;
     this.url = url;
     this.zodError = zodError;
   }
