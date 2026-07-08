@@ -108,3 +108,9 @@ export const loginResponseSchema = z.object({
 });
 
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
+
+export const refreshResponseSchema = z.object({
+  access_token: z.string(),
+});
+
+export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
