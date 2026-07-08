@@ -1,3 +1,4 @@
+import type { AxiosRequestConfig } from "axios";
 import type { IHttpClient } from "./client";
 import {
   registerRequestSchema,
@@ -12,7 +13,10 @@ export class AuthService {
     this.client = client;
   }
 
-  public async register(data: RegisterRequest): Promise<RegisterResponse> {
+  public async register(
+    data: RegisterRequest,
+    config?: AxiosRequestConfig,
+  ): Promise<RegisterResponse> {
     const validatedInput = registerRequestSchema.parse(data);
 
     return this.client.request({
@@ -20,6 +24,7 @@ export class AuthService {
       method: "POST",
       data: validatedInput,
       schema: registerResponseSchema,
+      ...config,
     });
   }
 }
