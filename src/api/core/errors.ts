@@ -135,6 +135,7 @@ export class ApiNetworkError extends Error {
     this.status = details.status;
     this.code = details.code;
     this.details = details;
+    Object.setPrototypeOf(this, ApiNetworkError.prototype);
   }
 
   public isValidationFailure(): boolean {
@@ -154,12 +155,12 @@ export class ApiNetworkError extends Error {
 export class ResponseValidationError extends Error {
   public readonly url: string;
   public readonly zodError: ZodError;
-
   constructor(zodError: ZodError, message: string, url: string) {
     super(message);
     this.name = "ResponseValidationError";
     this.url = url;
     this.zodError = zodError;
+    Object.setPrototypeOf(this, ResponseValidationError.prototype);
   }
 }
 
@@ -168,7 +169,8 @@ export function isProblemDetails(data: unknown): data is ProblemDetails {
     typeof data === "object" &&
     data !== null &&
     "code" in data &&
-    "detail" in data
+    "detail" in data &&
+    "status" in data
   );
 }
 
@@ -184,9 +186,13 @@ export const mapErrToProblem = (error: AxiosError<unknown>): ProblemDetails => {
   const slug = meta.code.toLowerCase().replace(/_/g, "-");
 
   const headers = error.response?.headers;
-  const reqId =
-    headers?.["x-request-id"] || headers?.["x-correlation-id"] || "unknown";
-  const traceId = headers?.["x-b3-traceid"] || "unknown";
+  const getHeader = (key: string): string => {
+    if (!headers) return "unknown";
+    if (typeof headers.get === "function") {
+      return String(headers.get(key) || "unknown");
+    }
+    return String((headers as Record<string, unknown>)[key] || "unknown");
+  };
 
   return {
     type: `https://api.bonfire.com/errors/${slug}`,
@@ -195,8 +201,11 @@ export const mapErrToProblem = (error: AxiosError<unknown>): ProblemDetails => {
     detail: error.message || meta.detail,
     code: meta.code,
     instance: error.config?.url || "unknown",
-    req_id: String(reqId),
-    trace_id: String(traceId),
+    req_id:
+      getHeader("x-request-id") !== "unknown"
+        ? getHeader("x-request-id")
+        : getHeader("x-correlation-id"),
+    trace_id: getHeader("x-b3-traceid"),
     timestamp: new Date().toISOString(),
   };
 };
