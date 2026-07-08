@@ -17,32 +17,32 @@ export const STATUS_ERRORS: Record<number, StatusError> = {
   400: {
     code: "BAD_REQUEST",
     title: "Bad Request",
-    detail: "The request payload is malformed or input validation failed.",
+    detail: "The request payload or syntax is malformed.",
   },
   401: {
     code: "UNAUTHORIZED",
     title: "Unauthorized Access",
-    detail: "Authentication credentials are invalid or have expired.",
+    detail: "The provided credentials are invalid or expired.",
   },
   403: {
     code: "FORBIDDEN",
     title: "Permission Denied",
-    detail: "You do not have the required permissions to perform this action.",
+    detail: "You lack the required permissions for this action.",
   },
   404: {
     code: "NOT_FOUND",
     title: "Resource Not Found",
-    detail: "The requested resource does not exist or could not be found.",
+    detail: "The requested resource could not be found.",
   },
   405: {
     code: "METHOD_NOT_ALLOWED",
     title: "Method Not Allowed",
-    detail: "The HTTP method is not supported for this endpoint.",
+    detail: "The HTTP method is not supported for this path.",
   },
   408: {
     code: "REQUEST_TIMEOUT",
     title: "Request Timeout",
-    detail: "The server closed the connection because the request timed out.",
+    detail: "The operation conflicted with the current state of a resource.",
   },
   409: {
     code: "CONFLICT",
@@ -52,12 +52,12 @@ export const STATUS_ERRORS: Record<number, StatusError> = {
   410: {
     code: "GONE",
     title: "Resource No Longer Available",
-    detail: "The requested resource has been permanently removed.",
+    detail: "The requested resource has been permanently deleted.",
   },
   412: {
     code: "PRECONDITION_FAILED",
     title: "Precondition Failed",
-    detail: "The resource state has changed. Please refresh and try again.",
+    detail: "Target resource state has changed. Please refresh and retry.",
   },
   413: {
     code: "PAYLOAD_TOO_LARGE",
@@ -83,7 +83,7 @@ export const STATUS_ERRORS: Record<number, StatusError> = {
     code: "CLIENT_CLOSED_REQUEST",
     title: "Client Closed Connection",
     detail:
-      "The connection was terminated by the client before processing finished.",
+      "The client disconnected before processing completed.",
   },
   500: {
     code: "INTERNAL",
