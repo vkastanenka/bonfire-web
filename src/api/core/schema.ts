@@ -31,7 +31,7 @@ z.config({
     }
 
     if (issue.code === "too_small") {
-      switch (issue.type) {
+      switch (issue.origin) {
         case "string":
           return ERROR_TEMPLATES.minString(issue.minimum);
         case "number":
@@ -44,7 +44,7 @@ z.config({
     }
 
     if (issue.code === "too_big") {
-      switch (issue.type) {
+      switch (issue.origin) {
         case "string":
           return ERROR_TEMPLATES.maxString(issue.maximum);
         case "number":
@@ -62,7 +62,7 @@ z.config({
 
 export const usernameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9_.]?[a-zA-Z0-9])+$/;
 
-export const identityEmail = z.string().email().max(255);
+export const identityEmail = z.email().max(255);
 
 export const identityUsername = z
   .string()
