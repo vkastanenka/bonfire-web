@@ -1,25 +1,25 @@
-import type { AxiosRequestConfig } from "axios";
-import { z } from "zod";
-import type { ApiClient, ValidatedRequestConfig } from "./client";
+import type { IHttpClient } from "./client";
 import {
+  registerRequestSchema,
   registerResponseSchema,
   type RegisterRequest,
   type RegisterResponse,
 } from "./schema";
 
 export class AuthService {
-  constructor(private readonly api: ScopedClient) {}
+  public readonly client: IHttpClient;
+  constructor(client: IHttpClient) {
+    this.client = client;
+  }
 
-  public register = (
-    data: RegisterRequest,
-    config?: AxiosRequestConfig,
-  ): Promise<RegisterResponse> => {
-    return this.api.request({
+  public async register(data: RegisterRequest): Promise<RegisterResponse> {
+    const validatedInput = registerRequestSchema.parse(data);
+
+    return this.client.request({
+      url: "/auth/register",
       method: "POST",
-      url: "/register", // Clean relative path scoped exactly to this service domain
-      data,
+      data: validatedInput,
       schema: registerResponseSchema,
-      ...config,
     });
-  };
+  }
 }

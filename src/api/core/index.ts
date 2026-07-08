@@ -1,23 +1,19 @@
-import { createConfig } from "./config";
-import { BonfireHttpClient, ScopedClient } from "./client";
+import { createConfig, type Config } from "./config";
+import { HttpClient } from "./client";
 import { AuthService } from "./services";
 
-class BonfireSdk {
+export class BonfireSdk {
   public readonly auth: AuthService;
 
-  constructor(envBaseUrl?: string) {
-    const config = createConfig({ baseURL: envBaseUrl });
-    const transport = new BonfireHttpClient("BonfireGateway", config);
+  constructor(configOverrides?: Partial<Config>) {
+    const config = createConfig(configOverrides);
+    const client = new HttpClient(config);
 
-    this.auth = new AuthService(
-      new ScopedClient(transport, "/auth", "AuthService"),
-    );
+    this.auth = new AuthService(client);
   }
 }
 
-export const bonfire = new BonfireSdk(
-  (import.meta.env.VITE_API_BASE_URL as string) || undefined,
-);
+export const bonfireSdk = new BonfireSdk();
 
 export * from "./errors";
 export * from "./schema";

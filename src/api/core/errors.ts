@@ -1,3 +1,4 @@
+import type { AxiosError } from "axios";
 import { ZodError } from "zod";
 
 interface BackendErrorMetadata {
@@ -99,7 +100,6 @@ export const BACKEND_ERROR_MAP: Record<number, BackendErrorMetadata> = {
   },
 };
 
-// Global default case mirroring CodeInternal (500)
 export const DEFAULT_INTERNAL_ERROR: BackendErrorMetadata = {
   code: "INTERNAL",
   title: "Internal Server Error",
@@ -127,15 +127,13 @@ export interface ProblemDetails {
 export class ApiNetworkError extends Error {
   public readonly status: number;
   public readonly code: string;
-  public readonly serviceContext: string;
   public readonly details: ProblemDetails;
 
-  constructor(serviceContext: string, details: ProblemDetails) {
+  constructor(details: ProblemDetails) {
     super(details.detail);
     this.name = "ApiNetworkError";
     this.status = details.status;
     this.code = details.code;
-    this.serviceContext = serviceContext;
     this.details = details;
   }
 
@@ -154,19 +152,12 @@ export class ApiNetworkError extends Error {
 }
 
 export class ResponseValidationError extends Error {
-  public readonly serviceContext: string;
   public readonly url: string;
   public readonly zodError: ZodError;
 
-  constructor(
-    serviceContext: string,
-    url: string,
-    zodError: ZodError,
-    message: string,
-  ) {
+  constructor(zodError: ZodError, message: string, url: string) {
     super(message);
     this.name = "ResponseValidationError";
-    this.serviceContext = serviceContext;
     this.url = url;
     this.zodError = zodError;
   }
@@ -180,3 +171,32 @@ export function isProblemDetails(data: unknown): data is ProblemDetails {
     "detail" in data
   );
 }
+
+export const mapErrToProblem = (error: AxiosError<unknown>): ProblemDetails => {
+  const errStatus = error.response?.status || 500;
+  const errData = error.response?.data;
+
+  if (isProblemDetails(errData)) {
+    return errData;
+  }
+
+  const meta = BACKEND_ERROR_MAP[errStatus] || DEFAULT_INTERNAL_ERROR;
+  const slug = meta.code.toLowerCase().replace(/_/g, "-");
+
+  const headers = error.response?.headers;
+  const reqId =
+    headers?.["x-request-id"] || headers?.["x-correlation-id"] || "unknown";
+  const traceId = headers?.["x-b3-traceid"] || "unknown";
+
+  return {
+    type: `https://api.bonfire.com/errors/${slug}`,
+    title: meta.title,
+    status: errStatus,
+    detail: error.message || meta.detail,
+    code: meta.code,
+    instance: error.config?.url || "unknown",
+    req_id: String(reqId),
+    trace_id: String(traceId),
+    timestamp: new Date().toISOString(),
+  };
+};
