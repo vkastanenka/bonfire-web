@@ -26,10 +26,8 @@ z.config({
       return ERROR_TEMPLATES.required;
     }
 
-    if (issue.code === "invalid_format") {
-      if (issue.format === "email") {
-        return ERROR_TEMPLATES.email;
-      }
+    if (issue.code === "invalid_format" && issue.format === "email") {
+      return ERROR_TEMPLATES.email;
     }
 
     if (issue.code === "too_small") {
@@ -64,16 +62,13 @@ z.config({
 
 export const usernameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9_.]?[a-zA-Z0-9])+$/;
 
-export const identityEmail = z.string().email().max(255);
+export const identityEmail = z.email().max(255);
 
 export const identityUsername = z
   .string()
   .min(3)
   .max(32)
-  .regex(
-    usernameRegex,
-    "Must start and end with a letter or number. May contain only letters, numbers, and non-consecutive underscores or periods.",
-  );
+  .regex(usernameRegex, ERROR_TEMPLATES.username);
 
 export const identityPassword = z.string().min(12).max(255);
 

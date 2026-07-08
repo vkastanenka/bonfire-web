@@ -96,7 +96,9 @@ export class HttpClient {
     return <T extends z.ZodTypeAny>(
       request: Omit<SdkRequestConfig<T>, "url"> & { url?: string },
     ) => {
-      const cleanUrl = `${basePath}${request.url ?? ""}`.replace(/\/+/g, "/");
+      const cleanUrl = `${basePath}/${request.url ?? ""}`
+        .replace(/\/+/g, "/")
+        .replace(/^\//, "");
       return this.request({ ...request, url: cleanUrl }, { serviceName });
     };
   }
