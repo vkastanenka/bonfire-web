@@ -5,38 +5,43 @@ import axios, {
   type AxiosRequestConfig,
 } from "axios";
 import { z } from "zod";
-import type { Config } from "./config";
+import type { HttpConfig } from "./config";
 import {
   ApiNetworkError,
   ResponseValidationError,
   mapErrToProblem,
 } from "./errors";
 
-export interface IHttpClient {
-  request<T extends z.ZodTypeAny>(
-    config: IValidatedReqConfig<T>,
-  ): Promise<z.infer<T>>;
-}
-
-export interface IValidatedReqConfig<
-  T extends z.ZodTypeAny,
-> extends AxiosRequestConfig {
+export interface SdkRequestConfig<T extends z.ZodTypeAny> extends Pick<
+  AxiosRequestConfig,
+  "url"
+> {
   schema: T;
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  data?: unknown;
+  queryParams?: Record<string, string | number | boolean | undefined>;
+  signal?: AbortSignal;
+  headers?: Record<string, string>;
 }
 
-export class HttpClient implements IHttpClient {
+export interface SdkRequestMeta {
+  serviceName: string;
+}
+
+export type ScopedRequest = <T extends z.ZodTypeAny>(
+  request: Omit<SdkRequestConfig<T>, "url"> & { url?: string },
+) => Promise<z.infer<T>>;
+
+export class HttpClient {
   private readonly instance: AxiosInstance;
 
-  constructor(config: Config) {
+  constructor(config: HttpConfig) {
     this.instance = axios.create({
       baseURL: config.baseURL,
       timeout: config.timeout,
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       withCredentials: true,
     });
-
     this.setupInterceptors();
   }
 
@@ -45,41 +50,54 @@ export class HttpClient implements IHttpClient {
       (response) => response,
       (error: AxiosError<unknown>) => {
         if (isCancel(error)) return Promise.reject(error);
-
-        const problem = mapErrToProblem(error);
-
-        console.error(
-          `[Error ${problem.status}]: ${problem.detail} (ReqID: ${problem.req_id})`,
-        );
-
-        return Promise.reject(new ApiNetworkError(problem));
+        return Promise.reject(new ApiNetworkError(mapErrToProblem(error)));
       },
     );
   }
 
   public async request<T extends z.ZodTypeAny>(
-    config: IValidatedReqConfig<T>,
+    config: SdkRequestConfig<T>,
+    meta?: SdkRequestMeta,
   ): Promise<z.infer<T>> {
-    const { schema, ...axiosConfig } = config;
-
-    const response = await this.instance.request({
-      ...axiosConfig,
-    });
-
-    const result = schema.safeParse(response.data);
-
-    if (!result.success) {
-      console.error(
-        `[Contract Violation at ${axiosConfig.url || ""}:`,
-        result.error,
-      );
-      throw new ResponseValidationError(
-        result.error,
-        "Response failed runtime contract verification against client schema.",
-        axiosConfig.url || "",
-      );
+    const serviceName = meta?.serviceName || "HttpClient";
+    try {
+      const response = await this.instance.request({
+        url: config.url,
+        method: config.method,
+        data: config.data,
+        params: config.queryParams,
+        headers: config.headers,
+        signal: config.signal,
+      });
+      const result = config.schema.safeParse(response.data);
+      if (!result.success) {
+        console.error(
+          `[${serviceName} Contract Violation] at ${config.url}:`,
+          result.error,
+        );
+        throw new ResponseValidationError(
+          result.error,
+          "Response failed contract verification.",
+          config.url || "",
+        );
+      }
+      return result.data;
+    } catch (error) {
+      if (error instanceof ApiNetworkError) {
+        console.error(
+          `[${serviceName} Error ${error.status}]: ${error.message}`,
+        );
+      }
+      throw error;
     }
+  }
 
-    return result.data;
+  public createScope(basePath: string, serviceName: string): ScopedRequest {
+    return <T extends z.ZodTypeAny>(
+      request: Omit<SdkRequestConfig<T>, "url"> & { url?: string },
+    ) => {
+      const cleanUrl = `${basePath}${request.url ?? ""}`.replace(/\/+/g, "/");
+      return this.request({ ...request, url: cleanUrl }, { serviceName });
+    };
   }
 }

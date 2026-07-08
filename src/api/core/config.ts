@@ -1,11 +1,9 @@
-export interface Config {
+export interface HttpConfig {
   baseURL: string;
   timeout: number;
 }
 
-export const createConfig = (overrides?: Partial<Config>): Config => {
-  return {
-    baseURL: overrides?.baseURL ?? "http://localhost:8080/api/v1",
-    timeout: overrides?.timeout ?? 15000,
-  };
+export const httpConfig: HttpConfig = {
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1",
+  timeout: 10000,
 };

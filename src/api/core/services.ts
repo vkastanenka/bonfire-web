@@ -1,30 +1,27 @@
-import type { AxiosRequestConfig } from "axios";
-import type { IHttpClient } from "./client";
+import type { ScopedRequest } from "./client";
 import {
-  registerRequestSchema,
   registerResponseSchema,
   type RegisterRequest,
   type RegisterResponse,
 } from "./schema";
 
 export class AuthService {
-  public readonly client: IHttpClient;
-  constructor(client: IHttpClient) {
-    this.client = client;
+  private readonly request: ScopedRequest;
+
+  constructor(request: ScopedRequest) {
+    this.request = request;
   }
 
-  public async register(
+  public register = (
     data: RegisterRequest,
-    config?: AxiosRequestConfig,
-  ): Promise<RegisterResponse> {
-    const validatedInput = registerRequestSchema.parse(data);
-
-    return this.client.request({
-      url: "/auth/register",
+    options?: { signal?: AbortSignal; headers?: Record<string, string> },
+  ): Promise<RegisterResponse> => {
+    return this.request({
       method: "POST",
-      data: validatedInput,
+      url: "/register",
+      data,
       schema: registerResponseSchema,
-      ...config,
+      ...options,
     });
-  }
+  };
 }
