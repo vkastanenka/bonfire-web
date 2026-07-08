@@ -8,6 +8,12 @@ interface StatusError {
 }
 
 export const STATUS_ERRORS: Record<number, StatusError> = {
+  0: {
+    code: "NETWORK_OFFLINE",
+    title: "Network Connection Failed",
+    detail:
+      "Unable to connect to the server. Please verify your internet connection.",
+  },
   400: {
     code: "BAD_REQUEST",
     title: "Bad Request",
@@ -176,36 +182,53 @@ export function isProblemDetails(data: unknown): data is ProblemDetails {
 export const mapErrorToProblem = (
   error: AxiosError<unknown>,
 ): ProblemDetails => {
-  const errStatus = error.response?.status || 500;
-  const errData = error.response?.data;
-
-  if (isProblemDetails(errData)) {
-    return errData;
+  if (error.response && isProblemDetails(error.response.data)) {
+    return error.response.data;
   }
 
-  const statusErr = STATUS_ERRORS[errStatus];
-  const slug = statusErr.code.toLowerCase().replace(/_/g, "-");
+  const isLocalError = !error.response;
+  const isTimeout =
+    isLocalError &&
+    (error.code === "ECONNABORTED" || error.message.includes("timeout"));
+  const errStatus = error.response
+    ? error.response.status
+    : isTimeout
+      ? 408
+      : 0;
+
+  const statusErr = STATUS_ERRORS[errStatus] || {
+    code: "UNKNOWN_HTTP_ERROR",
+    title: "Unexpected Network Response",
+    detail: `The server responded with an unhandled status code (${errStatus}).`,
+  };
 
   const headers = error.response?.headers;
   const getHeader = (key: string): string => {
     if (!headers) return "unknown";
-    if (typeof headers.get === "function") {
-      return String(headers.get(key) || "unknown");
-    }
-    return String((headers as Record<string, unknown>)[key] || "unknown");
+    const value =
+      typeof headers.get === "function"
+        ? headers.get(key)
+        : (headers as Record<string, unknown>)[key];
+    return String(value || "unknown");
   };
+
+  const detail = isLocalError
+    ? isTimeout
+      ? "The connection timed out before receiving a response from the server."
+      : statusErr.detail
+    : error.message || statusErr.detail;
+
+  const slug = statusErr.code.toLowerCase().replace(/_/g, "-");
+  const reqId = getHeader("x-request-id");
 
   return {
     type: `https://api.bonfire.com/errors/${slug}`,
     title: statusErr.title,
     status: errStatus,
-    detail: error.message || statusErr.detail,
+    detail,
     code: statusErr.code,
     instance: error.config?.url || "unknown",
-    req_id:
-      getHeader("x-request-id") !== "unknown"
-        ? getHeader("x-request-id")
-        : getHeader("x-correlation-id"),
+    req_id: reqId !== "unknown" ? reqId : getHeader("x-correlation-id"),
     trace_id: getHeader("x-b3-traceid"),
     timestamp: new Date().toISOString(),
   };
