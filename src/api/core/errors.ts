@@ -1,5 +1,111 @@
 import { ZodError } from "zod";
 
+interface BackendErrorMetadata {
+  code: string;
+  title: string;
+  detail: string;
+}
+
+export const BACKEND_ERROR_MAP: Record<number, BackendErrorMetadata> = {
+  400: {
+    code: "BAD_REQUEST",
+    title: "Bad Request",
+    detail: "The request payload or syntax is malformed.",
+  },
+  401: {
+    code: "UNAUTHORIZED",
+    title: "Unauthorized Access",
+    detail: "The provided credentials are invalid or expired.",
+  },
+  403: {
+    code: "FORBIDDEN",
+    title: "Permission Denied",
+    detail: "You lack the required permissions for this action.",
+  },
+  404: {
+    code: "NOT_FOUND",
+    title: "Resource Not Found",
+    detail: "The requested resource could not be found.",
+  },
+  405: {
+    code: "METHOD_NOT_ALLOWED",
+    title: "Method Not Allowed",
+    detail: "The HTTP method is not supported for this path.",
+  },
+  408: {
+    code: "REQUEST_TIMEOUT",
+    title: "Request Timeout",
+    detail: "The execution timeout deadline was exceeded.",
+  },
+  409: {
+    code: "CONFLICT",
+    title: "Resource Conflict",
+    detail: "The operation conflicted with the current state of a resource.",
+  },
+  410: {
+    code: "GONE",
+    title: "Resource No Longer Available",
+    detail: "The requested resource has been permanently deleted.",
+  },
+  412: {
+    code: "PRECONDITION_FAILED",
+    title: "Precondition Failed",
+    detail: "Target resource state has changed. Please refresh and retry.",
+  },
+  413: {
+    code: "PAYLOAD_TOO_LARGE",
+    title: "Payload Too Large",
+    detail: "The request body exceeds the maximum size limit.",
+  },
+  415: {
+    code: "UNSUPPORTED_MEDIA_TYPE",
+    title: "Unsupported Media Type",
+    detail: "Content-Type must be application/json.",
+  },
+  422: {
+    code: "UNPROCESSABLE_ENTITY",
+    title: "Unprocessable Entity",
+    detail: "The request is valid but breaks semantic business logic rules.",
+  },
+  429: {
+    code: "TOO_MANY_REQUESTS",
+    title: "Too Many Requests",
+    detail: "Rate limit exceeded. Please slow down.",
+  },
+  499: {
+    code: "CLIENT_CLOSED_REQUEST",
+    title: "Client Closed Connection",
+    detail: "The client disconnected before processing completed.",
+  },
+  501: {
+    code: "NOT_IMPLEMENTED",
+    title: "Feature Not Implemented",
+    detail: "This server capability is not yet supported.",
+  },
+  502: {
+    code: "BAD_GATEWAY",
+    title: "Bad Gateway",
+    detail: "An upstream dependency returned an invalid response.",
+  },
+  503: {
+    code: "SERVICE_UNAVAILABLE",
+    title: "Service Temporarily Unavailable",
+    detail: "The server is temporarily down for maintenance or overloaded.",
+  },
+  504: {
+    code: "GATEWAY_TIMEOUT",
+    title: "Gateway Timeout",
+    detail: "An upstream dependency failed to respond in time.",
+  },
+};
+
+// Global default case mirroring CodeInternal (500)
+export const DEFAULT_INTERNAL_ERROR: BackendErrorMetadata = {
+  code: "INTERNAL",
+  title: "Internal Server Error",
+  detail: "An unexpected condition occurred on our servers.",
+};
+
 export interface InvalidParam {
   name: string;
   reason: string;
@@ -64,4 +170,13 @@ export class ResponseValidationError extends Error {
     this.url = url;
     this.zodError = zodError;
   }
+}
+
+export function isProblemDetails(data: unknown): data is ProblemDetails {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "code" in data &&
+    "detail" in data
+  );
 }

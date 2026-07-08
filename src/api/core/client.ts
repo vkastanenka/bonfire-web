@@ -7,12 +7,15 @@ import axios, {
 import { z } from "zod";
 import type { Config } from "./config";
 import {
+  BACKEND_ERROR_MAP,
+  DEFAULT_INTERNAL_ERROR,
   ApiNetworkError,
   ResponseValidationError,
+  isProblemDetails,
   type ProblemDetails,
 } from "./errors";
 
-export interface ApiClient {
+export interface HttpClient {
   request<T extends z.ZodTypeAny>(
     config: ValidatedRequestConfig<T>,
   ): Promise<z.infer<T>>;
@@ -21,20 +24,17 @@ export interface ApiClient {
 export interface ValidatedRequestConfig<
   T extends z.ZodTypeAny,
 > extends AxiosRequestConfig {
+  scope: string;
   schema: T;
   context?: string;
 }
 
-interface InternalConfigWithMetadata {
-  metadata?: { serviceName?: string };
-}
-
-export class BonfireHttpClient implements ApiClient {
-  private readonly defaultName: string;
+export class BonfireHttpClient implements HttpClient {
+  private readonly name: string;
   private readonly instance: AxiosInstance;
 
-  constructor(defaultName: string, config: Config) {
-    this.defaultName = defaultName;
+  constructor(name: string, config: Config) {
+    this.name = name;
     this.instance = axios.create({
       baseURL: config.baseURL,
       timeout: config.timeout,
@@ -51,42 +51,31 @@ export class BonfireHttpClient implements ApiClient {
     this.instance.interceptors.response.use(
       (response) => response,
       (error: AxiosError<unknown>) => {
-        if (isCancel(error)) {
-          return Promise.reject(error);
-        }
+        if (isCancel(error)) return Promise.reject(error);
 
-        // Safely extract the service name assigned by the BaseApiService request dispatcher
-        const internalConfig = error.config as InternalConfigWithMetadata &
-          typeof error.config;
-        const serviceName =
-          internalConfig?.metadata?.serviceName || this.defaultName;
-
+        const serviceName = this.name;
         const status = error.response?.status || 500;
         const incomingData = error.response?.data;
+
         let normalizedDetails: ProblemDetails;
 
-        if (
-          incomingData &&
-          typeof incomingData === "object" &&
-          "code" in incomingData &&
-          "detail" in incomingData
-        ) {
-          normalizedDetails = incomingData as ProblemDetails;
+        if (isProblemDetails(incomingData)) {
+          normalizedDetails = incomingData;
         } else {
+          const meta = BACKEND_ERROR_MAP[status] || DEFAULT_INTERNAL_ERROR;
+          const slug = meta.code.toLowerCase().replace(/_/g, "-");
+
           const reqId =
             (error.response?.headers?.["x-request-id"] as string) || "unknown";
           const traceId =
             (error.response?.headers?.["x-trace-id"] as string) || "unknown";
 
           normalizedDetails = {
-            type: "https://api.bonfire.com/errors/infrastructure",
-            title:
-              status >= 500
-                ? "Internal Infrastructure Error"
-                : "Network Communication Failure",
+            type: `https://api.bonfire.com/errors/${slug}`,
+            title: meta.title,
             status,
-            detail: error.message || "An unparseable network event occurred.",
-            code: "INFRASTRUCTURE_ERROR",
+            detail: error.message || meta.detail,
+            code: meta.code,
             instance: error.config?.url || "unknown",
             req_id: reqId,
             trace_id: traceId,
@@ -108,15 +97,13 @@ export class BonfireHttpClient implements ApiClient {
   public async request<T extends z.ZodTypeAny>(
     config: ValidatedRequestConfig<T>,
   ): Promise<z.infer<T>> {
-    const { schema, context, ...axiosConfig } = config;
-    const serviceName = context || this.defaultName;
+    const { schema, ...axiosConfig } = config;
+    const serviceName = this.name;
 
-    const runtimeConfig = {
+    const response = await this.instance.request({
       ...axiosConfig,
-      metadata: { serviceName },
-    };
+    });
 
-    const response = await this.instance.request(runtimeConfig);
     const result = schema.safeParse(response.data);
 
     if (!result.success) {
@@ -128,10 +115,32 @@ export class BonfireHttpClient implements ApiClient {
         serviceName,
         axiosConfig.url || "",
         result.error,
-        `Response failed runtime type validation contract against client schema.`,
+        "Response failed runtime contract verification against client schema.",
       );
     }
 
     return result.data;
+  }
+}
+
+export class ScopedClient {
+  private readonly client: HttpClient;
+  private readonly basePath: string;
+  private readonly serviceName: string;
+
+  constructor(client: HttpClient, basePath: string, serviceName: string) {
+    this.client = client;
+    this.basePath = basePath;
+    this.serviceName = serviceName;
+  }
+
+  public request<T extends z.ZodTypeAny>(
+    config: Omit<ValidatedRequestConfig<T>, "context">,
+  ): Promise<z.infer<T>> {
+    return this.client.request({
+      ...config,
+      url: `${this.basePath}${config.url ?? ""}`,
+      context: this.serviceName,
+    });
   }
 }
