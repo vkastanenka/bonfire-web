@@ -67,12 +67,12 @@ export const STATUS_ERRORS: Record<number, StatusError> = {
   415: {
     code: "UNSUPPORTED_MEDIA_TYPE",
     title: "Unsupported Media Type",
-    detail: "The server requires a different Content-Type header.",
+    detail: "Content-Type must be application/json.",
   },
   422: {
     code: "UNPROCESSABLE_ENTITY",
     title: "Unprocessable Entity",
-    detail: "The request breaks semantic business logic rules.",
+    detail: "The request is valid but breaks semantic business logic rules.",
   },
   429: {
     code: "TOO_MANY_REQUESTS",
@@ -83,17 +83,17 @@ export const STATUS_ERRORS: Record<number, StatusError> = {
     code: "CLIENT_CLOSED_REQUEST",
     title: "Client Closed Connection",
     detail:
-      "The client disconnected before processing completed.",
+      "The connection was terminated by the client before processing finished.",
   },
   500: {
     code: "INTERNAL",
     title: "Internal Server Error",
-    detail: "An unexpected error occurred on our servers.",
+    detail: "An unexpected condition occurred on our servers.",
   },
   501: {
     code: "NOT_IMPLEMENTED",
     title: "Feature Not Implemented",
-    detail: "This capability is not yet supported by the server.",
+    detail: "This server capability is not yet supported.",
   },
   502: {
     code: "BAD_GATEWAY",
@@ -108,7 +108,7 @@ export const STATUS_ERRORS: Record<number, StatusError> = {
   504: {
     code: "GATEWAY_TIMEOUT",
     title: "Gateway Timeout",
-    detail: "An upstream dependency failed to respond within the deadline.",
+    detail: "An upstream dependency failed to respond in time.",
   },
 };
 
