@@ -95,3 +95,18 @@ export const registerResponseSchema = z.object({
 });
 
 export type RegisterResponse = z.infer<typeof registerResponseSchema>;
+
+export const loginRequestSchema = z.object({
+  email: identityEmail,
+  display_name: emptyToUndefined(profileDisplayName),
+  username: identityUsername,
+  password: identityPassword,
+});
+
+export type LoginRequest = z.infer<typeof loginRequestSchema>;
+
+export const loginResponseSchema = z.object({
+  access_token: z.string(),
+});
+
+export type LoginResponse = z.infer<typeof loginResponseSchema>;

@@ -1,36 +1,53 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema, type LoginInputs } from "./login.validation";
+import { useNavigate } from "@tanstack/react-router";
+
+import {
+  useLogin,
+  loginRequestSchema,
+  ApiNetworkError,
+  type LoginRequest,
+} from "@/api";
 
 export const useLoginForm = () => {
-  const [apiError, setApiError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  const methods = useForm<LoginInputs>({
-    resolver: zodResolver(loginSchema),
+  const methods = useForm<LoginRequest>({
+    resolver: zodResolver(loginRequestSchema),
     defaultValues: {
       email: "",
       password: "",
     },
   });
 
-  const onSubmit = async (data: LoginInputs) => {
-    setApiError(null);
+  const { mutate, isPending } = useLogin();
 
-    try {
-      // Fake API Call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Logged in successfully:", data);
-
-      // Handle your routing / state hydration here
-    } catch (err) {
-      setApiError(err instanceof Error ? err.message : "Login failed");
-      console.log(apiError);
-    }
+  const onSubmit = (data: LoginRequest) => {
+    mutate(data, {
+      onSuccess: (serverResponse) => {
+        console.log(
+          "Login successful! Access token acquired:",
+          serverResponse.access_token,
+        );
+        navigate({ to: "/register" });
+      },
+      onError: (err) => {
+        if (err instanceof ApiNetworkError && err.isValidationFailure()) {
+          console.log(err.details);
+          err.details.invalid_params?.forEach((param) => {
+            methods.setError(param.name as keyof LoginRequest, {
+              type: "manual",
+              message: param.reason,
+            });
+          });
+        }
+      },
+    });
   };
 
   return {
     methods,
     onSubmit,
+    isPending,
   };
 };

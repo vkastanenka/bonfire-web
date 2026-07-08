@@ -14,7 +14,12 @@ export const useRegisterForm = () => {
 
   const methods = useForm<RegisterRequest>({
     resolver: zodResolver(registerRequestSchema),
-    defaultValues: { email: "", display_name: "", username: "", password: "" },
+    defaultValues: {
+      email: "",
+      display_name: "",
+      username: "",
+      password: "",
+    },
   });
 
   const { mutate, isPending } = useRegister();

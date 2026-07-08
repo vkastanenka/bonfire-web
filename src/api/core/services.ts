@@ -3,6 +3,9 @@ import {
   registerResponseSchema,
   type RegisterRequest,
   type RegisterResponse,
+  loginResponseSchema,
+  type LoginRequest,
+  type LoginResponse,
 } from "./schema";
 
 export class AuthService {
@@ -21,6 +24,19 @@ export class AuthService {
       url: "/register",
       data,
       schema: registerResponseSchema,
+      ...options,
+    });
+  };
+
+  public login = (
+    data: LoginRequest,
+    options?: { signal?: AbortSignal; headers?: Record<string, string> },
+  ): Promise<LoginResponse> => {
+    return this.request({
+      method: "POST",
+      url: "/register",
+      data,
+      schema: loginResponseSchema,
       ...options,
     });
   };

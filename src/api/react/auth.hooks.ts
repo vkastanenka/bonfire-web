@@ -1,11 +1,17 @@
 import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import { authService } from "../core";
 import type { ApiNetworkError, ResponseValidationError } from "../core";
-import type { RegisterRequest, RegisterResponse } from "../core/schema";
+import type {
+  RegisterRequest,
+  RegisterResponse,
+  LoginRequest,
+  LoginResponse,
+} from "../core/schema";
 
 export const authKeys = {
   all: ["auth"] as const,
   register: () => [...authKeys.all, "register"] as const,
+  login: () => [...authKeys.all, "login"] as const,
 };
 
 export const useRegister = (
@@ -20,6 +26,22 @@ export const useRegister = (
   return useMutation({
     mutationKey: authKeys.register(),
     mutationFn: (data: RegisterRequest) => authService.register(data),
+    ...options,
+  });
+};
+
+export const useLogin = (
+  options?: Partial<
+    UseMutationOptions<
+      LoginResponse,
+      ApiNetworkError | ResponseValidationError,
+      LoginRequest
+    >
+  >,
+) => {
+  return useMutation({
+    mutationKey: authKeys.register(),
+    mutationFn: (data: RegisterRequest) => authService.login(data),
     ...options,
   });
 };
