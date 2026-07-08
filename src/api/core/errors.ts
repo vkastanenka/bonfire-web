@@ -17,47 +17,47 @@ export const STATUS_ERRORS: Record<number, StatusError> = {
   400: {
     code: "BAD_REQUEST",
     title: "Bad Request",
-    detail: "The request payload or syntax is malformed.",
+    detail: "The request payload is malformed or input validation failed.",
   },
   401: {
     code: "UNAUTHORIZED",
     title: "Unauthorized Access",
-    detail: "The provided credentials are invalid or expired.",
+    detail: "Authentication credentials are invalid or have expired.",
   },
   403: {
     code: "FORBIDDEN",
     title: "Permission Denied",
-    detail: "You lack the required permissions for this action.",
+    detail: "You do not have the required permissions to perform this action.",
   },
   404: {
     code: "NOT_FOUND",
     title: "Resource Not Found",
-    detail: "The requested resource could not be found.",
+    detail: "The requested resource does not exist or could not be found.",
   },
   405: {
     code: "METHOD_NOT_ALLOWED",
     title: "Method Not Allowed",
-    detail: "The HTTP method is not supported for this path.",
+    detail: "The HTTP method is not supported for this endpoint.",
   },
   408: {
     code: "REQUEST_TIMEOUT",
     title: "Request Timeout",
-    detail: "The execution timeout deadline was exceeded.",
+    detail: "The server closed the connection because the request timed out.",
   },
   409: {
     code: "CONFLICT",
     title: "Resource Conflict",
-    detail: "The operation conflicted with the current state of a resource.",
+    detail: "This operation conflicts with the current state of the resource.",
   },
   410: {
     code: "GONE",
     title: "Resource No Longer Available",
-    detail: "The requested resource has been permanently deleted.",
+    detail: "The requested resource has been permanently removed.",
   },
   412: {
     code: "PRECONDITION_FAILED",
     title: "Precondition Failed",
-    detail: "Target resource state has changed. Please refresh and retry.",
+    detail: "The resource state has changed. Please refresh and try again.",
   },
   413: {
     code: "PAYLOAD_TOO_LARGE",
@@ -67,32 +67,33 @@ export const STATUS_ERRORS: Record<number, StatusError> = {
   415: {
     code: "UNSUPPORTED_MEDIA_TYPE",
     title: "Unsupported Media Type",
-    detail: "Content-Type must be application/json.",
+    detail: "The server requires a different Content-Type header.",
   },
   422: {
     code: "UNPROCESSABLE_ENTITY",
     title: "Unprocessable Entity",
-    detail: "The request is valid but breaks semantic business logic rules.",
+    detail: "The request breaks semantic business logic rules.",
   },
   429: {
     code: "TOO_MANY_REQUESTS",
     title: "Too Many Requests",
-    detail: "Rate limit exceeded. Please slow down.",
+    detail: "Rate limit exceeded. Please slow down and retry shortly.",
   },
   499: {
     code: "CLIENT_CLOSED_REQUEST",
     title: "Client Closed Connection",
-    detail: "The client disconnected before processing completed.",
+    detail:
+      "The connection was terminated by the client before processing finished.",
   },
   500: {
     code: "INTERNAL",
     title: "Internal Server Error",
-    detail: "An unexpected condition occurred on our servers.",
+    detail: "An unexpected error occurred on our servers.",
   },
   501: {
     code: "NOT_IMPLEMENTED",
     title: "Feature Not Implemented",
-    detail: "This server capability is not yet supported.",
+    detail: "This capability is not yet supported by the server.",
   },
   502: {
     code: "BAD_GATEWAY",
@@ -107,7 +108,7 @@ export const STATUS_ERRORS: Record<number, StatusError> = {
   504: {
     code: "GATEWAY_TIMEOUT",
     title: "Gateway Timeout",
-    detail: "An upstream dependency failed to respond in time.",
+    detail: "An upstream dependency failed to respond within the deadline.",
   },
 };
 
