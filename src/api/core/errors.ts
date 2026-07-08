@@ -1,13 +1,13 @@
 import type { AxiosError } from "axios";
 import { ZodError } from "zod";
 
-interface BackendErrorMetadata {
+interface StatusError {
   code: string;
   title: string;
   detail: string;
 }
 
-export const BACKEND_ERROR_MAP: Record<number, BackendErrorMetadata> = {
+export const STATUS_ERRORS: Record<number, StatusError> = {
   400: {
     code: "BAD_REQUEST",
     title: "Bad Request",
@@ -78,6 +78,11 @@ export const BACKEND_ERROR_MAP: Record<number, BackendErrorMetadata> = {
     title: "Client Closed Connection",
     detail: "The client disconnected before processing completed.",
   },
+  500: {
+    code: "INTERNAL",
+    title: "Internal Server Error",
+    detail: "An unexpected condition occurred on our servers.",
+  },
   501: {
     code: "NOT_IMPLEMENTED",
     title: "Feature Not Implemented",
@@ -98,12 +103,6 @@ export const BACKEND_ERROR_MAP: Record<number, BackendErrorMetadata> = {
     title: "Gateway Timeout",
     detail: "An upstream dependency failed to respond in time.",
   },
-};
-
-export const DEFAULT_INTERNAL_ERROR: BackendErrorMetadata = {
-  code: "INTERNAL",
-  title: "Internal Server Error",
-  detail: "An unexpected condition occurred on our servers.",
 };
 
 export interface InvalidParam {
@@ -174,7 +173,9 @@ export function isProblemDetails(data: unknown): data is ProblemDetails {
   );
 }
 
-export const mapErrToProblem = (error: AxiosError<unknown>): ProblemDetails => {
+export const mapErrorToProblem = (
+  error: AxiosError<unknown>,
+): ProblemDetails => {
   const errStatus = error.response?.status || 500;
   const errData = error.response?.data;
 
@@ -182,8 +183,8 @@ export const mapErrToProblem = (error: AxiosError<unknown>): ProblemDetails => {
     return errData;
   }
 
-  const meta = BACKEND_ERROR_MAP[errStatus] || DEFAULT_INTERNAL_ERROR;
-  const slug = meta.code.toLowerCase().replace(/_/g, "-");
+  const statusErr = STATUS_ERRORS[errStatus];
+  const slug = statusErr.code.toLowerCase().replace(/_/g, "-");
 
   const headers = error.response?.headers;
   const getHeader = (key: string): string => {
@@ -196,10 +197,10 @@ export const mapErrToProblem = (error: AxiosError<unknown>): ProblemDetails => {
 
   return {
     type: `https://api.bonfire.com/errors/${slug}`,
-    title: meta.title,
+    title: statusErr.title,
     status: errStatus,
-    detail: error.message || meta.detail,
-    code: meta.code,
+    detail: error.message || statusErr.detail,
+    code: statusErr.code,
     instance: error.config?.url || "unknown",
     req_id:
       getHeader("x-request-id") !== "unknown"

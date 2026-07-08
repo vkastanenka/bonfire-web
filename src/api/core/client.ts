@@ -9,7 +9,7 @@ import type { HttpConfig } from "./config";
 import {
   ApiNetworkError,
   ResponseValidationError,
-  mapErrToProblem,
+  mapErrorToProblem,
 } from "./errors";
 
 export interface SdkRequestConfig<T extends z.ZodTypeAny> extends Pick<
@@ -50,7 +50,7 @@ export class HttpClient {
       (response) => response,
       (error: AxiosError<unknown>) => {
         if (isCancel(error)) return Promise.reject(error);
-        return Promise.reject(new ApiNetworkError(mapErrToProblem(error)));
+        return Promise.reject(new ApiNetworkError(mapErrorToProblem(error)));
       },
     );
   }
