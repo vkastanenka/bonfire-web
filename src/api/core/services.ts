@@ -34,7 +34,7 @@ export class AuthService {
   ): Promise<LoginResponse> => {
     return this.request({
       method: "POST",
-      url: "/register",
+      url: "/login",
       data,
       schema: loginResponseSchema,
       ...options,

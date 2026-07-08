@@ -29,7 +29,7 @@ export const useLoginForm = () => {
           "Login successful! Access token acquired:",
           serverResponse.access_token,
         );
-        navigate({ to: "/register" });
+        navigate({ to: "/" });
       },
       onError: (err) => {
         if (err instanceof ApiNetworkError && err.isValidationFailure()) {

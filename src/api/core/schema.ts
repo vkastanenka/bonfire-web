@@ -98,8 +98,6 @@ export type RegisterResponse = z.infer<typeof registerResponseSchema>;
 
 export const loginRequestSchema = z.object({
   email: identityEmail,
-  display_name: emptyToUndefined(profileDisplayName),
-  username: identityUsername,
   password: identityPassword,
 });
 

@@ -40,8 +40,8 @@ export const useLogin = (
   >,
 ) => {
   return useMutation({
-    mutationKey: authKeys.register(),
-    mutationFn: (data: RegisterRequest) => authService.login(data),
+    mutationKey: authKeys.login(),
+    mutationFn: (data: LoginRequest) => authService.login(data),
     ...options,
   });
 };
