@@ -29,8 +29,8 @@ export const useRegisterForm = () => {
         navigate({ to: "/login" });
       },
       onError: (err) => {
-        console.log(err.details);
         if (err instanceof ApiNetworkError && err.isValidationFailure()) {
+          console.log(err.details);
           err.details.invalid_params?.forEach((param) => {
             methods.setError(param.name as keyof RegisterRequest, {
               type: "manual",

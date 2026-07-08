@@ -62,7 +62,7 @@ z.config({
 
 export const usernameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9_.]?[a-zA-Z0-9])+$/;
 
-export const identityEmail = z.email().max(255);
+export const identityEmail = z.string().email().max(255);
 
 export const identityUsername = z
   .string()
@@ -75,13 +75,11 @@ export const identityPassword = z.string().min(12).max(255);
 export const profileDisplayName = z.string().min(3).max(32);
 
 export const emptyToUndefined = <T extends z.ZodString>(stringSchema: T) =>
-  z.preprocess(
-    (val) =>
-      val === "" || (typeof val === "string" && val.trim() === "")
-        ? undefined
-        : val,
-    stringSchema.optional(),
-  );
+  z
+    .string()
+    .optional()
+    .transform((val) => (val?.trim() === "" ? undefined : val))
+    .pipe(stringSchema.optional());
 
 export const registerRequestSchema = z.object({
   email: identityEmail,
