@@ -114,3 +114,9 @@ export const refreshResponseSchema = z.object({
 });
 
 export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
+
+export const wsTicketResponseSchema = z.object({
+  ticket: z.uuid(),
+});
+
+export type WSTicketResponse = z.infer<typeof wsTicketResponseSchema>;

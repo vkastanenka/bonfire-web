@@ -6,6 +6,8 @@ import {
   loginResponseSchema,
   type LoginRequest,
   type LoginResponse,
+  type WSTicketResponse,
+  wsTicketResponseSchema,
 } from "./schema";
 
 export class AuthService {
@@ -37,6 +39,18 @@ export class AuthService {
       url: "/login",
       data,
       schema: loginResponseSchema,
+      ...options,
+    });
+  };
+
+  public wsTicket = (options?: {
+    signal?: AbortSignal;
+    headers?: Record<string, string>;
+  }): Promise<WSTicketResponse> => {
+    return this.request({
+      method: "POST",
+      url: "/ws-ticket",
+      schema: wsTicketResponseSchema,
       ...options,
     });
   };
