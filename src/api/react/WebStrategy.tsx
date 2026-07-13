@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from "react";
 import axios from "axios";
 import type { HttpAuthStrategy } from "../core/client";
-import { refreshResponseSchema } from "../core/schema";
+import { refreshResponseSchema } from "../http/schema";
 
 export interface TokenStore {
   getAccessToken: () => string | null;

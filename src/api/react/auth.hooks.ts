@@ -6,7 +6,7 @@ import type {
   RegisterResponse,
   LoginRequest,
   LoginResponse,
-} from "../core/schema";
+} from "../http/schema";
 import { useTokenStore } from "./WebStrategy";
 
 export const authKeys = {

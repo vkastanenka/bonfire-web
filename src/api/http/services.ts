@@ -1,4 +1,4 @@
-import { httpClient, type ScopedRequest } from "./client";
+import { httpClient, type BonfireScopedClient } from "./client";
 import {
   registerResponseSchema,
   type RegisterRequest,
@@ -10,12 +10,12 @@ import {
   wsTicketResponseSchema,
   type RefreshResponse,
   refreshResponseSchema,
-} from "./schema";
+} from "../http/schema";
 
 class AuthService {
-  private readonly request: ScopedRequest;
+  private readonly request: BonfireScopedClient;
 
-  constructor(request: ScopedRequest) {
+  constructor(request: BonfireScopedClient) {
     this.request = request;
   }
 
@@ -65,11 +65,12 @@ class AuthService {
       method: "POST",
       url: "/ws-ticket",
       schema: wsTicketResponseSchema,
+      protected: true,
       ...options,
     });
   };
 }
 
 export const authService = new AuthService(
-  httpClient.createScope("/auth", "AuthService"),
+  httpClient.scope("/auth", "AuthService"),
 );

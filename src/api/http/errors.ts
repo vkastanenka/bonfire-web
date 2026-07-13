@@ -1,4 +1,3 @@
-import type { AxiosError } from "axios";
 import { ZodError } from "zod";
 
 interface StatusError {
@@ -112,8 +111,6 @@ export const STATUS_ERRORS: Record<number, StatusError> = {
   },
 };
 
-export const DEFAULT_RETRYABLE_STATUSES = [429, 502, 503, 504] as const;
-
 export const API_ERROR_CODES = {
   TOKEN_EXPIRED: "TOKEN_EXPIRED",
   INVALID_INPUT: "INVALID_INPUT",
@@ -156,7 +153,7 @@ export class ApiNetworkError extends Error {
 
   public isValidationFailure(): boolean {
     return (
-      this.code === "INVALID_INPUT" ||
+      this.code === API_ERROR_CODES.INVALID_INPUT ||
       (Array.isArray(this.details.invalid_params) &&
         this.details.invalid_params.length > 0)
     );
@@ -189,61 +186,6 @@ export function isProblemDetails(data: unknown): data is ProblemDetails {
     "status" in data
   );
 }
-
-export const mapErrorToProblem = (
-  error: AxiosError<unknown>,
-): ProblemDetails => {
-  if (error.response && isProblemDetails(error.response.data)) {
-    return error.response.data;
-  }
-
-  const isLocalError = !error.response;
-  const isTimeout =
-    isLocalError &&
-    (error.code === "ECONNABORTED" || error.message.includes("timeout"));
-  const errStatus = error.response
-    ? error.response.status
-    : isTimeout
-      ? 408
-      : 0;
-
-  const statusErr = STATUS_ERRORS[errStatus] || {
-    code: "UNKNOWN_HTTP_ERROR",
-    title: "Unexpected Network Response",
-    detail: `The server responded with an unhandled status code (${errStatus}).`,
-  };
-
-  const headers = error.response?.headers;
-  const getHeader = (key: string): string => {
-    if (!headers) return "unknown";
-    const value =
-      typeof headers.get === "function"
-        ? headers.get(key)
-        : (headers as Record<string, unknown>)[key];
-    return String(value || "unknown");
-  };
-
-  const detail = isLocalError
-    ? isTimeout
-      ? "The connection timed out before receiving a response from the server."
-      : statusErr.detail
-    : error.message || statusErr.detail;
-
-  const slug = statusErr.code.toLowerCase().replace(/_/g, "-");
-  const reqId = getHeader("x-request-id");
-
-  return {
-    type: `https://api.bonfire.com/errors/${slug}`,
-    title: statusErr.title,
-    status: errStatus,
-    detail,
-    code: statusErr.code,
-    instance: error.config?.url || "unknown",
-    req_id: reqId !== "unknown" ? reqId : getHeader("x-correlation-id"),
-    trace_id: getHeader("x-b3-traceid"),
-    timestamp: new Date().toISOString(),
-  };
-};
 
 export const mapFetchToProblem = (
   response: Response,

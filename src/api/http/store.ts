@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { gatewayManager, type GatewayStatus, type Presence } from "./gateway";
+import { gatewayManager, type GatewayStatus, type Presence } from "../gateway/manager";
 
 interface AuthState {
   accessToken: string | null;
