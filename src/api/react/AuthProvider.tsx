@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { authService, type RefreshResponse } from "../core";
-import { setAccessToken, getAccessToken, clearAuth } from "../core/store";
+import { useTokenStore } from "./WebStrategy";
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -10,6 +10,7 @@ interface AuthProviderProps {
 let refreshPromise: Promise<RefreshResponse> | null = null;
 
 export function AuthProvider({ children, fallback = null }: AuthProviderProps) {
+  const { getAccessToken, setAccessToken, clearAuth } = useTokenStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -54,7 +55,7 @@ export function AuthProvider({ children, fallback = null }: AuthProviderProps) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [getAccessToken, setAccessToken, clearAuth]);
 
   if (isInitializing) {
     return <>{fallback}</>;

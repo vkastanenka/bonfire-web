@@ -1,194 +1,172 @@
-import axios, {
-  type AxiosInstance,
-  AxiosError,
-  isCancel,
-  type AxiosRequestConfig,
-  AxiosHeaders,
-} from "axios";
 import { z } from "zod";
-import { httpConfig, type HttpConfig } from "./config";
+import { httpConfig } from "./config";
 import {
   ApiNetworkError,
+  mapFetchToProblem,
   ResponseValidationError,
-  mapErrorToProblem,
 } from "./errors";
-import { clearAuth, getAccessToken, setAccessToken } from "./store";
-import { refreshResponseSchema } from "./schema";
 
-export interface SdkRequestConfig<T extends z.ZodTypeAny> extends Pick<
-  AxiosRequestConfig,
-  "url"
-> {
+export interface RequestOptions<T extends z.ZodTypeAny> {
+  path: string;
   schema: T;
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  data?: unknown;
-  queryParams?: Record<string, string | number | boolean | undefined>;
+
   signal?: AbortSignal;
   headers?: Record<string, string>;
+  cache?: RequestCache;
+
+  data?: unknown;
+  queryParams?: Record<string, string | number | boolean | undefined>;
+  isPublic?: boolean;
 }
 
-export interface SdkRequestMeta {
+export interface RequestMeta {
   serviceName: string;
 }
 
-export type ScopedRequest = <T extends z.ZodTypeAny>(
-  request: Omit<SdkRequestConfig<T>, "url"> & { url?: string },
+export type ScopedClient = <T extends z.ZodTypeAny>(
+  request: Omit<RequestOptions<T>, "path"> & { path?: string },
 ) => Promise<z.infer<T>>;
 
-class HttpClient {
-  private readonly instance: AxiosInstance;
-  private isRefreshing = false;
-  private retriedRequests = new Set<AxiosRequestConfig>();
-  private failedQueue: Array<{
-    resolve: (token: string | null) => void;
-    reject: (err: unknown) => void;
-  }> = [];
+export interface HttpAuthStrategy {
+  getAccessToken(): Promise<string | null> | string | null;
+  refreshTokens(): Promise<string>;
+  onAuthFailure(error: unknown): void | Promise<void>;
+}
 
-  constructor(config: HttpConfig) {
-    this.instance = axios.create({
-      baseURL: config.baseURL,
-      timeout: config.timeout,
-      headers: { "Content-Type": "application/json" },
-      withCredentials: true,
-    });
-    this.setupInterceptors();
+export class HttpClient {
+  private readonly baseURL: string;
+  private readonly authStrategy?: HttpAuthStrategy;
+  private refreshPromise: Promise<string> | null = null;
+
+  constructor(options: { baseURL: string; authStrategy?: HttpAuthStrategy }) {
+    this.baseURL = options.baseURL.replace(/\/$/, "");
+    this.authStrategy = options.authStrategy;
   }
 
-  private setupInterceptors(): void {
-    this.instance.interceptors.request.use(
-      (config) => {
-        const token = getAccessToken();
-        if (token) {
-          config.headers = config.headers || {};
-          config.headers.set("Authorization", `Bearer ${token}`);
-        }
-        return config;
-      },
-      (error) => Promise.reject(error),
-    );
+  private async getAccessToken(forceRefresh = false): Promise<string | null> {
+    if (!this.authStrategy) return null;
 
-    this.instance.interceptors.response.use(
-      (response) => {
-        console.log(response);
-        return response;
-      },
-      async (error: AxiosError) => {
-        const originalRequest = error.config;
-        if (!originalRequest || isCancel(error)) return Promise.reject(error);
+    if (forceRefresh) {
+      if (!this.refreshPromise) {
+        this.refreshPromise = this.authStrategy.refreshTokens().finally(() => {
+          this.refreshPromise = null;
+        });
+      }
+      return this.refreshPromise;
+    }
 
-        const problem = mapErrorToProblem(error);
-        const isAuthRoute =
-          originalRequest.url?.includes("auth/refresh") ||
-          originalRequest.url?.includes("auth/login") ||
-          originalRequest.url?.includes("auth/register");
-
-        if (problem.code === "TOKEN_EXPIRED" && !isAuthRoute) {
-          if (this.isRefreshing) {
-            return new Promise((resolve, reject) => {
-              this.failedQueue.push({ resolve, reject });
-            })
-              .then((token) => {
-                originalRequest.headers =
-                  originalRequest.headers ||
-                  new AxiosHeaders(originalRequest.headers);
-                originalRequest.headers.set("Authorization", `Bearer ${token}`);
-                return this.instance.request(originalRequest);
-              })
-              .catch((err) => Promise.reject(err));
-          }
-
-          if (this.retriedRequests.has(originalRequest)) {
-            this.retriedRequests.delete(originalRequest);
-            clearAuth();
-            return Promise.reject(new ApiNetworkError(problem));
-          }
-
-          this.retriedRequests.add(originalRequest);
-          this.isRefreshing = true;
-
-          try {
-            const refreshRes = await this.instance.post("/auth/refresh");
-            const parsed = refreshResponseSchema.parse(refreshRes.data);
-            setAccessToken(parsed.access_token);
-
-            this.failedQueue.forEach((prom) =>
-              prom.resolve(parsed.access_token),
-            );
-            this.failedQueue = [];
-
-            originalRequest.headers =
-              originalRequest.headers ||
-              new AxiosHeaders(originalRequest.headers);
-            originalRequest.headers.set(
-              "Authorization",
-              `Bearer ${parsed.access_token}`,
-            );
-
-            const retryResponse = await this.instance.request(originalRequest);
-            this.retriedRequests.delete(originalRequest);
-            return retryResponse;
-          } catch (refreshError) {
-            this.failedQueue.forEach((prom) => prom.reject(refreshError));
-            this.failedQueue = [];
-            this.retriedRequests.delete(originalRequest);
-            clearAuth();
-            return Promise.reject(new ApiNetworkError(problem));
-          } finally {
-            this.isRefreshing = false;
-          }
-        }
-
-        this.retriedRequests.delete(originalRequest);
-        return Promise.reject(new ApiNetworkError(problem));
-      },
-    );
+    return this.authStrategy.getAccessToken();
   }
 
   public async request<T extends z.ZodTypeAny>(
-    config: SdkRequestConfig<T>,
-    meta?: SdkRequestMeta,
+    options: RequestOptions<T>,
+    meta?: RequestMeta,
   ): Promise<z.infer<T>> {
+    const { path, schema, queryParams, data, isPublic, ...nativeOptions } =
+      options;
     const serviceName = meta?.serviceName || "HttpClient";
-    try {
-      const response = await this.instance.request({
-        url: config.url,
-        method: config.method,
-        data: config.data,
-        params: config.queryParams,
-        headers: config.headers,
-        signal: config.signal,
+
+    const fullUrl = new URL(`${this.baseURL}/${path.replace(/^\//, "")}`);
+    if (queryParams) {
+      Object.entries(queryParams).forEach(([key, val]) => {
+        if (val !== undefined) fullUrl.searchParams.append(key, String(val));
       });
-      const result = config.schema.safeParse(response.data);
-      if (!result.success) {
-        console.error(
-          `[${serviceName} Contract Violation] at ${config.url}:`,
-          result.error,
-        );
+    }
+
+    const headers = new Headers(nativeOptions.headers);
+    if (data && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+
+    let attemptCount = 0;
+
+    const executeCall = async (
+      tokenOverride?: string | null,
+    ): Promise<unknown> => {
+      attemptCount++;
+
+      if (!isPublic) {
+        const token =
+          tokenOverride !== undefined
+            ? tokenOverride
+            : await this.getAccessToken();
+        if (token) {
+          headers.set("Authorization", `Bearer ${token}`);
+        }
+      }
+
+      const response = await fetch(fullUrl.toString(), {
+        ...nativeOptions,
+        headers,
+        body: data ? JSON.stringify(data) : undefined,
+      });
+
+      if (response.status === 401 && this.authStrategy && !isPublic) {
+        if (attemptCount >= 2) {
+          const authError = new Error(
+            `Authentication failed loop protection at ${path}`,
+          );
+          await this.authStrategy.onAuthFailure(authError);
+          throw authError;
+        }
+
+        const newToken = await this.getAccessToken(true);
+        return executeCall(newToken);
+      }
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        const problem = mapFetchToProblem(response, body, fullUrl.toString());
+        throw new ApiNetworkError(problem);
+      }
+
+      if (response.status === 204) {
+        return {};
+      }
+
+      return response.json();
+    };
+
+    try {
+      const rawData = await executeCall();
+
+      const parsed = schema.safeParse(rawData);
+      if (!parsed.success) {
+        // Throw custom validation error
         throw new ResponseValidationError(
-          result.error,
+          parsed.error,
           "Response failed contract verification.",
-          config.url || "",
+          fullUrl.toString(),
         );
       }
-      return result.data;
+
+      return parsed.data;
     } catch (error) {
-      if (error instanceof ApiNetworkError) {
-        console.error(
-          `[${serviceName} Error ${error.status}]: ${error.message}`,
-        );
+      if (
+        error instanceof ApiNetworkError ||
+        error instanceof ResponseValidationError
+      ) {
+        throw error;
       }
+
+      console.error(`[${serviceName} System Error] at ${path}:`, error);
       throw error;
     }
   }
 
-  public createScope(basePath: string, serviceName: string): ScopedRequest {
+  public scope(basePath: string, serviceName = "HttpClient"): ScopedClient {
     return <T extends z.ZodTypeAny>(
-      request: Omit<SdkRequestConfig<T>, "url"> & { url?: string },
-    ) => {
-      const cleanUrl = `${basePath}/${request.url ?? ""}`
-        .replace(/\/+/g, "/")
-        .replace(/^\//, "");
-      return this.request({ ...request, url: cleanUrl }, { serviceName });
+      subOptions: Omit<RequestOptions<T>, "path"> & { path?: string },
+    ): Promise<z.infer<T>> => {
+      const combinedPath = `${basePath}/${subOptions.path ?? ""}`.replace(
+        /\/+/g,
+        "/",
+      );
+      return this.request(
+        { ...subOptions, path: combinedPath } as RequestOptions<T>,
+        { serviceName },
+      );
     };
   }
 }

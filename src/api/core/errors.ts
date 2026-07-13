@@ -234,3 +234,37 @@ export const mapErrorToProblem = (
     timestamp: new Date().toISOString(),
   };
 };
+
+export const mapFetchToProblem = (
+  response: Response,
+  data: unknown,
+  url: string,
+): ProblemDetails => {
+  if (isProblemDetails(data)) {
+    return data;
+  }
+
+  const statusErr = STATUS_ERRORS[response.status] || {
+    code: "UNKNOWN_HTTP_ERROR",
+    title: "Unexpected Network Response",
+    detail: `The server responded with an unhandled status code (${response.status}).`,
+  };
+
+  const getHeader = (key: string): string =>
+    response.headers.get(key) || "unknown";
+
+  return {
+    type: `https://api.bonfire.com/errors/${statusErr.code.toLowerCase().replace(/_/g, "-")}`,
+    title: statusErr.title,
+    status: response.status,
+    detail: statusErr.detail,
+    code: statusErr.code,
+    instance: url,
+    req_id:
+      getHeader("x-request-id") !== "unknown"
+        ? getHeader("x-request-id")
+        : getHeader("x-correlation-id"),
+    trace_id: getHeader("x-b3-traceid"),
+    timestamp: new Date().toISOString(),
+  };
+};
