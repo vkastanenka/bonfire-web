@@ -16,6 +16,7 @@ import "@fontsource/quicksand/700.css";
 import { routeTree } from "./routeTree.gen";
 import { toast, ToastProvider } from "./lib";
 import { ApiNetworkError } from "@/api";
+import { AuthProvider } from "./api/react/AuthProvider";
 
 declare module "@tanstack/react-query" {
   interface Register {
@@ -67,9 +68,11 @@ declare module "@tanstack/react-router" {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <RouterProvider router={router} />
-      </ToastProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

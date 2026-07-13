@@ -1,4 +1,4 @@
-import type { ScopedRequest } from "./client";
+import { httpClient, type ScopedRequest } from "./client";
 import {
   registerResponseSchema,
   type RegisterRequest,
@@ -8,9 +8,11 @@ import {
   type LoginResponse,
   type WSTicketResponse,
   wsTicketResponseSchema,
+  type RefreshResponse,
+  refreshResponseSchema,
 } from "./schema";
 
-export class AuthService {
+class AuthService {
   private readonly request: ScopedRequest;
 
   constructor(request: ScopedRequest) {
@@ -43,6 +45,18 @@ export class AuthService {
     });
   };
 
+  public refresh = (options?: {
+    signal?: AbortSignal;
+    headers?: Record<string, string>;
+  }): Promise<RefreshResponse> => {
+    return this.request({
+      method: "POST",
+      url: "/refresh",
+      schema: refreshResponseSchema,
+      ...options,
+    });
+  };
+
   public wsTicket = (options?: {
     signal?: AbortSignal;
     headers?: Record<string, string>;
@@ -55,3 +69,7 @@ export class AuthService {
     });
   };
 }
+
+export const authService = new AuthService(
+  httpClient.createScope("/auth", "AuthService"),
+);

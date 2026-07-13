@@ -6,7 +6,7 @@ import axios, {
   AxiosHeaders,
 } from "axios";
 import { z } from "zod";
-import type { HttpConfig } from "./config";
+import { httpConfig, type HttpConfig } from "./config";
 import {
   ApiNetworkError,
   ResponseValidationError,
@@ -35,7 +35,7 @@ export type ScopedRequest = <T extends z.ZodTypeAny>(
   request: Omit<SdkRequestConfig<T>, "url"> & { url?: string },
 ) => Promise<z.infer<T>>;
 
-export class HttpClient {
+class HttpClient {
   private readonly instance: AxiosInstance;
   private isRefreshing = false;
   private retriedRequests = new Set<AxiosRequestConfig>();
@@ -189,3 +189,5 @@ export class HttpClient {
     };
   }
 }
+
+export const httpClient = new HttpClient(httpConfig);

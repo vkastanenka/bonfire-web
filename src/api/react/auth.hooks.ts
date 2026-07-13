@@ -7,6 +7,7 @@ import type {
   LoginRequest,
   LoginResponse,
 } from "../core/schema";
+import { setAccessToken } from "../core/store";
 
 export const authKeys = {
   all: ["auth"] as const,
@@ -26,6 +27,11 @@ export const useRegister = (
   return useMutation({
     mutationKey: authKeys.register(),
     mutationFn: (data: RegisterRequest) => authService.register(data),
+    onSuccess: (res: RegisterResponse) => {
+      if (res.access_token) {
+        setAccessToken(res.access_token);
+      }
+    },
     ...options,
   });
 };
@@ -42,6 +48,11 @@ export const useLogin = (
   return useMutation({
     mutationKey: authKeys.login(),
     mutationFn: (data: LoginRequest) => authService.login(data),
+    onSuccess: (res: LoginResponse) => {
+      if (res.access_token) {
+        setAccessToken(res.access_token);
+      }
+    },
     ...options,
   });
 };
