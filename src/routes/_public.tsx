@@ -1,15 +1,8 @@
 // routes/_public.tsx
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { requireGuest } from "@/api/core/guards";
 
 export const Route = createFileRoute("/_public")({
-  beforeLoad: ({ context }) => {
-    console.log("Auth route hit!");
-
-    if (context.auth.isAuthenticated) {
-      throw redirect({
-        to: "/channels/@me",
-      });
-    }
-  },
+  beforeLoad: requireGuest(),
   component: () => <Outlet />,
 });

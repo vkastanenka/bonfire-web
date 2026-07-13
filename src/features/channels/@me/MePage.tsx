@@ -1,5 +1,5 @@
-import { ChannelsLayout } from "../layout";
+import { Layout } from "../layout";
 
 export const MePage = () => {
-  return <ChannelsLayout>MePage</ChannelsLayout>;
+  return <Layout>MePage</Layout>;
 };

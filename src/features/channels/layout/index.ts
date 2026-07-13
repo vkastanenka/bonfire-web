@@ -1,1 +1,1 @@
-export * from "./ChannelsLayout";
+export * from "./Layout";

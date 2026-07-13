@@ -68,7 +68,10 @@ class HttpClient {
     );
 
     this.instance.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        console.log(response);
+        return response;
+      },
       async (error: AxiosError) => {
         const originalRequest = error.config;
         if (!originalRequest || isCancel(error)) return Promise.reject(error);
