@@ -17,6 +17,7 @@ import { routeTree } from "./routeTree.gen";
 import { toast, ToastProvider } from "./lib";
 import { ApiNetworkError } from "@/api";
 import { AuthProvider } from "./api/react/AuthProvider";
+import { getAccessToken } from "./api/core/store";
 
 declare module "@tanstack/react-query" {
   interface Register {
@@ -56,7 +57,13 @@ const queryClient = new QueryClient({
 
 const router = createRouter({
   routeTree,
-  context: { queryClient },
+  context: {
+    queryClient,
+    auth: {
+      isAuthenticated: false,
+      accessToken: null,
+    },
+  },
 });
 
 declare module "@tanstack/react-router" {
@@ -65,12 +72,29 @@ declare module "@tanstack/react-router" {
   }
 }
 
+const App = () => {
+  const accessToken = getAccessToken();
+  const isAuthenticated = !!accessToken;
+
+  return (
+    <RouterProvider
+      router={router}
+      context={{
+        auth: {
+          isAuthenticated,
+          accessToken,
+        },
+      }}
+    />
+  );
+};
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <RouterProvider router={router} />
+          <App />
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>

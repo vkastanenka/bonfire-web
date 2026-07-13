@@ -14,14 +14,16 @@ export function AuthProvider({ children, fallback = null }: AuthProviderProps) {
     const bootstrapAuth = async () => {
       const currentToken = getAccessToken();
 
+      console.log("AuthProvider currentToken", currentToken);
+
       if (currentToken) {
         setIsInitializing(false);
         return;
       }
 
       try {
-        const data = await authService.refresh();
-        setAccessToken(data.access_token);
+        // const data = await authService.refresh();
+        // setAccessToken(data.access_token);
       } catch {
         clearAuth();
       } finally {
