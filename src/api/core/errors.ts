@@ -112,6 +112,8 @@ export const STATUS_ERRORS: Record<number, StatusError> = {
   },
 };
 
+export const DEFAULT_RETRYABLE_STATUSES = [429, 502, 503, 504] as const;
+
 export const API_ERROR_CODES = {
   TOKEN_EXPIRED: "TOKEN_EXPIRED",
   INVALID_INPUT: "INVALID_INPUT",
