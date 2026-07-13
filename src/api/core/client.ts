@@ -18,7 +18,9 @@ export interface BonfireHttpRequestOptions<T extends z.ZodTypeAny> {
 
   data?: unknown;
   queryParams?: Record<string, string | number | boolean | undefined>;
-  isPublic?: boolean;
+
+  protected?: boolean;
+  skipRetry?: boolean;
 }
 
 export interface BonfireHttpRequestMeta {
@@ -33,9 +35,9 @@ export interface BonfireHttpMiddleware {
     headers: Headers,
   ): Promise<void> | void;
 
-  onResponseSuccess?(
+  onResponseSuccess?<T extends z.ZodTypeAny>(
     response: Response,
-    options: BonfireHttpRequestOptions<z.ZodTypeAny>,
+    options: BonfireHttpRequestOptions<T>,
   ): Promise<void> | void;
 
   onResponseError?<T extends z.ZodTypeAny>(
@@ -54,12 +56,11 @@ export class AuthMiddleware implements BonfireHttpMiddleware {
     this.provider = provider;
   }
 
-  // Aligned with generic interface contract
   async beforeRequest<T extends z.ZodTypeAny>(
     options: BonfireHttpRequestOptions<T>,
     headers: Headers,
   ) {
-    if (options.isPublic) return;
+    if (!options.protected) return;
 
     const token = await this.provider.getAccessToken();
     if (token) {
@@ -67,13 +68,12 @@ export class AuthMiddleware implements BonfireHttpMiddleware {
     }
   }
 
-  // Aligned with generic interface contract
   async onResponseError<T extends z.ZodTypeAny>(
     response: Response,
     options: BonfireHttpRequestOptions<T>,
     retry: () => Promise<unknown>,
   ) {
-    if (response.status !== 401 || options.isPublic) return;
+    if (response.status !== 401 || !options.protected) return;
 
     try {
       if (!this.refreshPromise) {
@@ -103,7 +103,11 @@ export class AuthMiddleware implements BonfireHttpMiddleware {
 export class RetryMiddleware implements BonfireHttpMiddleware {
   public readonly name = "RetryMiddleware";
   private maxRetries = 0;
-  private attempts = new Map<string, number>();
+
+  private attempts = new WeakMap<
+    BonfireHttpRequestOptions<z.ZodTypeAny>,
+    number
+  >();
 
   constructor(maxRetries = 3) {
     this.maxRetries = maxRetries;
@@ -114,22 +118,21 @@ export class RetryMiddleware implements BonfireHttpMiddleware {
     options: BonfireHttpRequestOptions<T>,
     retry: () => Promise<unknown>,
   ) {
+    if (options.skipRetry) return;
+
     const retryableStatuses = [429, 502, 503, 504];
     if (!retryableStatuses.includes(response.status)) return;
 
-    const cacheKey = `${options.method}:${options.path}`;
-    const currentAttempt = this.attempts.get(cacheKey) ?? 0;
+    const currentAttempt = this.attempts.get(options) ?? 0;
 
     if (currentAttempt < this.maxRetries) {
-      this.attempts.set(cacheKey, currentAttempt + 1);
+      this.attempts.set(options, currentAttempt + 1);
 
       const delay = Math.pow(2, currentAttempt) * 100 + Math.random() * 50;
       await new Promise((res) => setTimeout(res, delay));
 
       return retry();
     }
-
-    this.attempts.delete(cacheKey);
   }
 }
 
@@ -139,7 +142,6 @@ export type BonfireScopedClient = <T extends z.ZodTypeAny>(
 
 export class BonfireHttpClient {
   private readonly baseURL: string;
-  // Renamed from strategies to middleware
   private readonly middleware: BonfireHttpMiddleware[];
 
   constructor(options: {
@@ -156,7 +158,6 @@ export class BonfireHttpClient {
   ): Promise<z.infer<T>> {
     const serviceName = meta?.serviceName || "HttpClient";
 
-    // 1. Build the URL directly from the options parameter
     const fullUrl = new URL(
       `${this.baseURL}/${options.path.replace(/^\//, "")}`,
     );
@@ -166,7 +167,6 @@ export class BonfireHttpClient {
       });
     }
 
-    // 2. Initialize headers from options cleanly
     const headers = new Headers(options.headers);
     if (options.data && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
@@ -182,15 +182,12 @@ export class BonfireHttpClient {
         );
       }
 
-      // Middleware gets the full options block intact
       for (const layer of this.middleware) {
         if (layer.beforeRequest) {
           await layer.beforeRequest(options, headers);
         }
       }
 
-      // 3. Map options directly to the native fetch configuration.
-      // No rest spreads, no unused variables, zero type assertions.
       const response = await fetch(fullUrl.toString(), {
         method: options.method,
         signal: options.signal,
@@ -214,6 +211,13 @@ export class BonfireHttpClient {
         const body = await response.json().catch(() => ({}));
         const problem = mapFetchToProblem(response, body, fullUrl.toString());
         throw new ApiNetworkError(problem);
+      }
+
+      // FIX 4: Run success lifecycle hooks before passing off data
+      for (const layer of this.middleware) {
+        if (layer.onResponseSuccess) {
+          await layer.onResponseSuccess(response, options);
+        }
       }
 
       if (response.status === 204) return {};
@@ -268,257 +272,3 @@ export const bonfireHttpClient = new BonfireHttpClient({
   baseURL: httpConfig.baseURL,
   middleware: [new AuthMiddleware(tokenProvider), new RetryMiddleware(3)],
 });
-
-// import axios, {
-//   type AxiosInstance,
-//   AxiosError,
-//   isCancel,
-//   type AxiosRequestConfig,
-//   AxiosHeaders,
-//   type InternalAxiosRequestConfig,
-//   type AxiosResponse,
-// } from "axios";
-// import { z } from "zod";
-// import { httpConfig, type HttpConfig } from "./config";
-// import {
-//   ApiNetworkError,
-//   ResponseValidationError,
-//   mapErrorToProblem,
-// } from "./errors";
-// import { clearAuth, getAccessToken, setAccessToken } from "./store";
-// import { refreshResponseSchema } from "./schema";
-
-// export interface RequestConfig<T extends z.ZodTypeAny> extends Pick<
-//   AxiosRequestConfig,
-//   "url"
-// > {
-//   schema: T;
-//   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-//   data?: unknown;
-//   queryParams?: Record<string, string | number | boolean | undefined>;
-//   signal?: AbortSignal;
-//   headers?: Record<string, string>;
-// }
-
-// export interface BonfireRequestMeta {
-//   serviceName: string;
-// }
-
-// export type ScopedRequest = <T extends z.ZodTypeAny>(
-//   request: Omit<RequestConfig<T>, "url"> & { url?: string },
-// ) => Promise<z.infer<T>>;
-
-// interface QueuedRequest {
-//   resolve: (token: string) => void;
-//   reject: (err: unknown) => void;
-// }
-
-// class HttpClient {
-//   private readonly instance: AxiosInstance;
-//   private isRefreshing = false;
-//   private retriedRequests = new Set<AxiosRequestConfig>();
-//   private failedQueue: QueuedRequest[] = [];
-
-//   private readonly bypassAuthRoutes = [
-//     "/auth/refresh",
-//     "/auth/login",
-//     "/auth/register",
-//   ];
-
-//   constructor(config: HttpConfig) {
-//     this.instance = axios.create({
-//       baseURL: config.baseURL,
-//       timeout: config.timeout,
-//       headers: { "Content-Type": "application/json" },
-//       withCredentials: true,
-//     });
-//     this.setupInterceptors();
-//   }
-
-//   private setupInterceptors(): void {
-//     this.instance.interceptors.request.use(
-//       this.handleRequestAttachment.bind(this),
-//       (error) => Promise.reject(error),
-//     );
-
-//     this.instance.interceptors.response.use(
-//       this.handleResponseSuccess.bind(this),
-//       this.handleResponseError.bind(this),
-//     );
-//   }
-
-//   private handleRequestAttachment(
-//     config: InternalAxiosRequestConfig,
-//   ): InternalAxiosRequestConfig {
-//     const token = getAccessToken();
-//     if (token) {
-//       config.headers = config.headers || new AxiosHeaders();
-//       config.headers.set("Authorization", `Bearer ${token}`);
-//     }
-//     return config;
-//   }
-
-//   private handleResponseSuccess(response: AxiosResponse): AxiosResponse {
-//     if (process.env.NODE_ENV !== "production") {
-//       console.log(
-//         `[HTTP Success] ${response.config.method?.toUpperCase()} ${response.config.url}`,
-//       );
-//     }
-//     return response;
-//   }
-
-//   private async handleResponseError(error: AxiosError): Promise<unknown> {
-//     const originalRequest = error.config;
-//     if (!originalRequest || isCancel(error)) {
-//       return Promise.reject(error);
-//     }
-
-//     const problem = mapErrorToProblem(error);
-
-//     if (this.shouldTriggerTokenRefresh(problem.code, originalRequest.url)) {
-//       return this.handleExpiredTokenLifecycle(originalRequest, problem);
-//     }
-
-//     this.retriedRequests.delete(originalRequest);
-//     return Promise.reject(new ApiNetworkError(problem));
-//   }
-
-//   private shouldTriggerTokenRefresh(errorCode: string, url?: string): boolean {
-//     if (errorCode !== "TOKEN_EXPIRED" || !url) return false;
-//     return !this.bypassAuthRoutes.some((route) => url.includes(route));
-//   }
-
-//   /**
-//    * Orchestrates synchronization loops across thread-locked concurrent token tasks
-//    */
-//   private async handleExpiredTokenLifecycle(
-//     originalRequest: AxiosRequestConfig,
-//     problem: ReturnType<typeof mapErrorToProblem>,
-//   ): Promise<unknown> {
-//     // Scenario A: Token update is already flying down the pipeline. Queue this request.
-//     if (this.isRefreshing) {
-//       return this.enqueueFailedRequest(originalRequest);
-//     }
-
-//     // Scenario B: Infinite circular fallback check. Absolute termination breaker.
-//     if (this.retriedRequests.has(originalRequest)) {
-//       this.backoutAndClearAuthentication(originalRequest);
-//       return Promise.reject(new ApiNetworkError(problem));
-//     }
-
-//     // Scenario C: Primary executor thread context. Run the handshake update.
-//     this.retriedRequests.add(originalRequest);
-//     this.isRefreshing = true;
-
-//     try {
-//       const refreshRes = await this.instance.post("/auth/refresh");
-//       const parsed = refreshResponseSchema.parse(refreshRes.data);
-//       setAccessToken(parsed.access_token);
-
-//       this.flushFailedQueue(null, parsed.access_token);
-
-//       this.updateRequestAuthorizationHeader(
-//         originalRequest,
-//         parsed.access_token,
-//       );
-//       const retryResponse = await this.instance.request(originalRequest);
-
-//       this.retriedRequests.delete(originalRequest);
-//       return retryResponse;
-//     } catch (refreshError) {
-//       this.flushFailedQueue(refreshError);
-//       this.backoutAndClearAuthentication(originalRequest);
-//       return Promise.reject(new ApiNetworkError(problem));
-//     } finally {
-//       this.isRefreshing = false;
-//     }
-//   }
-
-//   private enqueueFailedRequest(
-//     originalRequest: AxiosRequestConfig,
-//   ): Promise<unknown> {
-//     return new Promise<string>((resolve, reject) => {
-//       this.failedQueue.push({ resolve, reject });
-//     }).then((token) => {
-//       this.updateRequestAuthorizationHeader(originalRequest, token);
-//       return this.instance.request(originalRequest);
-//     });
-//   }
-
-//   private flushFailedQueue(error: unknown | null, token?: string): void {
-//     if (error) {
-//       this.failedQueue.forEach((item) => item.reject(error));
-//     } else if (token) {
-//       this.failedQueue.forEach((item) => item.resolve(token));
-//     }
-//     this.failedQueue = [];
-//   }
-
-//   private updateRequestAuthorizationHeader(
-//     request: AxiosRequestConfig,
-//     token: string,
-//   ): void {
-//     request.headers = request.headers || new AxiosHeaders();
-//     if (request.headers instanceof AxiosHeaders) {
-//       request.headers.set("Authorization", `Bearer ${token}`);
-//     } else {
-//       request.headers["Authorization"] = `Bearer ${token}`;
-//     }
-//   }
-
-//   private backoutAndClearAuthentication(request: AxiosRequestConfig): void {
-//     this.retriedRequests.delete(request);
-//     clearAuth();
-//   }
-
-//   public async request<T extends z.ZodTypeAny>(
-//     config: RequestConfig<T>,
-//     meta?: BonfireRequestMeta,
-//   ): Promise<z.infer<T>> {
-//     const serviceName = meta?.serviceName || "HttpClient";
-//     try {
-//       const response = await this.instance.request({
-//         url: config.url,
-//         method: config.method,
-//         data: config.data,
-//         params: config.queryParams,
-//         headers: config.headers,
-//         signal: config.signal,
-//       });
-
-//       const result = config.schema.safeParse(response.data);
-//       if (!result.success) {
-//         console.error(
-//           `[${serviceName} Contract Violation] at ${config.url}:`,
-//           result.error,
-//         );
-//         throw new ResponseValidationError(
-//           result.error,
-//           "Response failed contract verification.",
-//           config.url || "",
-//         );
-//       }
-//       return result.data;
-//     } catch (error) {
-//       if (error instanceof ApiNetworkError) {
-//         console.error(
-//           `[${serviceName} Error ${error.status}]: ${error.message}`,
-//         );
-//       }
-//       throw error;
-//     }
-//   }
-
-//   public createScope(basePath: string, serviceName: string): ScopedRequest {
-//     return <T extends z.ZodTypeAny>(
-//       request: Omit<RequestConfig<T>, "url"> & { url?: string },
-//     ) => {
-//       const cleanUrl = `${basePath}/${request.url ?? ""}`
-//         .replace(/\/+/g, "/")
-//         .replace(/^\//, "");
-//       return this.request({ ...request, url: cleanUrl }, { serviceName });
-//     };
-//   }
-// }
-
-// export const httpClient = new HttpClient(httpConfig);
