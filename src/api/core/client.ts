@@ -7,7 +7,7 @@ import {
 } from "./errors";
 import { tokenProvider, type BonfireTokenProvider } from "./tokens";
 
-export interface BonfireRequestOptions<T extends z.ZodTypeAny> {
+export interface BonfireHttpRequestOptions<T extends z.ZodTypeAny> {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   path: string;
   schema: T;
@@ -21,32 +21,32 @@ export interface BonfireRequestOptions<T extends z.ZodTypeAny> {
   isPublic?: boolean;
 }
 
-export interface BonfireRequestMeta {
+export interface BonfireHttpRequestMeta {
   serviceName: string;
 }
 
-export interface BonfireHttpStrategy {
+export interface BonfireHttpMiddleware {
   name: string;
 
   beforeRequest?<T extends z.ZodTypeAny>(
-    options: BonfireRequestOptions<T>,
+    options: BonfireHttpRequestOptions<T>,
     headers: Headers,
   ): Promise<void> | void;
 
   onResponseSuccess?(
     response: Response,
-    options: BonfireRequestOptions<z.ZodTypeAny>,
+    options: BonfireHttpRequestOptions<z.ZodTypeAny>,
   ): Promise<void> | void;
 
   onResponseError?<T extends z.ZodTypeAny>(
     response: Response,
-    options: BonfireRequestOptions<T>,
+    options: BonfireHttpRequestOptions<T>,
     retry: () => Promise<unknown>,
   ): Promise<unknown> | void;
 }
 
-export class AuthStrategy implements BonfireHttpStrategy {
-  public readonly name = "AuthStrategy";
+export class AuthMiddleware implements BonfireHttpMiddleware {
+  public readonly name = "AuthMiddleware";
   private provider: BonfireTokenProvider;
   private refreshPromise: Promise<string | null> | null = null;
 
@@ -54,8 +54,9 @@ export class AuthStrategy implements BonfireHttpStrategy {
     this.provider = provider;
   }
 
-  async beforeRequest(
-    options: BonfireRequestOptions<z.ZodTypeAny>,
+  // Aligned with generic interface contract
+  async beforeRequest<T extends z.ZodTypeAny>(
+    options: BonfireHttpRequestOptions<T>,
     headers: Headers,
   ) {
     if (options.isPublic) return;
@@ -66,16 +67,15 @@ export class AuthStrategy implements BonfireHttpStrategy {
     }
   }
 
-  async onResponseError(
+  // Aligned with generic interface contract
+  async onResponseError<T extends z.ZodTypeAny>(
     response: Response,
-    options: BonfireRequestOptions<z.ZodTypeAny>,
+    options: BonfireHttpRequestOptions<T>,
     retry: () => Promise<unknown>,
   ) {
-    // Skip if it's not a 401 or if the endpoint is explicitly public
     if (response.status !== 401 || options.isPublic) return;
 
     try {
-      // Concurrency lock: ensures multiple parallel 401s only trigger ONE refresh call
       if (!this.refreshPromise) {
         this.refreshPromise = this.provider.refreshAccessToken().finally(() => {
           this.refreshPromise = null;
@@ -84,17 +84,14 @@ export class AuthStrategy implements BonfireHttpStrategy {
 
       const newToken = await this.refreshPromise;
 
-      // If refresh didn't give us a token, token rotation failed
       if (!newToken) {
         throw new Error("Token refresh returned empty payload.");
       }
 
-      // Retry the original request
       return await retry();
     } catch (error) {
-      // FIX: This now safely bubbles up to trigger global logout logic
       console.warn(
-        "[AuthStrategy] Token refresh failed. Evicting session.",
+        "[AuthMiddleware] Token refresh failed. Evicting session.",
         error,
       );
       await this.provider.onSessionExpired();
@@ -103,8 +100,8 @@ export class AuthStrategy implements BonfireHttpStrategy {
   }
 }
 
-export class RetryStrategy implements BonfireHttpStrategy {
-  public readonly name = "RetryStrategy";
+export class RetryMiddleware implements BonfireHttpMiddleware {
+  public readonly name = "RetryMiddleware";
   private maxRetries = 0;
   private attempts = new Map<string, number>();
 
@@ -112,10 +109,9 @@ export class RetryStrategy implements BonfireHttpStrategy {
     this.maxRetries = maxRetries;
   }
 
-  // Purely typed without any explicit 'any'
   async onResponseError<T extends z.ZodTypeAny>(
     response: Response,
-    options: BonfireRequestOptions<T>,
+    options: BonfireHttpRequestOptions<T>,
     retry: () => Promise<unknown>,
   ) {
     const retryableStatuses = [429, 502, 503, 504];
@@ -138,37 +134,41 @@ export class RetryStrategy implements BonfireHttpStrategy {
 }
 
 export type BonfireScopedClient = <T extends z.ZodTypeAny>(
-  request: Omit<BonfireRequestOptions<T>, "path"> & { path?: string },
+  request: Omit<BonfireHttpRequestOptions<T>, "path"> & { path?: string },
 ) => Promise<z.infer<T>>;
 
 export class BonfireHttpClient {
   private readonly baseURL: string;
-  private readonly strategies: BonfireHttpStrategy[];
+  // Renamed from strategies to middleware
+  private readonly middleware: BonfireHttpMiddleware[];
 
   constructor(options: {
     baseURL: string;
-    strategies?: BonfireHttpStrategy[];
+    middleware?: BonfireHttpMiddleware[];
   }) {
     this.baseURL = options.baseURL.replace(/\/$/, "");
-    this.strategies = options.strategies || [];
+    this.middleware = options.middleware || [];
   }
 
   public async request<T extends z.ZodTypeAny>(
-    options: BonfireRequestOptions<T>,
-    meta?: BonfireRequestMeta,
+    options: BonfireHttpRequestOptions<T>,
+    meta?: BonfireHttpRequestMeta,
   ): Promise<z.infer<T>> {
-    const { path, queryParams, data, schema, ...nativeOptions } = options;
     const serviceName = meta?.serviceName || "HttpClient";
 
-    const fullUrl = new URL(`${this.baseURL}/${path.replace(/^\//, "")}`);
-    if (queryParams) {
-      Object.entries(queryParams).forEach(([key, val]) => {
+    // 1. Build the URL directly from the options parameter
+    const fullUrl = new URL(
+      `${this.baseURL}/${options.path.replace(/^\//, "")}`,
+    );
+    if (options.queryParams) {
+      Object.entries(options.queryParams).forEach(([key, val]) => {
         if (val !== undefined) fullUrl.searchParams.append(key, String(val));
       });
     }
 
-    const headers = new Headers(nativeOptions.headers);
-    if (data && !headers.has("Content-Type")) {
+    // 2. Initialize headers from options cleanly
+    const headers = new Headers(options.headers);
+    if (options.data && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
     }
 
@@ -178,29 +178,31 @@ export class BonfireHttpClient {
       attemptCount++;
       if (attemptCount > 5) {
         throw new Error(
-          `[${serviceName}] Cascade breakdown protection at ${path}`,
+          `[${serviceName}] Cascade breakdown protection at ${options.path}`,
         );
       }
 
-      // 1. Run beforeRequest hooks across all registered strategies
-      for (const strategy of this.strategies) {
-        if (strategy.beforeRequest) {
-          await strategy.beforeRequest(options, headers);
+      // Middleware gets the full options block intact
+      for (const layer of this.middleware) {
+        if (layer.beforeRequest) {
+          await layer.beforeRequest(options, headers);
         }
       }
 
+      // 3. Map options directly to the native fetch configuration.
+      // No rest spreads, no unused variables, zero type assertions.
       const response = await fetch(fullUrl.toString(), {
-        ...nativeOptions,
+        method: options.method,
+        signal: options.signal,
+        cache: options.cache,
         headers,
-        body: data ? JSON.stringify(data) : undefined,
+        body: options.data ? JSON.stringify(options.data) : undefined,
       });
 
-      // 2. Handle Errors via the Strategy Pipeline
       if (!response.ok) {
-        for (const strategy of this.strategies) {
-          if (strategy.onResponseError) {
-            // Pass the execution context back as a recursive closure callback
-            const shortCircuit = await strategy.onResponseError(
+        for (const layer of this.middleware) {
+          if (layer.onResponseError) {
+            const shortCircuit = await layer.onResponseError(
               response,
               options,
               () => executeCall(),
@@ -209,7 +211,6 @@ export class BonfireHttpClient {
           }
         }
 
-        // If no strategy successfully intercepted and retried the error, map and throw normally
         const body = await response.json().catch(() => ({}));
         const problem = mapFetchToProblem(response, body, fullUrl.toString());
         throw new ApiNetworkError(problem);
@@ -219,10 +220,9 @@ export class BonfireHttpClient {
       return response.json();
     };
 
-    // --- Execution Validation ---
     try {
       const rawData = await executeCall();
-      const parsed = schema.safeParse(rawData);
+      const parsed = options.schema.safeParse(rawData);
       if (!parsed.success) {
         throw new ResponseValidationError(
           parsed.error,
@@ -237,7 +237,7 @@ export class BonfireHttpClient {
         error instanceof ResponseValidationError
       )
         throw error;
-      console.error(`[${serviceName} System Error] at ${path}:`, error);
+      console.error(`[${serviceName} System Error] at ${options.path}:`, error);
       throw error;
     }
   }
@@ -247,7 +247,9 @@ export class BonfireHttpClient {
     serviceName = "HttpClient",
   ): BonfireScopedClient {
     return <T extends z.ZodTypeAny>(
-      subOptions: Omit<BonfireRequestOptions<T>, "path"> & { path?: string },
+      subOptions: Omit<BonfireHttpRequestOptions<T>, "path"> & {
+        path?: string;
+      },
     ): Promise<z.infer<T>> => {
       const combinedPath = `${basePath}/${subOptions.path ?? ""}`.replace(
         /\/+/g,
@@ -264,7 +266,7 @@ export class BonfireHttpClient {
 
 export const bonfireHttpClient = new BonfireHttpClient({
   baseURL: httpConfig.baseURL,
-  strategies: [new AuthStrategy(tokenProvider), new RetryStrategy(3)],
+  middleware: [new AuthMiddleware(tokenProvider), new RetryMiddleware(3)],
 });
 
 // import axios, {
