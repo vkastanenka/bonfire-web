@@ -112,6 +112,14 @@ export const STATUS_ERRORS: Record<number, StatusError> = {
   },
 };
 
+export const API_ERROR_CODES = {
+  TOKEN_EXPIRED: "TOKEN_EXPIRED",
+  INVALID_INPUT: "INVALID_INPUT",
+} as const;
+
+export type ApiErrorCode =
+  (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES];
+
 export interface InvalidParam {
   name: string;
   reason: string;

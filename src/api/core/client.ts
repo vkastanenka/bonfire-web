@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { httpConfig } from "./config";
 import {
+  API_ERROR_CODES,
   ApiNetworkError,
+  isProblemDetails,
   mapFetchToProblem,
   ResponseValidationError,
 } from "./errors";
@@ -76,6 +78,19 @@ export class AuthMiddleware implements BonfireHttpMiddleware {
     if (response.status !== 401 || !options.protected) return;
 
     try {
+      const errorBody: unknown = await response
+        .clone()
+        .json()
+        .catch(() => null);
+
+      const isExpired =
+        isProblemDetails(errorBody) &&
+        errorBody.code === API_ERROR_CODES.TOKEN_EXPIRED;
+
+      if (!isExpired) {
+        return;
+      }
+
       if (!this.refreshPromise) {
         this.refreshPromise = this.provider.refreshAccessToken().finally(() => {
           this.refreshPromise = null;
@@ -156,7 +171,7 @@ export class BonfireHttpClient {
     options: BonfireHttpRequestOptions<T>,
     meta?: BonfireHttpRequestMeta,
   ): Promise<z.infer<T>> {
-    const serviceName = meta?.serviceName || "HttpClient";
+    const serviceName = meta?.serviceName || "BonfireHttpClient";
 
     const fullUrl = new URL(
       `${this.baseURL}/${options.path.replace(/^\//, "")}`,
@@ -177,9 +192,17 @@ export class BonfireHttpClient {
     const executeCall = async (): Promise<unknown> => {
       attemptCount++;
       if (attemptCount > 5) {
-        throw new Error(
-          `[${serviceName}] Cascade breakdown protection at ${options.path}`,
-        );
+        throw new ApiNetworkError({
+          type: "https://api.bonfire.com/errors/cascade-breakdown",
+          title: "Request Cascade Loop Detected",
+          status: 0,
+          detail: `The execution loop was terminated to prevent a stack overflow. A middleware layer (likely Auth or Retry) is recursively replaying this request infinitely.`,
+          code: "CASCADE_BREAKDOWN",
+          instance: fullUrl.toString(),
+          req_id: "client-side-circuit-breaker",
+          trace_id: "unknown",
+          timestamp: new Date().toISOString(),
+        });
       }
 
       for (const layer of this.middleware) {
@@ -213,7 +236,6 @@ export class BonfireHttpClient {
         throw new ApiNetworkError(problem);
       }
 
-      // FIX 4: Run success lifecycle hooks before passing off data
       for (const layer of this.middleware) {
         if (layer.onResponseSuccess) {
           await layer.onResponseSuccess(response, options);
