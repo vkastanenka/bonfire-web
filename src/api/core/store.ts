@@ -33,31 +33,43 @@ interface GatewayState {
   updatePresence: (status: Presence) => void;
 }
 
+// Module-level flag to guarantee we only subscribe to the singleton once
+let listenersAttached = false;
+
 export const useGatewayStore = create<GatewayState>((set) => {
-  // Bind store state directly onto the central singleton observer engine
-  gatewayManager.subscribeToStatus((status) => {
-    set({ status });
-  });
-
-  gatewayManager.subscribeToMessages((message) => {
-    switch (message.t) {
-      case "PRESENCE_UPDATE":
-        // useUserStore.getState().handlePresenceEvent(message.d);
-        break;
-      case "MESSAGE_CREATE":
-        // useChannelStore.getState().handleNewMessage(message.d);
-        break;
-      default:
-        console.debug(
-          `[Gateway State Router] Unhandled transmission type [${message.t}]`,
-        );
-    }
-  });
-
   return {
-    status: gatewayManager.getStatus(),
+    // Start with a safe string literal instead of invoking gatewayManager immediately
+    status: "DISCONNECTED",
 
     initializeGateway: (initialPresence = "online") => {
+      // 1. Bind listeners lazily on first execution to bypass file-parse race conditions
+      if (!listenersAttached) {
+        gatewayManager.subscribeToStatus((status) => {
+          set({ status });
+        });
+
+        gatewayManager.subscribeToMessages((message) => {
+          switch (message.t) {
+            case "PRESENCE_UPDATE":
+              // useUserStore.getState().handlePresenceEvent(message.d);
+              break;
+            case "MESSAGE_CREATE":
+              // useChannelStore.getState().handleNewMessage(message.d);
+              break;
+            default:
+              console.debug(
+                `[Gateway State Router] Unhandled transmission type [${message.t}]`,
+              );
+          }
+        });
+
+        listenersAttached = true;
+      }
+
+      // 2. Sync the store with the manager's current state
+      set({ status: gatewayManager.getStatus() });
+
+      // 3. Kick off connection
       gatewayManager.setPresence(initialPresence);
       gatewayManager.connect();
     },
