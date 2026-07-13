@@ -42,6 +42,9 @@ export class GatewayManager {
   private status: GatewayStatus = "DISCONNECTED";
   private presence: Presence;
 
+  private connectionVersion = 0;
+  private activeTicketPromise: Promise<string> | null = null;
+
   private messageListeners = new Set<MessageListener>();
   private statusListeners = new Set<StatusListener>();
 
@@ -86,21 +89,67 @@ export class GatewayManager {
       this.reconnectAttempts > 0 ? "RECONNECTING" : "CONNECTING",
     );
 
-    try {
-      // Pull fresh token data instantly inside the lock window to respect the 20s TTL
-      const ticketId = await this.config.getTicket();
-      const wsUrl = buildGatewayUrl(ticketId, this.presence);
+    this.connectionVersion++;
+    const currentVersion = this.connectionVersion;
 
-      this.ws = new WebSocket(wsUrl);
-      this.setupEventListeners();
+    try {
+      // 1. SELF-CLEANING PROMISE PATTERN:
+      // We initialize the promise and ensure it clears its own cache footprint ONLY when
+      // it completely settles (resolves or rejects).
+      if (!this.activeTicketPromise) {
+        this.activeTicketPromise = this.config.getTicket().finally(() => {
+          this.activeTicketPromise = null;
+        });
+      }
+
+      const ticketId = await this.activeTicketPromise;
+
+      // 2. WATERPROOF RACE GUARD:
+      if (
+        this.forcedClose ||
+        this.status === "DISCONNECTED" ||
+        this.connectionVersion !== currentVersion
+      ) {
+        console.log(
+          "[Gateway] Stale connection attempt superseded. Aborting sequence.",
+        );
+        return;
+      }
+
+      console.log("gateway ticketID", ticketId);
+      // const wsUrl = buildGatewayUrl(ticketId, this.presence);
+
+      // this.ws = new WebSocket(wsUrl);
+      // this.setupEventListeners();
     } catch (error) {
-      console.error("[Gateway] Handshake extraction or setup failure:", error);
-      this.handleReconnect();
+      if (this.connectionVersion === currentVersion) {
+        if (!this.forcedClose) {
+          console.error(
+            "[Gateway] Handshake extraction or setup failure:",
+            error,
+          );
+
+          // 3. CIRCUIT BREAKER CHECK:
+          // Safely intercept rate-limiting exceptions to avoid cascading request loops
+          const isRateLimit =
+            error instanceof Error &&
+            (error.message.includes("429") ||
+              error.message.toLowerCase().includes("rate limit"));
+
+          this.handleReconnect(isRateLimit);
+        }
+      }
     }
   }
 
   public disconnect(): void {
     this.forcedClose = true;
+    this.connectionVersion++;
+
+    // CRITICAL FIX: Do NOT set this.activeTicketPromise = null here anymore.
+    // By keeping it intact across unmounts, the synchronous React remount cycle
+    // will safely discover and latch onto the existing, active in-flight promise.
+
     this.clearTimeouts();
     this.updateStatus("DISCONNECTED");
 
@@ -150,16 +199,26 @@ export class GatewayManager {
     this.ws.onerror = () => {};
   }
 
-  private handleReconnect(): void {
+  private handleReconnect(isRateLimit = false): void {
     if (this.forcedClose) return;
     this.updateStatus("RECONNECTING");
     this.cleanupSocket();
 
+    // 4. BACKOFF ENFORCEMENT:
+    // If we're hit with a 429, back off aggressively (minimum 5 seconds) to allow the backend rate limits to cool down
+    const baseDelay = isRateLimit
+      ? Math.max(5000, this.baseReconnectDelay)
+      : this.baseReconnectDelay;
+
     const delay = Math.min(
       this.maxReconnectDelay,
-      this.baseReconnectDelay * Math.pow(2, this.reconnectAttempts),
+      baseDelay * Math.pow(2, this.reconnectAttempts),
     );
     const jitteredDelay = delay + Math.random() * 1000;
+
+    console.log(
+      `[Gateway] Reconnect scheduled in ${Math.round(jitteredDelay)}ms (Rate Limited: ${isRateLimit})`,
+    );
 
     this.reconnectTimeoutId = setTimeout(() => {
       this.reconnectAttempts++;
