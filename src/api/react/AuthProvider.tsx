@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { authService } from "../core";
+import { authService, type RefreshResponse } from "../core";
 import { setAccessToken, getAccessToken, clearAuth } from "../core/store";
 
 interface AuthProviderProps {
@@ -7,31 +7,53 @@ interface AuthProviderProps {
   fallback?: React.ReactNode;
 }
 
+let refreshPromise: Promise<RefreshResponse> | null = null;
+
 export function AuthProvider({ children, fallback = null }: AuthProviderProps) {
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const bootstrapAuth = async () => {
-      const currentToken = getAccessToken();
+      const accessToken = getAccessToken();
 
-      console.log("AuthProvider currentToken", currentToken);
-
-      if (currentToken) {
-        setIsInitializing(false);
+      if (accessToken) {
+        if (isMounted) setIsInitializing(false);
         return;
       }
 
       try {
-        // const data = await authService.refresh();
-        // setAccessToken(data.access_token);
-      } catch {
-        clearAuth();
+        if (!refreshPromise) {
+          refreshPromise = authService.refresh();
+        }
+
+        const data = await refreshPromise;
+
+        if (isMounted) {
+          setAccessToken(data.access_token);
+        }
+      } catch (error) {
+        console.error(
+          "[Auth Bootstrapper] Session restoration rejected:",
+          error,
+        );
+        if (isMounted) {
+          clearAuth();
+        }
       } finally {
-        setIsInitializing(false);
+        refreshPromise = null;
+        if (isMounted) {
+          setIsInitializing(false);
+        }
       }
     };
 
     bootstrapAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isInitializing) {

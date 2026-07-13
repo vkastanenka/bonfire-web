@@ -8,6 +8,7 @@ import {
   ApiNetworkError,
   type LoginRequest,
 } from "@/api";
+import { setAccessToken } from "@/api/core/store";
 
 export const useLoginForm = () => {
   const navigate = useNavigate();
@@ -24,12 +25,13 @@ export const useLoginForm = () => {
 
   const onSubmit = (data: LoginRequest) => {
     mutate(data, {
-      onSuccess: (serverResponse) => {
+      onSuccess: (res) => {
         console.log(
           "Login successful! Access token acquired:",
-          serverResponse.access_token,
+          res.access_token,
         );
-        navigate({ to: "/" });
+        setAccessToken(res.access_token);
+        navigate({ to: "/channels/@me" });
       },
       onError: (err) => {
         if (err instanceof ApiNetworkError && err.isValidationFailure()) {

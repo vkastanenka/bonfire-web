@@ -3,6 +3,8 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_public")({
   beforeLoad: ({ context }) => {
+    console.log("Auth route hit!");
+
     if (context.auth.isAuthenticated) {
       throw redirect({
         to: "/channels/@me",

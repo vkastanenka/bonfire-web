@@ -1,24 +1,14 @@
 // routes/_auth.tsx
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { requireAuth } from "@/api/core/guards";
+import { AuthProvider } from "@/api/react/AuthProvider";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_auth")({
-  beforeLoad: ({ context, location }) => {
-    if (!context.auth.isAuthenticated) {
-      throw redirect({
-        to: "/login",
-        search: {
-          redirect: location.href,
-        },
-      });
-    }
-  },
-  component: AuthLayout,
-});
-
-function AuthLayout() {
-  return (
-    <div>
+  beforeLoad: requireAuth(),
+  pendingComponent: () => <div>Restoring Session...</div>,
+  component: () => (
+    <AuthProvider>
       <Outlet />
-    </div>
-  );
-}
+    </AuthProvider>
+  ),
+});
