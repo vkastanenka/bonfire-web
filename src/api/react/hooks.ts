@@ -1,5 +1,9 @@
-import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
-import { authService } from "../http/services";
+import {
+  useMutation,
+  useQuery,
+  type UseMutationOptions,
+} from "@tanstack/react-query";
+import { authService, userService } from "../http/services";
 import type { ApiNetworkError, ResponseValidationError } from "../http/errors";
 import type {
   RegisterRequest,
@@ -58,6 +62,19 @@ export const useRegister = (
     ...options,
   });
 };
+
+export const meKeys = {
+  all: ["me"] as const,
+};
+
+export function useMe(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: meKeys.all,
+    queryFn: () => userService.getMe(),
+    staleTime: Infinity,
+    ...options,
+  });
+}
 
 export function useGateway() {
   const initializeGateway = useGatewayStore((state) => state.initializeGateway);

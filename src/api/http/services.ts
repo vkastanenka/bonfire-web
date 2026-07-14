@@ -11,6 +11,8 @@ import {
   wsTicketResponseSchema,
   type RefreshResponse,
   refreshResponseSchema,
+  type Me,
+  meSchema,
 } from "../http/schema";
 import type { HttpRequestOptions } from "./request";
 
@@ -74,4 +76,26 @@ class AuthService {
 
 export const authService = new AuthService(
   httpClient.scope("/auth", "AuthService"),
+);
+
+class UserService {
+  private readonly client: ScopedClient;
+
+  constructor(client: ScopedClient) {
+    this.client = client;
+  }
+
+  public getMe = (options?: ServiceOptions): Promise<Me> => {
+    return this.client({
+      method: "GET",
+      url: "/@me",
+      schema: meSchema,
+      protected: true,
+      ...options,
+    });
+  };
+}
+
+export const userService = new UserService(
+  httpClient.scope("/users", "UserService"),
 );

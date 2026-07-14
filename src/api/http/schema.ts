@@ -120,3 +120,27 @@ export const wsTicketResponseSchema = z.object({
 });
 
 export type WSTicketResponse = z.infer<typeof wsTicketResponseSchema>;
+
+export const presenceSchema = z.enum([
+  "online",
+  "offline",
+  "idle",
+  "dnd",
+  "offline",
+  "invisible",
+]);
+
+export type Presence = z.infer<typeof presenceSchema>;
+
+export const meSchema = z.object({
+  id: z.uuid(),
+  email: identityEmail,
+  username: identityUsername,
+  display_name: profileDisplayName,
+  avatar_url: z.url().nullable().optional(),
+  presence: presenceSchema.nullable().optional(),
+  created_at: z.iso.datetime(),
+  updated_at: z.iso.datetime(),
+});
+
+export type Me = z.infer<typeof meSchema>;
