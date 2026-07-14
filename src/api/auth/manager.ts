@@ -24,7 +24,7 @@ class AuthManager implements HttpAuthManager {
     try {
       return await this.refreshAccessToken();
     } catch {
-      console.warn("[AuthSession] Automatic restore session failed.");
+      console.warn("[AuthManager] Automatic restore session failed.");
       this.clearTokens();
       return null;
     }

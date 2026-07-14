@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { HttpRequestOptions } from "./request";
 import { API_ERROR_CODES, isProblemDetails } from "./errors";
+import { authManager } from "../auth";
 
 export interface HttpMiddleware {
   name: string;
@@ -72,11 +73,11 @@ export interface HttpAuthManager {
 
 export class AuthMiddleware implements HttpMiddleware {
   public readonly name = "AuthMiddleware";
-  private authManager: HttpAuthManager;
+  // private authManager: HttpAuthManager;
 
-  constructor(authManager: HttpAuthManager) {
-    this.authManager = authManager;
-  }
+  // constructor(authManager: HttpAuthManager) {
+  //   this.authManager = authManager;
+  // }
 
   async beforeRequest<T extends z.ZodTypeAny>(
     options: HttpRequestOptions<T>,
@@ -84,7 +85,7 @@ export class AuthMiddleware implements HttpMiddleware {
   ) {
     if (!options.protected) return;
 
-    const token = this.authManager.getAccessToken();
+    const token = authManager.getAccessToken();
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }
@@ -109,12 +110,12 @@ export class AuthMiddleware implements HttpMiddleware {
 
       if (!isExpired) return;
 
-      const newToken = await this.authManager.refreshAccessToken();
+      const newToken = await authManager.refreshAccessToken();
       if (!newToken) throw new Error("Token refresh failed.");
 
       return await retry();
     } catch (error) {
-      await this.authManager.clearTokens();
+      await authManager.clearTokens();
       throw error;
     }
   }

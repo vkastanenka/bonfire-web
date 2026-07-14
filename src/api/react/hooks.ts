@@ -101,26 +101,27 @@ export function useGateway() {
     let isMounted = true;
 
     async function bootstrapLayoutData() {
-      try {
-        // Step 1: Execute static REST calls safely here (e.g., fetch user settings, channels)
-        // await useChannelStore.getState().fetchMeChannels();
-
-        // Step 2: Establish the stateful network pipe once structural models exist in memory
-        if (isMounted) {
-          initializeGateway("online");
-        }
-      } catch (err) {
-        console.error(
-          "[App Switchboard] Resource mapping halted root state resolution:",
-          err,
-        );
+      if (isMounted) {
+        initializeGateway("online");
       }
     }
 
     bootstrapLayoutData();
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        console.log("[Gateway] Tab focused. Restoring connection...");
+        initializeGateway("online");
+      } else {
+        console.log("[Gateway] Tab backgrounded.");
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       isMounted = false;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       terminateGateway();
     };
   }, [initializeGateway, terminateGateway]);

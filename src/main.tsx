@@ -15,7 +15,7 @@ import "@fontsource/quicksand/700.css";
 
 import { routeTree } from "./routeTree.gen";
 import { toast, ToastProvider } from "./lib";
-import { ApiNetworkError, tokenProvider } from "@/api";
+import { ApiNetworkError, authManager } from "@/api";
 
 declare module "@tanstack/react-query" {
   interface Register {
@@ -38,7 +38,7 @@ const handleGlobalError = (error: unknown) => {
   }
 };
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
       if (query.meta?.skipGlobalToast) return;
@@ -71,7 +71,7 @@ declare module "@tanstack/react-router" {
 }
 
 const App = () => {
-  const accessToken = tokenProvider.getAccessToken();
+  const accessToken = authManager.getAccessToken();
   const isAuthenticated = !!accessToken;
 
   return (

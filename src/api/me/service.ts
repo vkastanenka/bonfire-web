@@ -23,4 +23,6 @@ class MeService {
   };
 }
 
-export const meService = new MeService(httpClient.scope("/users", "MeService"));
+export const meService = new MeService(
+  httpClient.scope("/users", "MeService"),
+);

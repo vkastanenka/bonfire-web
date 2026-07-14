@@ -163,6 +163,14 @@ export async function httpRequest<T extends z.ZodTypeAny>(
     const rawData = await executeCall();
     const parsed = options.schema.safeParse(rawData);
     if (!parsed.success) {
+      console.groupCollapsed(
+        `🚨 [${serviceName} Contract Validation Failed] at ${options.method} ${options.url}`,
+      );
+      console.error("Validation Errors:", parsed.error.format()); // Formatted errors (field by field)
+      console.info("Raw Payload Received:", rawData); // The actual JSON from Go
+      console.dir(parsed.error.issues); // Raw Zod issues array
+      console.groupEnd();
+
       throw new ResponseValidationError(
         parsed.error,
         "Contract failed.",

@@ -9,8 +9,8 @@ export const meSchema = z.object({
   display_name: displayNameSchema,
   avatar_url: z.url().nullable().optional(),
   presence: presenceSchema.nullable().optional(),
-  created_at: z.iso.datetime(),
-  updated_at: z.iso.datetime(),
+  created_at: z.iso.datetime({ offset: true }),
+  updated_at: z.iso.datetime({ offset: true }),
 });
 
 export type Me = z.infer<typeof meSchema>;

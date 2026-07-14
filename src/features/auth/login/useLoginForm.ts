@@ -8,7 +8,6 @@ import {
   ApiNetworkError,
   type LoginRequest,
 } from "@/api";
-import { sessionManager } from "@/api/auth/manager";
 
 export const useLoginForm = () => {
   const navigate = useNavigate();
@@ -30,7 +29,6 @@ export const useLoginForm = () => {
           "Login successful! Access token acquired:",
           res.access_token,
         );
-        sessionManager.setAccessToken(res.access_token);
         navigate({ to: "/channels/@me" });
       },
       onError: (err) => {
