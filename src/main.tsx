@@ -15,8 +15,7 @@ import "@fontsource/quicksand/700.css";
 
 import { routeTree } from "./routeTree.gen";
 import { toast, ToastProvider } from "./lib";
-import { ApiNetworkError } from "@/api";
-import { getAccessToken } from "./api/core/store";
+import { ApiNetworkError, tokenProvider } from "@/api";
 
 declare module "@tanstack/react-query" {
   interface Register {
@@ -72,7 +71,7 @@ declare module "@tanstack/react-router" {
 }
 
 const App = () => {
-  const accessToken = getAccessToken();
+  const accessToken = tokenProvider.getAccessToken();
   const isAuthenticated = !!accessToken;
 
   return (

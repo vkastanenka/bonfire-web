@@ -1,29 +1,29 @@
 import { z } from "zod";
 import { API_ERROR_CODES, isProblemDetails } from "./errors";
-import type { BonfireHttpRequestOptions } from "./request";
+import type { HttpRequestOptions } from "./request";
 import type { sessionManager } from "../session";
 
-export interface BonfireHttpMiddleware {
+export interface HttpMiddleware {
   name: string;
 
   beforeRequest?<T extends z.ZodTypeAny>(
-    options: BonfireHttpRequestOptions<T>,
+    options: HttpRequestOptions<T>,
     headers: Headers,
   ): Promise<void> | void;
 
   onResponseSuccess?<T extends z.ZodTypeAny>(
     response: Response,
-    options: BonfireHttpRequestOptions<T>,
+    options: HttpRequestOptions<T>,
   ): Promise<void> | void;
 
   onResponseError?<T extends z.ZodTypeAny>(
     response: Response,
-    options: BonfireHttpRequestOptions<T>,
+    options: HttpRequestOptions<T>,
     retry: () => Promise<unknown>,
   ): Promise<unknown> | void;
 }
 
-export class AuthMiddleware implements BonfireHttpMiddleware {
+export class AuthMiddleware implements HttpMiddleware {
   public readonly name = "AuthMiddleware";
   private session: typeof sessionManager;
 
@@ -32,7 +32,7 @@ export class AuthMiddleware implements BonfireHttpMiddleware {
   }
 
   async beforeRequest<T extends z.ZodTypeAny>(
-    options: BonfireHttpRequestOptions<T>,
+    options: HttpRequestOptions<T>,
     headers: Headers,
   ) {
     if (!options.protected) return;
@@ -45,7 +45,7 @@ export class AuthMiddleware implements BonfireHttpMiddleware {
 
   async onResponseError<T extends z.ZodTypeAny>(
     response: Response,
-    options: BonfireHttpRequestOptions<T>,
+    options: HttpRequestOptions<T>,
     retry: () => Promise<unknown>,
   ) {
     if (response.status !== 401 || !options.protected) return;
@@ -73,7 +73,7 @@ export class AuthMiddleware implements BonfireHttpMiddleware {
   }
 }
 
-export class RetryMiddleware implements BonfireHttpMiddleware {
+export class RetryMiddleware implements HttpMiddleware {
   public readonly name = "RetryMiddleware";
   private maxRetries: number;
 
@@ -85,13 +85,13 @@ export class RetryMiddleware implements BonfireHttpMiddleware {
     this.maxRetries = maxRetries;
   }
 
-  private getKey(options: BonfireHttpRequestOptions<z.ZodTypeAny>): string {
+  private getKey(options: HttpRequestOptions<z.ZodTypeAny>): string {
     return `${options.method}:${options.url}`;
   }
 
   async onResponseSuccess<T extends z.ZodTypeAny>(
     _response: Response,
-    options: BonfireHttpRequestOptions<T>,
+    options: HttpRequestOptions<T>,
   ) {
     const key = this.getKey(options);
     this.attempts.delete(key);
@@ -104,7 +104,7 @@ export class RetryMiddleware implements BonfireHttpMiddleware {
 
   async onResponseError<T extends z.ZodTypeAny>(
     response: Response,
-    options: BonfireHttpRequestOptions<T>,
+    options: HttpRequestOptions<T>,
     retry: () => Promise<unknown>,
   ) {
     if (options.skipRetry) return;

@@ -4,14 +4,14 @@ import {
   mapFetchToProblem,
   ResponseValidationError,
 } from "./errors";
-import type { BonfireHttpMiddleware } from "./middleware";
+import type { HttpMiddleware } from "./middleware";
 
-interface BonfireHttpRequestContext {
+interface HttpRequestContext {
   baseURL: string;
-  middleware: BonfireHttpMiddleware[];
+  middleware: HttpMiddleware[];
 }
 
-export interface BonfireHttpRequestOptions<T extends z.ZodTypeAny> {
+export interface HttpRequestOptions<T extends z.ZodTypeAny> {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   url: string;
   schema: T;
@@ -27,16 +27,16 @@ export interface BonfireHttpRequestOptions<T extends z.ZodTypeAny> {
   skipRetry?: boolean;
 }
 
-export interface BonfireHttpRequestMeta {
+export interface HttpRequestMeta {
   serviceName: string;
 }
 
-export async function bonfireHttpRequest<T extends z.ZodTypeAny>(
-  context: BonfireHttpRequestContext,
-  options: BonfireHttpRequestOptions<T>,
-  meta?: BonfireHttpRequestMeta,
+export async function httpRequest<T extends z.ZodTypeAny>(
+  context: HttpRequestContext,
+  options: HttpRequestOptions<T>,
+  meta?: HttpRequestMeta,
 ): Promise<z.infer<T>> {
-  const serviceName = meta?.serviceName || "BonfireHttpClient";
+  const serviceName = meta?.serviceName || "HttpClient";
 
   const fullUrl = new URL(
     `${context.baseURL}/${options.url.replace(/^\//, "")}`,
@@ -59,7 +59,7 @@ export async function bonfireHttpRequest<T extends z.ZodTypeAny>(
     attemptCount++;
     if (attemptCount > 5) {
       throw new ApiNetworkError({
-        type: "https://api.bonfire.com/errors/cascade-breakdown",
+        type: "https://api..com/errors/cascade-breakdown",
         title: "Request Cascade Loop Detected",
         status: 0,
         detail:

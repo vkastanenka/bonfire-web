@@ -1,7 +1,7 @@
-import { useAppInitializer } from "@/api/react/ws.hooks";
+// import { useGateway } from "@/api";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
-  useAppInitializer();
+  // useGateway();
 
   return <>{children}</>;
 };

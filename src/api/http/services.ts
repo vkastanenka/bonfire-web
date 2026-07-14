@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { httpClient, type BonfireScopedClient } from "./client";
+import { httpClient, type ScopedClient } from "./client";
 import {
   registerResponseSchema,
   type RegisterRequest,
@@ -12,47 +12,17 @@ import {
   type RefreshResponse,
   refreshResponseSchema,
 } from "../http/schema";
-import type { BonfireHttpRequestOptions } from "./request";
+import type { HttpRequestOptions } from "./request";
 
 export type ServiceOptions = Omit<
-  BonfireHttpRequestOptions<z.ZodTypeAny>,
+  HttpRequestOptions<z.ZodTypeAny>,
   "method" | "url" | "schema" | "data"
 >;
 
-export abstract class BaseService {
-  private readonly client: BonfireScopedClient;
-
-  constructor(client: BonfireScopedClient) {
-    this.client = client;
-  }
-
-  protected async request<T extends z.ZodTypeAny>({
-    method,
-    url,
-    schema,
-    data,
-    options,
-  }: {
-    method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-    url: string;
-    schema: T;
-    data?: unknown;
-    options?: ServiceOptions;
-  }): Promise<z.infer<T>> {
-    return this.client({
-      method,
-      url,
-      schema,
-      data,
-      ...options,
-    });
-  }
-}
-
 class AuthService {
-  private readonly client: BonfireScopedClient;
+  private readonly client: ScopedClient;
 
-  constructor(client: BonfireScopedClient) {
+  constructor(client: ScopedClient) {
     this.client = client;
   }
 
