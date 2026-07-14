@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { identityEmail, identityUsername, profileDisplayName } from "../http";
+import { emailSchema, usernameSchema, displayNameSchema } from "../pkg";
 import { presenceSchema } from "../presence";
 
 export const meSchema = z.object({
   id: z.uuid(),
-  email: identityEmail,
-  username: identityUsername,
-  display_name: profileDisplayName,
+  email: emailSchema,
+  username: usernameSchema,
+  display_name: displayNameSchema,
   avatar_url: z.url().nullable().optional(),
   presence: presenceSchema.nullable().optional(),
   created_at: z.iso.datetime(),

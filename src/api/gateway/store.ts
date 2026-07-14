@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { gatewayManager, type GatewayStatus, type Presence } from "./manager";
-import { useAuthStore } from "../tokens/store";
+import { useTokenStore } from "../auth/tokens";
 
 interface GatewayState {
   status: GatewayStatus;
@@ -56,7 +56,7 @@ export const useGatewayStore = create<GatewayState>((set) => ({
   },
 }));
 
-useAuthStore.subscribe((state) => {
+useTokenStore.subscribe((state) => {
   if (!state.accessToken) {
     gatewayManager.disconnect();
   }

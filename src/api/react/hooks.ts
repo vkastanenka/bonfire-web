@@ -3,17 +3,18 @@ import {
   useQuery,
   type UseMutationOptions,
 } from "@tanstack/react-query";
-import { authService, userService } from "../http/services";
 import type { ApiNetworkError, ResponseValidationError } from "../http/errors";
 import type {
   RegisterRequest,
   RegisterResponse,
   LoginRequest,
   LoginResponse,
-} from "../http/schema";
+} from "../auth";
 import { useGatewayStore } from "../gateway/store";
 import { useEffect } from "react";
-import { tokenProvider } from "../tokens";
+import { setAccessToken } from "../auth/tokens";
+import { authService } from "../auth";
+import { meService } from "../me/service";
 
 export const authKeys = {
   all: ["auth"] as const,
@@ -35,7 +36,7 @@ export const useLogin = (
     mutationFn: (data: LoginRequest) => authService.login(data),
     onSuccess: (res: LoginResponse) => {
       if (res.access_token) {
-        tokenProvider.setAccessToken(res.access_token);
+        setAccessToken(res.access_token);
       }
     },
     ...options,
@@ -56,7 +57,7 @@ export const useRegister = (
     mutationFn: (data: RegisterRequest) => authService.register(data),
     onSuccess: (res: RegisterResponse) => {
       if (res.access_token) {
-        tokenProvider.setAccessToken(res.access_token);
+        setAccessToken(res.access_token);
       }
     },
     ...options,
@@ -70,7 +71,7 @@ export const meKeys = {
 export function useMe(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: meKeys.all,
-    queryFn: () => userService.getMe(),
+    queryFn: () => meService.get(),
     staleTime: Infinity,
     ...options,
   });

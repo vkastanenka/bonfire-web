@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { httpConfig } from "./config";
 import {
-  AuthMiddleware,
+  // AuthMiddleware,
   LoggingMiddleware,
   RetryMiddleware,
   type HttpMiddleware,
@@ -11,17 +11,17 @@ import {
   type HttpRequestMeta,
   type HttpRequestOptions,
 } from "./request";
-import { sessionManager } from "../session";
+// import { sessionManager } from "../session";
 
-export type ScopedRequest<T extends z.ZodTypeAny = z.ZodTypeAny> = Omit<
+export type HttpScopedRequest<T extends z.ZodTypeAny = z.ZodTypeAny> = Omit<
   HttpRequestOptions<T>,
   "url"
 > & {
   url?: string;
 };
 
-export type ScopedClient = <T extends z.ZodTypeAny>(
-  request: ScopedRequest<T>,
+export type HttpScopedClient = <T extends z.ZodTypeAny>(
+  request: HttpScopedRequest<T>,
 ) => Promise<z.infer<T>>;
 
 export class HttpClient {
@@ -44,9 +44,9 @@ export class HttpClient {
     );
   }
 
-  public scope(baseUrl: string, serviceName = "HttpClient"): ScopedClient {
+  public scope(baseUrl: string, serviceName = "HttpClient"): HttpScopedClient {
     return <T extends z.ZodTypeAny>(
-      subOptions: ScopedRequest<T>,
+      subOptions: HttpScopedRequest<T>,
     ): Promise<z.infer<T>> => {
       const combinedUrl = `${baseUrl}/${subOptions.url ?? ""}`.replace(
         /\/+/g,
@@ -62,7 +62,7 @@ export const httpClient = new HttpClient({
   baseURL: httpConfig.baseURL,
   middleware: [
     new LoggingMiddleware(),
-    new AuthMiddleware(sessionManager),
+    // new AuthMiddleware(sessionManager),
     new RetryMiddleware(3),
   ],
 });

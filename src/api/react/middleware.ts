@@ -1,15 +1,11 @@
 import { redirect } from "@tanstack/react-router";
-import { sessionManager } from "../session/manager";
-import { getAccessToken } from "../tokens";
-import { authService } from "../http";
+import { getAccessToken, authManager } from "../auth";
 
 export function requireAuth(options: { redirectTo?: string } = {}) {
   const { redirectTo = "/login" } = options;
 
   return async ({ location }: { location: { href: string } }) => {
-    const token = await sessionManager.restore(() =>
-      authService.refresh({ skipRetry: true }),
-    );
+    const token = await authManager.restoreSession();
 
     if (!token) {
       throw redirect({

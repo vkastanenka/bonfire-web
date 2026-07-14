@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { API_ERROR_CODES, isProblemDetails } from "./errors";
+// import { API_ERROR_CODES, isProblemDetails } from "./errors";
 import type { HttpRequestOptions } from "./request";
-import type { sessionManager } from "../session";
+// import type { sessionManager } from "../session";
 
 export interface HttpMiddleware {
   name: string;
@@ -65,55 +65,55 @@ export class LoggingMiddleware implements HttpMiddleware {
   }
 }
 
-export class AuthMiddleware implements HttpMiddleware {
-  public readonly name = "AuthMiddleware";
-  private session: typeof sessionManager;
+// export class AuthMiddleware implements HttpMiddleware {
+//   public readonly name = "AuthMiddleware";
+//   private session: typeof sessionManager;
 
-  constructor(session: typeof sessionManager) {
-    this.session = session;
-  }
+//   constructor(session: typeof sessionManager) {
+//     this.session = session;
+//   }
 
-  async beforeRequest<T extends z.ZodTypeAny>(
-    options: HttpRequestOptions<T>,
-    headers: Headers,
-  ) {
-    if (!options.protected) return;
+//   async beforeRequest<T extends z.ZodTypeAny>(
+//     options: HttpRequestOptions<T>,
+//     headers: Headers,
+//   ) {
+//     if (!options.protected) return;
 
-    const token = await this.session.getAccessToken();
-    if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
-    }
-  }
+//     const token = await this.session.getAccessToken();
+//     if (token) {
+//       headers.set("Authorization", `Bearer ${token}`);
+//     }
+//   }
 
-  async onResponseError<T extends z.ZodTypeAny>(
-    response: Response,
-    options: HttpRequestOptions<T>,
-    retry: () => Promise<unknown>,
-  ) {
-    if (response.status !== 401 || !options.protected) return;
+//   async onResponseError<T extends z.ZodTypeAny>(
+//     response: Response,
+//     options: HttpRequestOptions<T>,
+//     retry: () => Promise<unknown>,
+//   ) {
+//     if (response.status !== 401 || !options.protected) return;
 
-    try {
-      const errorBody = await response
-        .clone()
-        .json()
-        .catch(() => null);
+//     try {
+//       const errorBody = await response
+//         .clone()
+//         .json()
+//         .catch(() => null);
 
-      const isExpired =
-        isProblemDetails(errorBody) &&
-        errorBody.code === API_ERROR_CODES.TOKEN_EXPIRED;
+//       const isExpired =
+//         isProblemDetails(errorBody) &&
+//         errorBody.code === API_ERROR_CODES.TOKEN_EXPIRED;
 
-      if (!isExpired) return;
+//       if (!isExpired) return;
 
-      const newToken = await this.session.refreshAccessToken();
-      if (!newToken) throw new Error("Token refresh failed.");
+//       const newToken = await this.session.refreshAccessToken();
+//       if (!newToken) throw new Error("Token refresh failed.");
 
-      return await retry();
-    } catch (error) {
-      await this.session.handleSessionExpired();
-      throw error;
-    }
-  }
-}
+//       return await retry();
+//     } catch (error) {
+//       await this.session.handleSessionExpired();
+//       throw error;
+//     }
+//   }
+// }
 
 export class RetryMiddleware implements HttpMiddleware {
   public readonly name = "RetryMiddleware";

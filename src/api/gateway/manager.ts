@@ -1,4 +1,4 @@
-import { authService } from "../http/services";
+import { authService } from "../auth";
 
 export type GatewayStatus =
   | "CONNECTING"

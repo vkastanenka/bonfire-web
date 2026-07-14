@@ -6,7 +6,7 @@ interface TokenState {
   clearTokens: () => void;
 }
 
-const useTokenStore = create<TokenState>((set) => ({
+export const useTokenStore = create<TokenState>((set) => ({
   accessToken: null,
   setAccessToken: (accessToken) => set({ accessToken }),
   clearTokens: () => set({ accessToken: null }),

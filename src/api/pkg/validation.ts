@@ -60,20 +60,6 @@ z.config({
   },
 });
 
-export const usernameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9_.]?[a-zA-Z0-9])+$/;
-
-export const identityEmail = z.email().max(255);
-
-export const identityUsername = z
-  .string()
-  .min(3)
-  .max(32)
-  .regex(usernameRegex, ERROR_TEMPLATES.username);
-
-export const identityPassword = z.string().min(12).max(255);
-
-export const profileDisplayName = z.string().min(3).max(32);
-
 export const emptyToUndefined = <T extends z.ZodString>(stringSchema: T) =>
   z
     .string()
@@ -81,43 +67,16 @@ export const emptyToUndefined = <T extends z.ZodString>(stringSchema: T) =>
     .transform((val) => (val?.trim() === "" ? undefined : val))
     .pipe(stringSchema.optional());
 
-export const registerRequestSchema = z.object({
-  email: identityEmail,
-  display_name: emptyToUndefined(profileDisplayName),
-  username: identityUsername,
-  password: identityPassword,
-});
+export const usernameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9_.]?[a-zA-Z0-9])+$/;
 
-export type RegisterRequest = z.infer<typeof registerRequestSchema>;
+export const emailSchema = z.email().max(255);
 
-export const registerResponseSchema = z.object({
-  access_token: z.string(),
-});
+export const usernameSchema = z
+  .string()
+  .min(3)
+  .max(32)
+  .regex(usernameRegex, ERROR_TEMPLATES.username);
 
-export type RegisterResponse = z.infer<typeof registerResponseSchema>;
+export const passwordSchema = z.string().min(12).max(255);
 
-export const loginRequestSchema = z.object({
-  email: identityEmail,
-  password: identityPassword,
-});
-
-export type LoginRequest = z.infer<typeof loginRequestSchema>;
-
-export const loginResponseSchema = z.object({
-  access_token: z.string(),
-});
-
-export type LoginResponse = z.infer<typeof loginResponseSchema>;
-
-export const refreshResponseSchema = z.object({
-  access_token: z.string(),
-});
-
-export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
-
-export const wsTicketResponseSchema = z.object({
-  ticket: z.uuid(),
-});
-
-export type WSTicketResponse = z.infer<typeof wsTicketResponseSchema>;
-
+export const displayNameSchema = z.string().min(3).max(32);

@@ -31,6 +31,11 @@ export interface HttpRequestMeta {
   serviceName: string;
 }
 
+export type HttpServiceRequestOptions = Omit<
+  HttpRequestOptions<z.ZodTypeAny>,
+  "method" | "url" | "schema" | "data"
+>;
+
 export async function httpRequest<T extends z.ZodTypeAny>(
   context: HttpRequestContext,
   options: HttpRequestOptions<T>,
