@@ -8,7 +8,7 @@ import {
   ApiNetworkError,
   type LoginRequest,
 } from "@/api";
-import { sessionManager } from "@/api/auth/manager";
+import { sessionManager } from "@/api/auth/session";
 
 export const useLoginForm = () => {
   const navigate = useNavigate();

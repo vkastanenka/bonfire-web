@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { httpConfig } from "./config";
 import {
-  // AuthMiddleware,
+  AuthMiddleware,
   LoggingMiddleware,
   RetryMiddleware,
   type HttpMiddleware,
@@ -11,7 +11,7 @@ import {
   type HttpRequestMeta,
   type HttpRequestOptions,
 } from "./request";
-// import { sessionManager } from "../session";
+import { authSession } from "../auth";
 
 export type HttpScopedRequest<T extends z.ZodTypeAny = z.ZodTypeAny> = Omit<
   HttpRequestOptions<T>,
@@ -62,7 +62,7 @@ export const httpClient = new HttpClient({
   baseURL: httpConfig.baseURL,
   middleware: [
     new LoggingMiddleware(),
-    // new AuthMiddleware(sessionManager),
+    new AuthMiddleware(authSession),
     new RetryMiddleware(3),
   ],
 });

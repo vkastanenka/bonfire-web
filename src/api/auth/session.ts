@@ -1,17 +1,22 @@
 import { authService } from "./service";
 import { getAccessToken, setAccessToken, clearTokens } from "./tokens";
 
-class AuthManager {
+export interface IAuthSession {
+  restore(): Promise<string | null>;
+  refreshAccessToken(): Promise<string | null>;
+}
+
+class AuthSession implements IAuthSession {
   private activeRefreshPromise: Promise<string | null> | null = null;
 
-  public async restoreSession(): Promise<string | null> {
+  public async restore(): Promise<string | null> {
     const activeToken = getAccessToken();
     if (activeToken) return activeToken;
 
     try {
       return await this.refreshAccessToken();
     } catch {
-      console.warn("[AuthManager] Automatic session bootstrap failed.");
+      console.warn("[AuthSession] Automatic restore session failed.");
       clearTokens();
       return null;
     }
@@ -39,4 +44,4 @@ class AuthManager {
   }
 }
 
-export const authManager = new AuthManager();
+export const authSession = new AuthSession();
