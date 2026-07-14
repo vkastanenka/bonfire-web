@@ -24,7 +24,11 @@ export function requireGuest(options: { redirectTo?: string } = {}) {
   const { redirectTo = "/channels/@me" } = options;
 
   return async () => {
-    const token = await sessionManager.getAccessToken();
+    const token = sessionManager.getAccessToken();
+
+    // if (!token) {
+    //   token = await sessionManager.bootstrapSession();
+    // }
 
     if (token) {
       throw redirect({

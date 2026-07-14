@@ -23,6 +23,48 @@ export interface HttpMiddleware {
   ): Promise<unknown> | void;
 }
 
+export class LoggingMiddleware implements HttpMiddleware {
+  public readonly name = "LoggingMiddleware";
+  private startTimes = new WeakMap<HttpRequestOptions<z.ZodTypeAny>, number>();
+
+  async beforeRequest<T extends z.ZodTypeAny>(options: HttpRequestOptions<T>) {
+    if (process.env.NODE_ENV === "production") return;
+
+    this.startTimes.set(options, performance.now());
+    console.log(
+      `[HTTP Request] ${options.method.toUpperCase()} ${options.url}`,
+    );
+  }
+
+  async onResponseSuccess<T extends z.ZodTypeAny>(
+    response: Response,
+    options: HttpRequestOptions<T>,
+  ) {
+    if (process.env.NODE_ENV === "production") return;
+
+    const startTime = this.startTimes.get(options) || performance.now();
+    const duration = (performance.now() - startTime).toFixed(0);
+
+    console.log(
+      `[HTTP Success] ${options.method.toUpperCase()} ${options.url} | Status: ${response.status} | Took: ${duration}ms`,
+    );
+  }
+
+  async onResponseError<T extends z.ZodTypeAny>(
+    response: Response,
+    options: HttpRequestOptions<T>,
+  ) {
+    if (process.env.NODE_ENV === "production") return;
+
+    const startTime = this.startTimes.get(options) || performance.now();
+    const duration = (performance.now() - startTime).toFixed(0);
+
+    console.error(
+      `[HTTP Error] ${options.method.toUpperCase()} ${options.url} | Status: ${response.status} | Took: ${duration}ms`,
+    );
+  }
+}
+
 export class AuthMiddleware implements HttpMiddleware {
   public readonly name = "AuthMiddleware";
   private session: typeof sessionManager;

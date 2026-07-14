@@ -2,6 +2,7 @@ import { z } from "zod";
 import { httpConfig } from "./config";
 import {
   AuthMiddleware,
+  LoggingMiddleware,
   RetryMiddleware,
   type HttpMiddleware,
 } from "./middleware";
@@ -14,9 +15,9 @@ import { sessionManager } from "../session";
 
 export type ScopedRequest<T extends z.ZodTypeAny = z.ZodTypeAny> = Omit<
   HttpRequestOptions<T>,
-  "path"
+  "url"
 > & {
-  path?: string;
+  url?: string;
 };
 
 export type ScopedClient = <T extends z.ZodTypeAny>(
@@ -47,7 +48,7 @@ export class HttpClient {
     return <T extends z.ZodTypeAny>(
       subOptions: ScopedRequest<T>,
     ): Promise<z.infer<T>> => {
-      const combinedUrl = `${baseUrl}/${subOptions.path ?? ""}`.replace(
+      const combinedUrl = `${baseUrl}/${subOptions.url ?? ""}`.replace(
         /\/+/g,
         "/",
       );
@@ -59,5 +60,9 @@ export class HttpClient {
 
 export const httpClient = new HttpClient({
   baseURL: httpConfig.baseURL,
-  middleware: [new AuthMiddleware(sessionManager), new RetryMiddleware(3)],
+  middleware: [
+    new LoggingMiddleware(),
+    new AuthMiddleware(sessionManager),
+    new RetryMiddleware(3),
+  ],
 });

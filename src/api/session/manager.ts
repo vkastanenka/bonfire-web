@@ -7,12 +7,16 @@ class SessionManager {
   private bootstrapPromise: Promise<RefreshResponse | null> | null = null;
   private refreshPromise: Promise<RefreshResponse | null> | null = null;
 
-  public async getAccessToken(): Promise<string | null> {
+  public getAccessToken(): string | null {
     return tokenProvider.getAccessToken();
   }
 
-  public async handleSessionExpired(): Promise<void> {
-    await tokenProvider.clearSession();
+  public setAccessToken(token: string): void {
+    tokenProvider.setAccessToken(token);
+  }
+
+  public handleSessionExpired(): void {
+    tokenProvider.clearSession();
   }
 
   public async bootstrapSession(): Promise<string | null> {

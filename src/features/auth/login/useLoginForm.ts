@@ -7,8 +7,8 @@ import {
   loginRequestSchema,
   ApiNetworkError,
   type LoginRequest,
-  tokenProvider,
 } from "@/api";
+import { sessionManager } from "@/api/session";
 
 export const useLoginForm = () => {
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ export const useLoginForm = () => {
           "Login successful! Access token acquired:",
           res.access_token,
         );
-        tokenProvider.setAccessToken(res.access_token);
+        sessionManager.setAccessToken(res.access_token);
         navigate({ to: "/channels/@me" });
       },
       onError: (err) => {
