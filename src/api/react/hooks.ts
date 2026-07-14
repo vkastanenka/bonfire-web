@@ -2,6 +2,7 @@ import {
   useMutation,
   useQuery,
   type UseMutationOptions,
+  type UseQueryOptions,
 } from "@tanstack/react-query";
 import type { ApiNetworkError, ResponseValidationError } from "../http/errors";
 import type {
@@ -14,6 +15,8 @@ import { useGatewayStore } from "../gateway/store";
 import { useEffect } from "react";
 import { authManager, authService } from "../auth";
 import { meService } from "../me/service";
+import { meManager } from "../me/manager";
+import type { Me } from "../me";
 
 export const authKeys = {
   all: ["auth"] as const,
@@ -65,16 +68,30 @@ export const useRegister = (
 
 export const meKeys = {
   all: ["me"] as const,
+  get: () => [...meKeys.all, "get"] as const,
 };
 
-export function useMe(options?: { enabled?: boolean }) {
-  return useQuery({
-    queryKey: meKeys.all,
+export const useMe = (
+  options?: Omit<
+    UseQueryOptions<Me, ApiNetworkError | ResponseValidationError>,
+    "queryKey" | "queryFn"
+  >,
+) => {
+  const query = useQuery({
+    queryKey: meKeys.get(),
     queryFn: () => meService.get(),
-    staleTime: Infinity,
+    staleTime: 1000 * 60 * 5,
     ...options,
   });
-}
+
+  useEffect(() => {
+    if (query.data) {
+      meManager.set(query.data);
+    }
+  }, [query.data]);
+
+  return query;
+};
 
 export function useGateway() {
   const initializeGateway = useGatewayStore((state) => state.initializeGateway);
