@@ -1,6 +1,6 @@
 // api/session/manager.ts
 import { authService } from "../http/services";
-import { bonfireTokenProvider } from "../tokens";
+import { tokenProvider } from "../tokens";
 import type { RefreshResponse } from "../http/schema";
 
 class SessionManager {
@@ -8,15 +8,15 @@ class SessionManager {
   private refreshPromise: Promise<RefreshResponse | null> | null = null;
 
   public async getAccessToken(): Promise<string | null> {
-    return bonfireTokenProvider.getAccessToken();
+    return tokenProvider.getAccessToken();
   }
 
   public async handleSessionExpired(): Promise<void> {
-    await bonfireTokenProvider.clearSession();
+    await tokenProvider.clearSession();
   }
 
   public async bootstrapSession(): Promise<string | null> {
-    const activeToken = await bonfireTokenProvider.getAccessToken();
+    const activeToken = await tokenProvider.getAccessToken();
     if (activeToken) return activeToken;
 
     if (this.bootstrapPromise) {
@@ -27,13 +27,13 @@ class SessionManager {
     this.bootstrapPromise = (async () => {
       try {
         const data = await authService.refresh({ skipRetry: true });
-        await bonfireTokenProvider.setAccessToken(data.access_token);
+        await tokenProvider.setAccessToken(data.access_token);
         return data;
       } catch {
         console.warn(
           "[SessionManager] Auto-session restoration skipped or invalid token cookie.",
         );
-        await bonfireTokenProvider.clearSession();
+        await tokenProvider.clearSession();
         return null;
       }
     })();
@@ -57,7 +57,7 @@ class SessionManager {
     this.refreshPromise = (async () => {
       try {
         const data = await authService.refresh({ skipRetry: true });
-        await bonfireTokenProvider.setAccessToken(data.access_token);
+        await tokenProvider.setAccessToken(data.access_token);
         return data;
       } catch (error) {
         this.handleSessionExpired();

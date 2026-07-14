@@ -1,4 +1,3 @@
-// api/tokens/provider.ts
 import { getAccessToken, setAccessToken, clearAuth } from "./store";
 
 export class BonfireTokenProvider {
@@ -15,4 +14,4 @@ export class BonfireTokenProvider {
   }
 }
 
-export const bonfireTokenProvider = new BonfireTokenProvider();
+export const tokenProvider = new BonfireTokenProvider();

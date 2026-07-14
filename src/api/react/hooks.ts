@@ -7,9 +7,9 @@ import type {
   LoginRequest,
   LoginResponse,
 } from "../http/schema";
-import { useTokenStore } from "./WebStrategy";
 import { useGatewayStore } from "../gateway/store";
 import { useEffect } from "react";
+import { tokenProvider } from "../tokens";
 
 export const authKeys = {
   all: ["auth"] as const,
@@ -26,14 +26,12 @@ export const useLogin = (
     >
   >,
 ) => {
-  const { setAccessToken } = useTokenStore();
-
   return useMutation({
     mutationKey: authKeys.login(),
     mutationFn: (data: LoginRequest) => authService.login(data),
     onSuccess: (res: LoginResponse) => {
       if (res.access_token) {
-        setAccessToken(res.access_token);
+        tokenProvider.setAccessToken(res.access_token);
       }
     },
     ...options,
@@ -49,14 +47,12 @@ export const useRegister = (
     >
   >,
 ) => {
-  const { setAccessToken } = useTokenStore();
-
   return useMutation({
     mutationKey: authKeys.register(),
     mutationFn: (data: RegisterRequest) => authService.register(data),
     onSuccess: (res: RegisterResponse) => {
       if (res.access_token) {
-        setAccessToken(res.access_token);
+        tokenProvider.setAccessToken(res.access_token);
       }
     },
     ...options,

@@ -1,5 +1,5 @@
 // routes/_auth.tsx
-import { requireAuth } from "@/api/http/guards";
+import { requireAuth } from "@/api";
 import { AuthProvider } from "@/api/react/AuthProvider";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
