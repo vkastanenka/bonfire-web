@@ -1,11 +1,11 @@
 import { authService } from "../auth";
+import { type Presence } from "../presence";
 
 export type GatewayStatus =
   | "CONNECTING"
   | "CONNECTED"
   | "DISCONNECTED"
   | "RECONNECTING";
-export type Presence = "online" | "idle" | "dnd" | "invisible";
 
 export interface GatewayMessage<T = unknown> {
   t: string;

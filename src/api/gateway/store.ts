@@ -1,6 +1,7 @@
 import { create } from "zustand";
-import { gatewayManager, type GatewayStatus, type Presence } from "./manager";
-import { useTokenStore } from "../auth/tokens";
+import { useTokenStore } from "../auth";
+import { type Presence } from "../presence";
+import { gatewayManager, type GatewayStatus } from "./manager";
 
 interface GatewayState {
   status: GatewayStatus;
