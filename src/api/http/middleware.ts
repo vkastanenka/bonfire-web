@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { API_ERROR_CODES, isProblemDetails } from "./errors";
-import { type BonfireTokenProvider } from "./tokens";
 import type { BonfireHttpRequestOptions } from "./request";
+import type { sessionManager } from "../session";
 
 export interface BonfireHttpMiddleware {
   name: string;
@@ -25,10 +25,10 @@ export interface BonfireHttpMiddleware {
 
 export class AuthMiddleware implements BonfireHttpMiddleware {
   public readonly name = "AuthMiddleware";
-  private provider: BonfireTokenProvider;
+  private session: typeof sessionManager;
 
-  constructor(provider: BonfireTokenProvider) {
-    this.provider = provider;
+  constructor(session: typeof sessionManager) {
+    this.session = session;
   }
 
   async beforeRequest<T extends z.ZodTypeAny>(
@@ -37,7 +37,7 @@ export class AuthMiddleware implements BonfireHttpMiddleware {
   ) {
     if (!options.protected) return;
 
-    const token = await this.provider.getAccessToken();
+    const token = await this.session.getAccessToken();
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }
@@ -62,12 +62,12 @@ export class AuthMiddleware implements BonfireHttpMiddleware {
 
       if (!isExpired) return;
 
-      const newToken = await this.provider.refreshAccessToken();
+      const newToken = await this.session.refreshAccessToken();
       if (!newToken) throw new Error("Token refresh failed.");
 
       return await retry();
     } catch (error) {
-      await this.provider.onSessionExpired();
+      await this.session.handleSessionExpired();
       throw error;
     }
   }
@@ -75,15 +75,31 @@ export class AuthMiddleware implements BonfireHttpMiddleware {
 
 export class RetryMiddleware implements BonfireHttpMiddleware {
   public readonly name = "RetryMiddleware";
-  private maxRetries = 0;
+  private maxRetries: number;
 
-  private attempts = new WeakMap<
-    BonfireHttpRequestOptions<z.ZodTypeAny>,
-    number
-  >();
+  private attempts = new Map<string, number>();
+
+  private timers = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(maxRetries = 3) {
     this.maxRetries = maxRetries;
+  }
+
+  private getKey(options: BonfireHttpRequestOptions<z.ZodTypeAny>): string {
+    return `${options.method}:${options.url}`;
+  }
+
+  async onResponseSuccess<T extends z.ZodTypeAny>(
+    _response: Response,
+    options: BonfireHttpRequestOptions<T>,
+  ) {
+    const key = this.getKey(options);
+    this.attempts.delete(key);
+
+    if (this.timers.has(key)) {
+      clearTimeout(this.timers.get(key));
+      this.timers.delete(key);
+    }
   }
 
   async onResponseError<T extends z.ZodTypeAny>(
@@ -96,10 +112,20 @@ export class RetryMiddleware implements BonfireHttpMiddleware {
     const retryableStatuses = [429, 502, 503, 504];
     if (!retryableStatuses.includes(response.status)) return;
 
-    const currentAttempt = this.attempts.get(options) ?? 0;
+    const key = this.getKey(options);
+    const currentAttempt = this.attempts.get(key) ?? 0;
 
     if (currentAttempt < this.maxRetries) {
-      this.attempts.set(options, currentAttempt + 1);
+      this.attempts.set(key, currentAttempt + 1);
+
+      if (this.timers.has(key)) clearTimeout(this.timers.get(key));
+      this.timers.set(
+        key,
+        setTimeout(() => {
+          this.attempts.delete(key);
+          this.timers.delete(key);
+        }, 5000),
+      );
 
       const delay = Math.pow(2, currentAttempt) * 100 + Math.random() * 50;
       await new Promise((res) => setTimeout(res, delay));

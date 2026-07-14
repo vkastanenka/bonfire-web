@@ -78,14 +78,18 @@ export async function bonfireHttpRequest<T extends z.ZodTypeAny>(
       }
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     let response: Response;
 
     try {
       response = await fetch(fullUrl.toString(), {
         method: options.method,
-        signal: options.signal,
+        signal: options.signal || controller.signal,
         cache: options.cache,
         headers,
+        credentials: "include",
         body: options.data ? JSON.stringify(options.data) : undefined,
       });
     } catch (networkError) {
@@ -98,6 +102,8 @@ export async function bonfireHttpRequest<T extends z.ZodTypeAny>(
         ...problem,
         detail: `Network communication failed: ${(networkError as Error).message}`,
       });
+    } finally {
+      clearTimeout(timeoutId);
     }
 
     if (!response.ok) {

@@ -1,22 +1,15 @@
 import { redirect } from "@tanstack/react-router";
-import { tokenProvider } from "../http/tokens";
+import { sessionManager } from "../session/manager";
 
-/**
- * Route middleware to enforce authenticated sessions.
- */
 export function requireAuth(options: { redirectTo?: string } = {}) {
   const { redirectTo = "/login" } = options;
 
   return async ({ location }: { location: { href: string } }) => {
-    let token = await tokenProvider.getAccessToken();
-
-    // If memory token missing, trigger the thread-safe provider refresh method
-    if (!token) {
-      token = await tokenProvider.refreshAccessToken();
-    }
+    const token = await sessionManager.bootstrapSession();
 
     if (!token) {
-      await tokenProvider.onSessionExpired();
+      await sessionManager.handleSessionExpired();
+
       throw redirect({
         to: redirectTo,
         search: {
@@ -27,14 +20,12 @@ export function requireAuth(options: { redirectTo?: string } = {}) {
   };
 }
 
-/**
- * Route middleware to restrict access to unauthenticated guests only.
- */
 export function requireGuest(options: { redirectTo?: string } = {}) {
   const { redirectTo = "/channels/@me" } = options;
 
   return async () => {
-    const token = await tokenProvider.getAccessToken();
+    const token = await sessionManager.getAccessToken();
+
     if (token) {
       throw redirect({
         to: redirectTo,

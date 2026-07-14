@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { httpConfig } from "./config";
-import { tokenProvider } from "./tokens";
 import {
   AuthMiddleware,
   RetryMiddleware,
@@ -11,6 +10,7 @@ import {
   type BonfireHttpRequestMeta,
   type BonfireHttpRequestOptions,
 } from "./request";
+import { sessionManager } from "../session";
 
 export type BonfireScopedRequest<T extends z.ZodTypeAny = z.ZodTypeAny> = Omit<
   BonfireHttpRequestOptions<T>,
@@ -65,7 +65,7 @@ export class BonfireHttpClient {
 
 export const httpClient = new BonfireHttpClient({
   baseURL: httpConfig.baseURL,
-  middleware: [new AuthMiddleware(tokenProvider), new RetryMiddleware(3)],
+  middleware: [new AuthMiddleware(sessionManager), new RetryMiddleware(3)],
 });
 
 // import axios, {

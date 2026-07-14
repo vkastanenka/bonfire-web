@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { httpClient, type BonfireScopedClient } from "./client";
 import {
   registerResponseSchema,
@@ -11,19 +12,55 @@ import {
   type RefreshResponse,
   refreshResponseSchema,
 } from "../http/schema";
+import type { BonfireHttpRequestOptions } from "./request";
+
+export type ServiceOptions = Omit<
+  BonfireHttpRequestOptions<z.ZodTypeAny>,
+  "method" | "url" | "schema" | "data"
+>;
+
+export abstract class BaseService {
+  private readonly client: BonfireScopedClient;
+
+  constructor(client: BonfireScopedClient) {
+    this.client = client;
+  }
+
+  protected async request<T extends z.ZodTypeAny>({
+    method,
+    url,
+    schema,
+    data,
+    options,
+  }: {
+    method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+    url: string;
+    schema: T;
+    data?: unknown;
+    options?: ServiceOptions;
+  }): Promise<z.infer<T>> {
+    return this.client({
+      method,
+      url,
+      schema,
+      data,
+      ...options,
+    });
+  }
+}
 
 class AuthService {
-  private readonly request: BonfireScopedClient;
+  private readonly client: BonfireScopedClient;
 
-  constructor(request: BonfireScopedClient) {
-    this.request = request;
+  constructor(client: BonfireScopedClient) {
+    this.client = client;
   }
 
   public register = (
     data: RegisterRequest,
-    options?: { signal?: AbortSignal; headers?: Record<string, string> },
+    options?: ServiceOptions,
   ): Promise<RegisterResponse> => {
-    return this.request({
+    return this.client({
       method: "POST",
       url: "/register",
       data,
@@ -34,9 +71,9 @@ class AuthService {
 
   public login = (
     data: LoginRequest,
-    options?: { signal?: AbortSignal; headers?: Record<string, string> },
+    options?: ServiceOptions,
   ): Promise<LoginResponse> => {
-    return this.request({
+    return this.client({
       method: "POST",
       url: "/login",
       data,
@@ -45,11 +82,8 @@ class AuthService {
     });
   };
 
-  public refresh = (options?: {
-    signal?: AbortSignal;
-    headers?: Record<string, string>;
-  }): Promise<RefreshResponse> => {
-    return this.request({
+  public refresh = (options?: ServiceOptions): Promise<RefreshResponse> => {
+    return this.client({
       method: "POST",
       url: "/refresh",
       schema: refreshResponseSchema,
@@ -57,11 +91,8 @@ class AuthService {
     });
   };
 
-  public wsTicket = (options?: {
-    signal?: AbortSignal;
-    headers?: Record<string, string>;
-  }): Promise<WSTicketResponse> => {
-    return this.request({
+  public wsTicket = (options?: ServiceOptions): Promise<WSTicketResponse> => {
+    return this.client({
       method: "POST",
       url: "/ws-ticket",
       schema: wsTicketResponseSchema,
