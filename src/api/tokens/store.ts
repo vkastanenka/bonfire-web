@@ -1,18 +1,18 @@
 import { create } from "zustand";
 
-interface AuthState {
+interface TokenState {
   accessToken: string | null;
   setAccessToken: (accessToken: string) => void;
-  clearAuth: () => void;
+  clearTokens: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+const useTokenStore = create<TokenState>((set) => ({
   accessToken: null,
   setAccessToken: (accessToken) => set({ accessToken }),
-  clearAuth: () => set({ accessToken: null }),
+  clearTokens: () => set({ accessToken: null }),
 }));
 
-export const getAccessToken = () => useAuthStore.getState().accessToken;
+export const getAccessToken = () => useTokenStore.getState().accessToken;
 export const setAccessToken = (token: string) =>
-  useAuthStore.getState().setAccessToken(token);
-export const clearAuth = () => useAuthStore.getState().clearAuth();
+  useTokenStore.getState().setAccessToken(token);
+export const clearTokens = () => useTokenStore.getState().clearTokens();

@@ -1,80 +1,45 @@
 // api/session/manager.ts
-import { authService } from "../http/services";
-import { tokenProvider } from "../tokens";
-import type { RefreshResponse } from "../http/schema";
+import { getAccessToken, setAccessToken, clearTokens } from "../tokens";
+
+export type RefreshFn = () => Promise<{ access_token: string }>;
 
 class SessionManager {
-  private bootstrapPromise: Promise<RefreshResponse | null> | null = null;
-  private refreshPromise: Promise<RefreshResponse | null> | null = null;
+  private activeRefreshPromise: Promise<string | null> | null = null;
 
-  public getAccessToken(): string | null {
-    return tokenProvider.getAccessToken();
-  }
-
-  public setAccessToken(token: string): void {
-    tokenProvider.setAccessToken(token);
-  }
-
-  public handleSessionExpired(): void {
-    tokenProvider.clearSession();
-  }
-
-  public async bootstrapSession(): Promise<string | null> {
-    const activeToken = await tokenProvider.getAccessToken();
+  public async restore(refreshFn: RefreshFn): Promise<string | null> {
+    const activeToken = getAccessToken();
     if (activeToken) return activeToken;
 
-    if (this.bootstrapPromise) {
-      const result = await this.bootstrapPromise;
-      return result?.access_token ?? null;
-    }
-
-    this.bootstrapPromise = (async () => {
-      try {
-        const data = await authService.refresh({ skipRetry: true });
-        await tokenProvider.setAccessToken(data.access_token);
-        return data;
-      } catch {
-        console.warn(
-          "[SessionManager] Auto-session restoration skipped or invalid token cookie.",
-        );
-        await tokenProvider.clearSession();
-        return null;
-      }
-    })();
-
     try {
-      const result = await this.bootstrapPromise;
-      return result?.access_token ?? null;
+      return await this.refreshAccessToken(refreshFn);
     } catch {
+      console.warn("[SessionManager] Automatic session bootstrap failed.");
+      await clearTokens();
       return null;
-    } finally {
-      this.bootstrapPromise = null;
     }
   }
 
-  public async refreshAccessToken(): Promise<string | null> {
-    if (this.refreshPromise) {
-      const result = await this.refreshPromise;
-      return result?.access_token ?? null;
+  public async refreshAccessToken(
+    refreshFn: RefreshFn,
+  ): Promise<string | null> {
+    if (this.activeRefreshPromise) {
+      return this.activeRefreshPromise;
     }
 
-    this.refreshPromise = (async () => {
+    this.activeRefreshPromise = (async () => {
       try {
-        const data = await authService.refresh({ skipRetry: true });
-        await tokenProvider.setAccessToken(data.access_token);
-        return data;
+        const data = await refreshFn();
+        setAccessToken(data.access_token);
+        return data.access_token;
       } catch (error) {
-        this.handleSessionExpired();
+        clearTokens();
         throw error;
+      } finally {
+        this.activeRefreshPromise = null;
       }
     })();
 
-    try {
-      const result = await this.refreshPromise;
-      return result?.access_token ?? null;
-    } finally {
-      this.refreshPromise = null;
-    }
+    return this.activeRefreshPromise;
   }
 }
 
