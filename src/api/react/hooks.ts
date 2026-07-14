@@ -12,8 +12,7 @@ import type {
 } from "../auth";
 import { useGatewayStore } from "../gateway/store";
 import { useEffect } from "react";
-import { setAccessToken } from "../auth/tokens";
-import { authService } from "../auth";
+import { authManager, authService } from "../auth";
 import { meService } from "../me/service";
 
 export const authKeys = {
@@ -36,7 +35,7 @@ export const useLogin = (
     mutationFn: (data: LoginRequest) => authService.login(data),
     onSuccess: (res: LoginResponse) => {
       if (res.access_token) {
-        setAccessToken(res.access_token);
+        authManager.setAccessToken(res.access_token);
       }
     },
     ...options,
@@ -57,7 +56,7 @@ export const useRegister = (
     mutationFn: (data: RegisterRequest) => authService.register(data),
     onSuccess: (res: RegisterResponse) => {
       if (res.access_token) {
-        setAccessToken(res.access_token);
+        authManager.setAccessToken(res.access_token);
       }
     },
     ...options,

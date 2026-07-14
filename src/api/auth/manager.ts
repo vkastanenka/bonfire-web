@@ -1,23 +1,31 @@
+import type { HttpAuthManager } from "../http/middleware";
 import { authService } from "./service";
-import { getAccessToken, setAccessToken, clearTokens } from "./tokens";
+import { useTokenStore } from "./tokens";
 
-export interface IAuthSession {
-  restore(): Promise<string | null>;
-  refreshAccessToken(): Promise<string | null>;
-}
-
-class AuthSession implements IAuthSession {
+class AuthManager implements HttpAuthManager {
   private activeRefreshPromise: Promise<string | null> | null = null;
 
+  public getAccessToken(): string | null {
+    return useTokenStore.getState().accessToken;
+  }
+
+  public setAccessToken(token: string): void {
+    useTokenStore.getState().setAccessToken(token);
+  }
+
+  public clearTokens(): void {
+    useTokenStore.getState().clearTokens();
+  }
+
   public async restore(): Promise<string | null> {
-    const activeToken = getAccessToken();
+    const activeToken = this.getAccessToken();
     if (activeToken) return activeToken;
 
     try {
       return await this.refreshAccessToken();
     } catch {
       console.warn("[AuthSession] Automatic restore session failed.");
-      clearTokens();
+      this.clearTokens();
       return null;
     }
   }
@@ -30,10 +38,10 @@ class AuthSession implements IAuthSession {
     this.activeRefreshPromise = (async () => {
       try {
         const data = await authService.refresh();
-        setAccessToken(data.access_token);
+        this.setAccessToken(data.access_token);
         return data.access_token;
       } catch {
-        clearTokens();
+        this.clearTokens();
         return null;
       } finally {
         this.activeRefreshPromise = null;
@@ -44,4 +52,4 @@ class AuthSession implements IAuthSession {
   }
 }
 
-export const authSession = new AuthSession();
+export const authManager = new AuthManager();

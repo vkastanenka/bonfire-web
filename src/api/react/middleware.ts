@@ -1,11 +1,11 @@
 import { redirect } from "@tanstack/react-router";
-import { getAccessToken, authSession } from "../auth";
+import { authManager } from "../auth";
 
 export function requireAuth(options: { redirectTo?: string } = {}) {
   const { redirectTo = "/login" } = options;
 
   return async ({ location }: { location: { href: string } }) => {
-    const token = await authSession.restore();
+    const token = await authManager.restore();
 
     if (!token) {
       throw redirect({
@@ -22,7 +22,7 @@ export function requireGuest(options: { redirectTo?: string } = {}) {
   const { redirectTo = "/channels/@me" } = options;
 
   return async () => {
-    const token = getAccessToken();
+    const token = authManager.getAccessToken();
 
     // if (!token) {
     //   token = await sessionManager.bootstrapSession();
