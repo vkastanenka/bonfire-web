@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { gatewayManager, type GatewayStatus, type Presence } from "./manager";
-import { useAuthStore } from "../tokens/store"; // Clean downstream import boundary
+import { useAuthStore } from "../tokens/store";
 
 interface GatewayState {
   status: GatewayStatus;
@@ -56,11 +56,6 @@ export const useGatewayStore = create<GatewayState>((set) => ({
   },
 }));
 
-/**
- * INVERSION OF CONTROL EVENT SUBSCRIBER
- * We tap into your auth store globally outside of React.
- * Whenever the token changes to `null`, the gateway tears itself down automatically.
- */
 useAuthStore.subscribe((state) => {
   if (!state.accessToken) {
     gatewayManager.disconnect();

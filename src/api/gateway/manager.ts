@@ -20,20 +20,21 @@ interface GatewayConfig {
   initialPresence?: Presence;
 }
 
-/**
- * Pure function to construct the secure real-time gateway link.
- */
 export function buildGatewayUrl(ticketId: string, presence: Presence): string {
   const httpUrl =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-  const wsBaseUrl = httpUrl.replace(/^http/, "ws");
 
-  const searchParams = new URLSearchParams({
-    ticket_id: ticketId,
-    presence: presence,
-  });
+  const url = new URL(httpUrl);
+  // Convert http/https to ws/wss safely
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
 
-  return `${wsBaseUrl}/gateway/ws?${searchParams.toString()}`;
+  // Normalize path appending
+  url.pathname = `${url.pathname.replace(/\/$/, "")}/gateway/ws`;
+
+  url.searchParams.set("ticket_id", ticketId);
+  url.searchParams.set("presence", presence);
+
+  return url.toString();
 }
 
 export class GatewayManager {
@@ -93,9 +94,6 @@ export class GatewayManager {
     const currentVersion = this.connectionVersion;
 
     try {
-      // 1. SELF-CLEANING PROMISE PATTERN:
-      // We initialize the promise and ensure it clears its own cache footprint ONLY when
-      // it completely settles (resolves or rejects).
       if (!this.activeTicketPromise) {
         this.activeTicketPromise = this.config.getTicket().finally(() => {
           this.activeTicketPromise = null;
@@ -104,33 +102,27 @@ export class GatewayManager {
 
       const ticketId = await this.activeTicketPromise;
 
-      // 2. WATERPROOF RACE GUARD:
       if (
         this.forcedClose ||
         this.status === "DISCONNECTED" ||
         this.connectionVersion !== currentVersion
       ) {
         console.log(
-          "[Gateway] Stale connection attempt superseded. Aborting sequence.",
+          "[Gateway] Stale connection sequence superseded. Aborting stream initialization.",
         );
         return;
       }
 
-      console.log("gateway ticketID", ticketId);
-      // const wsUrl = buildGatewayUrl(ticketId, this.presence);
+      const wsUrl = buildGatewayUrl(ticketId, this.presence);
 
-      // this.ws = new WebSocket(wsUrl);
-      // this.setupEventListeners();
+      this.ws = new WebSocket(wsUrl);
+      this.setupEventListeners();
     } catch (error) {
       if (this.connectionVersion === currentVersion) {
         if (!this.forcedClose) {
-          console.error(
-            "[Gateway] Handshake extraction or setup failure:",
-            error,
-          );
+          console.error("[Gateway] Connection sequence failed:", error);
 
-          // 3. CIRCUIT BREAKER CHECK:
-          // Safely intercept rate-limiting exceptions to avoid cascading request loops
+          // Detect rate limits from network error structure (e.g. 429)
           const isRateLimit =
             error instanceof Error &&
             (error.message.includes("429") ||
@@ -146,15 +138,18 @@ export class GatewayManager {
     this.forcedClose = true;
     this.connectionVersion++;
 
-    // CRITICAL FIX: Do NOT set this.activeTicketPromise = null here anymore.
-    // By keeping it intact across unmounts, the synchronous React remount cycle
-    // will safely discover and latch onto the existing, active in-flight promise.
-
     this.clearTimeouts();
     this.updateStatus("DISCONNECTED");
 
     if (this.ws) {
-      this.ws.close(1000, "Normal Closure");
+      // Safe guard socket state closure
+      if (
+        this.ws.readyState === WebSocket.OPEN ||
+        this.ws.readyState === WebSocket.CONNECTING
+      ) {
+        this.ws.close(1000, "Normal Closure");
+      }
+      this.cleanupSocket();
       this.ws = null;
     }
     this.reconnectAttempts = 0;
@@ -172,7 +167,7 @@ export class GatewayManager {
     if (!this.ws) return;
 
     this.ws.onopen = () => {
-      console.log("[Gateway] Pipeline stream running.");
+      console.log("[Gateway] Real-time stream established.");
       this.updateStatus("CONNECTED");
       this.reconnectAttempts = 0;
       this.startWatchdog();
@@ -186,17 +181,26 @@ export class GatewayManager {
           this.messageListeners.forEach((listener) => listener(message));
         }
       } catch (err) {
-        console.error("[Gateway] Message broadcast exception:", err);
+        console.error("[Gateway] Message broadcast processing exception:", err);
       }
     };
 
     this.ws.onclose = (event) => {
-      console.log(`[Gateway] Pipeline closed (${event.code})`);
+      console.log(`[Gateway] Stream terminated by host (Code: ${event.code})`);
       this.cleanupSocket();
-      if (!this.forcedClose) this.handleReconnect();
+      if (!this.forcedClose) {
+        this.handleReconnect();
+      }
     };
 
-    this.ws.onerror = () => {};
+    this.ws.onerror = (err) => {
+      // Browsers intentionally hide error details from JS WS APIs for security reasons.
+      // We rely on the subsequent onclose hook to run the recovery strategy.
+      console.debug(
+        "[Gateway] Transport channel encountered a pipeline exception:",
+        err,
+      );
+    };
   }
 
   private handleReconnect(isRateLimit = false): void {
@@ -204,8 +208,6 @@ export class GatewayManager {
     this.updateStatus("RECONNECTING");
     this.cleanupSocket();
 
-    // 4. BACKOFF ENFORCEMENT:
-    // If we're hit with a 429, back off aggressively (minimum 5 seconds) to allow the backend rate limits to cool down
     const baseDelay = isRateLimit
       ? Math.max(5000, this.baseReconnectDelay)
       : this.baseReconnectDelay;
@@ -214,10 +216,11 @@ export class GatewayManager {
       this.maxReconnectDelay,
       baseDelay * Math.pow(2, this.reconnectAttempts),
     );
+    // Add simple jitter to spread cluster attempts on backend reconnection
     const jitteredDelay = delay + Math.random() * 1000;
 
     console.log(
-      `[Gateway] Reconnect scheduled in ${Math.round(jitteredDelay)}ms (Rate Limited: ${isRateLimit})`,
+      `[Gateway] Stream recovery scheduled in ${Math.round(jitteredDelay)}ms (Rate Limited: ${isRateLimit})`,
     );
 
     this.reconnectTimeoutId = setTimeout(() => {
@@ -229,17 +232,24 @@ export class GatewayManager {
   private startWatchdog(): void {
     this.clearWatchdog();
     this.heartbeatTimeoutId = setTimeout(() => {
-      if (this.ws) this.ws.close(4000, "Heartbeat Timeout");
+      console.warn(
+        "[Gateway] Keep-alive threshold exceeded. Severing pipeline.",
+      );
+      if (this.ws) {
+        this.ws.close(4000, "Heartbeat Timeout");
+      }
     }, this.watchdogTimeout);
   }
 
   private feedWatchdog(): void {
     this.startWatchdog();
   }
+
   private clearWatchdog(): void {
     if (this.heartbeatTimeoutId) clearTimeout(this.heartbeatTimeoutId);
     this.heartbeatTimeoutId = null;
   }
+
   private clearTimeouts(): void {
     this.clearWatchdog();
     if (this.reconnectTimeoutId) clearTimeout(this.reconnectTimeoutId);
