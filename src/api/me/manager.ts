@@ -1,6 +1,8 @@
+// api/me/manager.ts
 import type { Presence } from "../presence";
 import type { Me } from "./schema";
 import { useMeStore, type UpdateProfileParams } from "./store";
+import { gatewayManager } from "../gateway/manager";
 
 class MeManager {
   public get() {
@@ -17,6 +19,7 @@ class MeManager {
 
   public updatePresence(presence: Presence | null): void {
     useMeStore.getState().updatePresence(presence);
+    gatewayManager.syncPresence();
   }
 
   public clear(): void {

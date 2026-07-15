@@ -17,6 +17,8 @@ import { authManager, authService } from "../auth";
 import { meService } from "../me/service";
 import { meManager } from "../me/manager";
 import type { Me } from "../me";
+import { activityTracker } from "../presence";
+import { gatewayManager } from "../gateway/manager";
 
 export const authKeys = {
   all: ["auth"] as const,
@@ -96,24 +98,35 @@ export const useMe = (
 export function useGateway() {
   const initializeGateway = useGatewayStore((state) => state.initializeGateway);
   const terminateGateway = useGatewayStore((state) => state.terminateGateway);
+  const setActivity = useGatewayStore((state) => state.setActivity);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function bootstrapLayoutData() {
+    // 1. Kickstart low-level browser interaction listeners
+    activityTracker.start();
+
+    // 2. Subscribe and stream activity tracker values into Zustand
+    const unsubscribeActivity = activityTracker.subscribe((status) => {
       if (isMounted) {
-        initializeGateway("online");
+        setActivity(status);
+        // Dispatch instant WS frame if we transition between online and idle
+        gatewayManager.syncPresence();
       }
+    });
+
+    // 3. Mount real-time websocket channel
+    if (isMounted) {
+      initializeGateway();
     }
 
-    bootstrapLayoutData();
-
+    // 4. Tab visibility focus mechanics
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        console.log("[Gateway] Tab focused. Restoring connection...");
-        initializeGateway("online");
-      } else {
-        console.log("[Gateway] Tab backgrounded.");
+        console.log("[Gateway] Tab focused. Synchronizing socket activity...");
+        // Fast recovery path: wake connection up if sleep severed it, then sync presence
+        initializeGateway();
+        gatewayManager.syncPresence();
       }
     };
 
@@ -121,8 +134,10 @@ export function useGateway() {
 
     return () => {
       isMounted = false;
+      unsubscribeActivity();
+      activityTracker.stop();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       terminateGateway();
     };
-  }, [initializeGateway, terminateGateway]);
+  }, [initializeGateway, terminateGateway, setActivity]);
 }

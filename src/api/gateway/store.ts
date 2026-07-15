@@ -1,22 +1,27 @@
+// api/gateway/store.ts
 import { create } from "zustand";
 import { useTokenStore } from "../auth";
-import { type Presence } from "../presence";
+import { Presence, type Activity } from "../presence";
 import { gatewayManager, type GatewayStatus } from "./manager";
 
 interface GatewayState {
   status: GatewayStatus;
-  initializeGateway: (initialPresence?: Presence) => void;
+  activity: Activity;
+  initializeGateway: () => void;
   terminateGateway: () => void;
   sendEvent: (type: string, data: unknown) => void;
-  updatePresence: (presence: Presence) => void;
+  setActivity: (activity: Activity) => void;
 }
 
 let listenersAttached = false;
 
 export const useGatewayStore = create<GatewayState>((set) => ({
   status: "DISCONNECTED",
+  activity: Presence.Online,
 
-  initializeGateway: (initialPresence = "online") => {
+  setActivity: (activity) => set({ activity }),
+
+  initializeGateway: () => {
     if (!listenersAttached) {
       gatewayManager.subscribeToStatus((status) => {
         set({ status });
@@ -39,7 +44,6 @@ export const useGatewayStore = create<GatewayState>((set) => ({
     }
 
     set({ status: gatewayManager.getStatus() });
-    gatewayManager.setPresence(initialPresence);
     gatewayManager.connect();
   },
 
@@ -49,11 +53,6 @@ export const useGatewayStore = create<GatewayState>((set) => ({
 
   sendEvent: (type, data) => {
     gatewayManager.send(type, data);
-  },
-
-  updatePresence: (presence) => {
-    gatewayManager.setPresence(presence);
-    gatewayManager.send("UPDATE_PRESENCE", { presence });
   },
 }));
 

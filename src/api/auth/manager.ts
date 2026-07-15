@@ -2,6 +2,7 @@ import type { HttpAuthManager } from "../http/middleware";
 import { authService } from "./service";
 import { useTokenStore } from "./tokens";
 
+// TODO: DI the store
 class AuthManager implements HttpAuthManager {
   private activeRefreshPromise: Promise<string | null> | null = null;
 
