@@ -19,7 +19,7 @@ export type HttpScopedRequest<T extends z.ZodTypeAny = z.ZodTypeAny> = Omit<
   url?: string;
 };
 
-export type HttpScopedClient = <T extends z.ZodTypeAny>(
+export type HttpScopedClient = <T extends z.ZodTypeAny = z.ZodTypeAny>(
   request: HttpScopedRequest<T>,
 ) => Promise<z.infer<T>>;
 
@@ -32,7 +32,7 @@ export class HttpClient {
     this.middleware = options.middleware || [];
   }
 
-  public async request<T extends z.ZodTypeAny>(
+  public async request<T extends z.ZodTypeAny = z.ZodTypeAny>(
     options: HttpRequestOptions<T>,
     meta?: HttpRequestMeta,
   ): Promise<z.infer<T>> {

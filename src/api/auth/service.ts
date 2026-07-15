@@ -14,6 +14,9 @@ import {
   loginResponseSchema,
   refreshResponseSchema,
   wsTicketResponseSchema,
+  type ForgotPasswordRequest,
+  type ResetPasswordRequest,
+  type VerifyEmailRequest,
 } from "./schema";
 
 class AuthService {
@@ -56,6 +59,54 @@ class AuthService {
       method: "POST",
       url: "/refresh",
       schema: refreshResponseSchema,
+      ...options,
+    });
+  };
+
+  public verify = (
+    data: VerifyEmailRequest,
+    options?: HttpServiceRequestOptions,
+  ): Promise<unknown> => {
+    return this.client({
+      method: "POST",
+      url: "/verify",
+      data,
+      protected: true,
+      ...options,
+    });
+  };
+
+  public resendVerify = (
+    options?: HttpServiceRequestOptions,
+  ): Promise<unknown> => {
+    return this.client({
+      method: "POST",
+      url: "/resend-verify",
+      protected: true,
+      ...options,
+    });
+  };
+
+  public forgotPassword = (
+    data: ForgotPasswordRequest,
+    options?: HttpServiceRequestOptions,
+  ): Promise<unknown> => {
+    return this.client({
+      method: "POST",
+      url: "/forgot-password",
+      data,
+      ...options,
+    });
+  };
+
+  public resetPassword = (
+    data: ResetPasswordRequest,
+    options?: HttpServiceRequestOptions,
+  ): Promise<unknown> => {
+    return this.client({
+      method: "POST",
+      url: "/reset-password",
+      data,
       ...options,
     });
   };

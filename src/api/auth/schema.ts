@@ -41,6 +41,25 @@ export const refreshResponseSchema = z.object({
 
 export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
 
+export const verifyEmailRequestSchema = z.object({
+  access_token: z.string(),
+});
+
+export type VerifyEmailRequest = z.infer<typeof verifyEmailRequestSchema>;
+
+export const forgotPasswordRequestSchema = z.object({
+  email: emailSchema,
+});
+
+export type ForgotPasswordRequest = z.infer<typeof forgotPasswordRequestSchema>;
+
+export const resetPasswordRequestSchema = z.object({
+  token: z.string(),
+  password: passwordSchema,
+});
+
+export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
+
 export const wsTicketResponseSchema = z.object({
   ticket: z.uuid(),
 });

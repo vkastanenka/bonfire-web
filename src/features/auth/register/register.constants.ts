@@ -19,6 +19,7 @@ export const FORM_FIELDS = {
     name: "email",
     id: "email-input",
     label: LABELS.email,
+    required: true,
   },
   display_name: {
     name: "display_name",
@@ -29,10 +30,12 @@ export const FORM_FIELDS = {
     name: "username",
     id: "username-input",
     label: LABELS.username,
+    required: true,
   },
   password: {
     name: "password",
     id: "password-input",
     label: LABELS.password,
+    required: true,
   },
 } as const;

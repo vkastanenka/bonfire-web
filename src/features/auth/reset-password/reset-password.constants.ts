@@ -15,5 +15,6 @@ export const FORM_FIELDS = {
     name: "password",
     id: "password-input",
     label: LABELS.password,
+    required: true,
   },
 } as const;

@@ -14,3 +14,9 @@ export const meSchema = z.object({
 });
 
 export type Me = z.infer<typeof meSchema>;
+
+export const verifyRequestSchema = z.object({
+  token: z.string(),
+});
+
+export type VerifyRequest = z.infer<typeof verifyRequestSchema>;

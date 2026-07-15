@@ -5,6 +5,7 @@ interface FormFieldProps extends StackProps {
   error: boolean;
   htmlFor: string;
   label: string;
+  required?: boolean;
 }
 
 export const FormField = ({
@@ -12,6 +13,7 @@ export const FormField = ({
   htmlFor,
   label,
   error,
+  required,
   sx,
   ...props
 }: FormFieldProps) => {
@@ -20,8 +22,9 @@ export const FormField = ({
       {label && (
         <InputLabel
           htmlFor={htmlFor}
-          sx={{ fontWeight: "bold", color: "text.primary" }}
+          required={required}
           error={error}
+          sx={{ fontWeight: "bold", color: "text.primary" }}
         >
           {label}
         </InputLabel>

@@ -14,7 +14,7 @@ interface HttpRequestContext {
 export interface HttpRequestOptions<T extends z.ZodTypeAny> {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   url: string;
-  schema: T;
+  schema?: T;
 
   signal?: AbortSignal;
   headers?: Record<string, string>;
@@ -36,7 +36,7 @@ export type HttpServiceRequestOptions = Omit<
   "method" | "url" | "schema" | "data"
 >;
 
-export async function httpRequest<T extends z.ZodTypeAny>(
+export async function httpRequest<T extends z.ZodTypeAny = z.ZodTypeAny>(
   context: HttpRequestContext,
   options: HttpRequestOptions<T>,
   meta?: HttpRequestMeta,
@@ -161,6 +161,11 @@ export async function httpRequest<T extends z.ZodTypeAny>(
 
   try {
     const rawData = await executeCall();
+
+    if (!options.schema) {
+      return rawData as z.infer<T>;
+    }
+
     const parsed = options.schema.safeParse(rawData);
     if (!parsed.success) {
       console.groupCollapsed(

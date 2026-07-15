@@ -31,7 +31,7 @@ export const useRegisterForm = () => {
           "Registration successful! Access token acquired:",
           serverResponse.access_token,
         );
-        navigate({ to: "/login" });
+        navigate({ to: "/channels/@me" });
       },
       onError: (err) => {
         if (err instanceof ApiNetworkError && err.isValidationFailure()) {

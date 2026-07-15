@@ -21,6 +21,7 @@ export const FormTextField = <TFieldValues extends FieldValues>({
   id,
   label,
   helperText,
+  required,
   ...props
 }: FormTextFieldProps<TFieldValues>) => {
   const { control } = useFormContext();
@@ -30,7 +31,12 @@ export const FormTextField = <TFieldValues extends FieldValues>({
       name={name}
       control={control}
       render={({ field, fieldState: { error } }) => (
-        <FormField htmlFor={id} label={label} error={!!error}>
+        <FormField
+          htmlFor={id}
+          label={label}
+          error={!!error}
+          required={required}
+        >
           <TextField
             variant="outlined"
             fullWidth
@@ -39,6 +45,7 @@ export const FormTextField = <TFieldValues extends FieldValues>({
             id={id}
             error={!!error}
             helperText={error ? error.message : helperText}
+            required={required}
           />
         </FormField>
       )}

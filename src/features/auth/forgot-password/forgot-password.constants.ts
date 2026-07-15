@@ -12,5 +12,6 @@ export const FORM_FIELDS = {
     name: "email",
     id: "email-input",
     label: LABELS.email,
+    required: true,
   },
 } as const;
