@@ -42,7 +42,7 @@ export const refreshResponseSchema = z.object({
 export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
 
 export const verifyEmailRequestSchema = z.object({
-  access_token: z.string(),
+  token: z.string(),
 });
 
 export type VerifyEmailRequest = z.infer<typeof verifyEmailRequestSchema>;
