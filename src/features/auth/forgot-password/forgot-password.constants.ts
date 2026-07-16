@@ -5,7 +5,7 @@ export const LABELS = {
   email: "Email Address",
   submit: "Send password reset email",
   login: "Don't need to reset your password? Log in",
-  titleSuccess: "Email has been sent",
+  titleSuccess: "Check your email",
   subtitleSuccess: "We've sent recovery instructions to your inbox.",
   loginSuccess: "Return to login",
 } as const;
