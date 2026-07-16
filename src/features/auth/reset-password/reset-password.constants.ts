@@ -7,7 +7,7 @@ export const LABELS = {
 } as const;
 
 export const VALIDATION_LABELS = {
-  password: "Password must be at least 6 characters long",
+  password: "Password must be at least 12 characters long",
 } as const;
 
 export const FORM_FIELDS = {

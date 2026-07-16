@@ -1,37 +1,52 @@
-import { useState } from "react";
+import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  resetPasswordSchema,
-  type ResetPasswordInputs,
-} from "./reset-password.validation";
+import { useNavigate } from "@tanstack/react-router";
+import { ApiNetworkError, useResetPassword } from "@/api";
+import { passwordSchema } from "@/api/pkg";
 
-export const useResetPasswordForm = () => {
-  const [apiError, setApiError] = useState<string | null>(null);
+const resetPasswordFormSchema = z.object({
+  password: passwordSchema,
+});
 
-  const methods = useForm<ResetPasswordInputs>({
-    resolver: zodResolver(resetPasswordSchema),
+export type TResetPasswordForm = z.infer<typeof resetPasswordFormSchema>;
+
+export const useResetPasswordForm = (token: string) => {
+  const navigate = useNavigate();
+
+  const methods = useForm<TResetPasswordForm>({
+    resolver: zodResolver(resetPasswordFormSchema),
     defaultValues: {
       password: "",
     },
   });
 
-  const onSubmit = async (data: ResetPasswordInputs) => {
-    setApiError(null);
+  const { mutate, isPending } = useResetPassword();
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Reset password successfully:", data);
-    } catch (err) {
-      setApiError(
-        err instanceof Error ? err.message : "Failed to reset password",
-      );
-      console.log(apiError);
-    }
+  const onSubmit = async (data: TResetPasswordForm) => {
+    const req = { token, password: data.password };
+    mutate(req, {
+      onSuccess: () => {
+        console.log("Reset Password Success!");
+        navigate({ to: "/channels/@me" });
+      },
+      onError: (err) => {
+        if (err instanceof ApiNetworkError && err.isValidationFailure()) {
+          console.log(err.details);
+          err.details.invalid_params?.forEach((param) => {
+            methods.setError(param.name as keyof TResetPasswordForm, {
+              type: "manual",
+              message: param.reason,
+            });
+          });
+        }
+      },
+    });
   };
 
   return {
     methods,
     onSubmit,
+    isPending,
   };
 };

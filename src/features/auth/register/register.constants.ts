@@ -9,9 +9,9 @@ export const LABELS = {
 } as const;
 
 export const VALIDATION_LABELS = {
-  displayName: "Display name must be at least 6 characters long",
-  username: "Username must be at least 6 characters long",
-  password: "Password must be at least 6 characters long",
+  displayName: "Display name must be at least 3 characters long",
+  username: "Username must be at least 12 characters long",
+  password: "Password must be at least 12 characters long",
 } as const;
 
 export const FORM_FIELDS = {

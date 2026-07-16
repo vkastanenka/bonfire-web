@@ -23,7 +23,7 @@ export const useForgotPasswordForm = () => {
   const onSubmit = (data: ForgotPasswordRequest) => {
     mutate(data, {
       onSuccess: () => {
-        console.log("Forgot Password success!");
+        console.log("Forgot Password Success!");
         setEmail(data.email);
       },
       onError: (err) => {
