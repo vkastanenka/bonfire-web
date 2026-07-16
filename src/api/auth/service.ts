@@ -17,6 +17,8 @@ import {
   type ForgotPasswordRequest,
   type ResetPasswordRequest,
   type VerifyEmailRequest,
+  type ResetPasswordResponse,
+  resetPasswordResponseSchema,
 } from "./schema";
 
 class AuthService {
@@ -102,10 +104,11 @@ class AuthService {
   public resetPassword = (
     data: ResetPasswordRequest,
     options?: HttpServiceRequestOptions,
-  ): Promise<unknown> => {
+  ): Promise<ResetPasswordResponse> => {
     return this.client({
       method: "POST",
       url: "/reset-password",
+      schema: resetPasswordResponseSchema,
       data,
       ...options,
     });

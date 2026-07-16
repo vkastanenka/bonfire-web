@@ -60,6 +60,12 @@ export const resetPasswordRequestSchema = z.object({
 
 export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
 
+export const resetPasswordResponseSchema = z.object({
+  access_token: z.string(),
+});
+
+export type ResetPasswordResponse = z.infer<typeof resetPasswordResponseSchema>;
+
 export const wsTicketResponseSchema = z.object({
   ticket: z.uuid(),
 });

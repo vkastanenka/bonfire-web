@@ -10,6 +10,10 @@ import type {
   RegisterResponse,
   LoginRequest,
   LoginResponse,
+  VerifyEmailRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
 } from "../auth";
 import { useGatewayStore } from "../gateway/store";
 import { useEffect } from "react";
@@ -24,6 +28,11 @@ export const authKeys = {
   all: ["auth"] as const,
   register: () => [...authKeys.all, "register"] as const,
   login: () => [...authKeys.all, "login"] as const,
+  verify: () => [...authKeys.all, "verify"] as const,
+  resendVerify: () => [...authKeys.all, "resendVerify"] as const,
+  forgotPassword: () => [...authKeys.all, "forgotPassword"] as const,
+  resetPassword: () => [...authKeys.all, "resetPassword"] as const,
+  wsTicket: () => [...authKeys.all, "wsTicket"] as const,
 };
 
 export const useLogin = (
@@ -39,7 +48,7 @@ export const useLogin = (
     mutationKey: authKeys.login(),
     mutationFn: (data: LoginRequest) => authService.login(data),
     onSuccess: (res: LoginResponse) => {
-      if (res.access_token) {
+      if (res?.access_token) {
         authManager.setAccessToken(res.access_token);
       }
     },
@@ -60,7 +69,73 @@ export const useRegister = (
     mutationKey: authKeys.register(),
     mutationFn: (data: RegisterRequest) => authService.register(data),
     onSuccess: (res: RegisterResponse) => {
-      if (res.access_token) {
+      if (res?.access_token) {
+        authManager.setAccessToken(res.access_token);
+      }
+    },
+    ...options,
+  });
+};
+
+export const useVerifyEmail = (
+  options?: Partial<
+    UseMutationOptions<
+      unknown,
+      ApiNetworkError | ResponseValidationError,
+      VerifyEmailRequest
+    >
+  >,
+) => {
+  return useMutation({
+    mutationKey: authKeys.verify(),
+    mutationFn: (data: VerifyEmailRequest) => authService.verify(data),
+    ...options,
+  });
+};
+
+export const useResendVerify = (
+  options?: Partial<
+    UseMutationOptions<unknown, ApiNetworkError | ResponseValidationError, void>
+  >,
+) => {
+  return useMutation({
+    mutationKey: authKeys.resendVerify(),
+    mutationFn: () => authService.resendVerify(),
+    ...options,
+  });
+};
+
+export const useForgotPassword = (
+  options?: Partial<
+    UseMutationOptions<
+      unknown,
+      ApiNetworkError | ResponseValidationError,
+      ForgotPasswordRequest
+    >
+  >,
+) => {
+  return useMutation({
+    mutationKey: authKeys.forgotPassword(),
+    mutationFn: (data: ForgotPasswordRequest) =>
+      authService.forgotPassword(data),
+    ...options,
+  });
+};
+
+export const useResetPassword = (
+  options?: Partial<
+    UseMutationOptions<
+      ResetPasswordResponse,
+      ApiNetworkError | ResponseValidationError,
+      ResetPasswordRequest
+    >
+  >,
+) => {
+  return useMutation({
+    mutationKey: authKeys.resetPassword(),
+    mutationFn: (data: ResetPasswordRequest) => authService.resetPassword(data),
+    onSuccess: (res: ResetPasswordResponse) => {
+      if (res?.access_token) {
         authManager.setAccessToken(res.access_token);
       }
     },
