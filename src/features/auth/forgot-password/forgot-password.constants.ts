@@ -5,6 +5,9 @@ export const LABELS = {
   email: "Email Address",
   submit: "Send password reset email",
   login: "Don't need to reset your password? Log in",
+  titleSuccess: "Email has been sent",
+  subtitleSuccess: "We've sent recovery instructions to your inbox.",
+  loginSuccess: "Return to login",
 } as const;
 
 export const FORM_FIELDS = {

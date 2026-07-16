@@ -2,38 +2,48 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  forgotPasswordSchema,
-  type ForgotPasswordInputs,
-} from "./forgot-password.validation";
+  ApiNetworkError,
+  forgotPasswordRequestSchema,
+  useForgotPassword,
+  type ForgotPasswordRequest,
+} from "@/api";
 
 export const useForgotPasswordForm = () => {
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
 
-  const methods = useForm<ForgotPasswordInputs>({
-    resolver: zodResolver(forgotPasswordSchema),
+  const methods = useForm<ForgotPasswordRequest>({
+    resolver: zodResolver(forgotPasswordRequestSchema),
     defaultValues: {
       email: "",
     },
   });
 
-  const onSubmit = async (data: ForgotPasswordInputs) => {
-    setApiError(null);
+  const { mutate, isPending } = useForgotPassword();
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Sent password reset email successfully:", data);
-    } catch (err) {
-      setApiError(
-        err instanceof Error
-          ? err.message
-          : "Failed to send password reset email",
-      );
-      console.log(apiError);
-    }
+  const onSubmit = (data: ForgotPasswordRequest) => {
+    mutate(data, {
+      onSuccess: () => {
+        console.log("Forgot Password success!");
+        setEmail(data.email);
+      },
+      onError: (err) => {
+        if (err instanceof ApiNetworkError && err.isValidationFailure()) {
+          console.log(err.details);
+          err.details.invalid_params?.forEach((param) => {
+            methods.setError(param.name as keyof ForgotPasswordRequest, {
+              type: "manual",
+              message: param.reason,
+            });
+          });
+        }
+      },
+    });
   };
 
   return {
     methods,
     onSubmit,
+    isPending,
+    email,
   };
 };
