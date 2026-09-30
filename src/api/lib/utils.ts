@@ -28,9 +28,29 @@ export const buildFullUrl = (
   return url;
 };
 
+/**
+ * Detects whether data is a native browser/Node body type that manages
+ * its own Content-Type (e.g., FormData sets multipart boundaries automatically).
+ */
+export const isNativeRequestBody = (data: unknown): boolean => {
+  if (data === null || data === undefined) return false;
+
+  return (
+    data instanceof FormData ||
+    data instanceof URLSearchParams ||
+    data instanceof Blob ||
+    data instanceof ArrayBuffer ||
+    ArrayBuffer.isView(data) // Catches TypedArrays like Uint8Array
+  );
+};
+
+/**
+ * Merges default and request-specific headers, automatically inferring
+ * or clearing Content-Type based on request payload type.
+ */
 export const buildHeaders = (
-  defaultHeaders?: Record<string, string>,
-  requestHeaders?: Record<string, string>,
+  defaultHeaders?: HeadersInit,
+  requestHeaders?: HeadersInit,
   data?: unknown,
 ): Headers => {
   const headers = new Headers(defaultHeaders);
@@ -41,15 +61,14 @@ export const buildHeaders = (
     });
   }
 
-  if (
-    data !== undefined &&
-    data !== null &&
-    !headers.has("Content-Type") &&
-    !(data instanceof FormData) &&
-    !(data instanceof URLSearchParams) &&
-    !(data instanceof Blob)
-  ) {
-    headers.set("Content-Type", "application/json");
+  // Handle Content-Type inference when payload exists
+  if (data !== undefined && data !== null) {
+    if (isNativeRequestBody(data)) {
+      // Allow fetch to auto-generate boundaries (e.g. multipart/form-data)
+      headers.delete("Content-Type");
+    } else if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
   }
 
   return headers;

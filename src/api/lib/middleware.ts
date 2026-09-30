@@ -1,9 +1,26 @@
 import type { z } from "zod";
-import type {
-  RequestContext,
-  RequestOptions,
-  RequestMiddleware,
-} from "./types";
+import type { RequestOptions, RequestContext } from "./request";
+
+export interface RequestMiddleware {
+  beforeRequest?<T extends z.ZodTypeAny>(
+    options: RequestOptions<T>,
+    context: RequestContext,
+    headers: Headers,
+  ): Promise<void> | void;
+
+  onResponseSuccess?<T extends z.ZodTypeAny>(
+    response: Response,
+    options: RequestOptions<T>,
+    context: RequestContext,
+  ): Promise<void> | void;
+
+  onResponseError?<T extends z.ZodTypeAny>(
+    response: Response,
+    options: RequestOptions<T>,
+    context: RequestContext,
+    retry: () => Promise<unknown>,
+  ): Promise<unknown> | void;
+}
 
 export class LoggingMiddleware implements RequestMiddleware {
   beforeRequest<T extends z.ZodTypeAny>(

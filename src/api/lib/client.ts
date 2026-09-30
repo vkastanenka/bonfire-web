@@ -1,19 +1,150 @@
 import type { z } from "zod";
-import type { ClientConfig, RequestOptions } from "./types";
-import { request } from "./request";
+import { type RequestOptions, request } from "./request";
+import type { RequestMiddleware } from "./middleware";
+import { buildHeaders } from "./utils";
+import { CLIENT_ERROR_CODES, CLIENT_ERROR_MESSAGES } from "./errors";
+import { AppError } from "@/lib";
 
-export class HttpClient {
-  private readonly config: Required<ClientConfig>;
+// TODO: ClientConfig /** Function or static string to resolve Bearer token */
+//   getAuthToken?: () => Promise<string | null> | string | null;
+
+export type CustomFetch = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<Response>;
+
+export interface ClientConfig {
+  baseUrl: string;
+  headers?: HeadersInit;
+  credentials?: RequestCredentials;
+  maxAttempts?: number;
+  timeout?: number;
+  protected?: boolean;
+  middleware?: RequestMiddleware[];
+  fetch?: CustomFetch;
+}
+
+export const DEFAULT_CLIENT_CONFIG = {
+  headers: {
+    Accept: "application/json",
+  },
+  credentials: "same-origin",
+  maxAttempts: 3,
+  timeout: 10_000,
+  protected: true,
+} as const satisfies Partial<ClientConfig>;
+
+export class Client {
+  public readonly config: Readonly<
+    Omit<Required<ClientConfig>, "headers"> & { headers: Headers }
+  >;
 
   constructor(config: ClientConfig) {
-    this.config = {
-      baseURL: config.baseURL,
-      credentials: config.credentials ?? "include",
-      headers: config.headers ?? {},
-      maxAttempts: config.maxAttempts ?? 3,
-      timeout: config.timeout ?? 10000,
-      middleware: config.middleware ?? [],
-    };
+    const fetchImpl = Client.resolveAndValidateFetch(config.fetch);
+    const baseUrl = Client.validateBaseUrl(config.baseUrl);
+    const timeout = Client.validateTimeout(config.timeout);
+    const maxAttempts = Client.validateMaxAttempts(config.maxAttempts);
+
+    this.config = Object.freeze({
+      baseUrl,
+      credentials: config.credentials ?? DEFAULT_CLIENT_CONFIG.credentials,
+      headers: buildHeaders(DEFAULT_CLIENT_CONFIG.headers, config.headers),
+      maxAttempts,
+      timeout,
+      middleware: [...(config.middleware ?? [])],
+      fetch: fetchImpl,
+      protected: config.protected ?? DEFAULT_CLIENT_CONFIG.protected,
+    });
+  }
+
+  private static resolveAndValidateFetch(
+    customFetch?: CustomFetch,
+  ): CustomFetch {
+    const fetchImpl = customFetch ?? globalThis.fetch?.bind(globalThis);
+
+    if (!fetchImpl || typeof fetchImpl !== "function") {
+      throw new AppError({
+        code: CLIENT_ERROR_CODES.MISSING_FETCH,
+        message: CLIENT_ERROR_MESSAGES[CLIENT_ERROR_CODES.MISSING_FETCH],
+        context: {
+          hasCustomFetch: Boolean(customFetch),
+          hasGlobalFetch: typeof globalThis.fetch !== "undefined",
+        },
+      });
+    }
+
+    return fetchImpl;
+  }
+
+  private static validateBaseUrl(baseUrl: unknown): string {
+    if (
+      !baseUrl ||
+      typeof baseUrl !== "string" ||
+      baseUrl.trim().length === 0
+    ) {
+      throw new AppError({
+        code: CLIENT_ERROR_CODES.INVALID_BASE_URL,
+        message: CLIENT_ERROR_MESSAGES[CLIENT_ERROR_CODES.INVALID_BASE_URL],
+        context: { providedBaseUrl: baseUrl },
+      });
+    }
+
+    try {
+      new URL(baseUrl, "https://placeholder.local");
+      return baseUrl;
+    } catch (cause) {
+      throw new AppError({
+        code: CLIENT_ERROR_CODES.INVALID_BASE_URL,
+        message: CLIENT_ERROR_MESSAGES[CLIENT_ERROR_CODES.INVALID_BASE_URL],
+        context: { providedBaseUrl: baseUrl },
+        cause,
+      });
+    }
+  }
+
+  private static validateTimeout(timeoutInput?: number): number {
+    const timeout = timeoutInput ?? DEFAULT_CLIENT_CONFIG.timeout;
+
+    if (
+      typeof timeout !== "number" ||
+      timeout <= 0 ||
+      !Number.isFinite(timeout)
+    ) {
+      throw new AppError({
+        code: CLIENT_ERROR_CODES.INVALID_TIMEOUT,
+        message: CLIENT_ERROR_MESSAGES[CLIENT_ERROR_CODES.INVALID_TIMEOUT],
+        context: { timeout: timeoutInput },
+      });
+    }
+
+    return timeout;
+  }
+
+  private static validateMaxAttempts(maxAttemptsInput?: number): number {
+    const maxAttempts = maxAttemptsInput ?? DEFAULT_CLIENT_CONFIG.maxAttempts;
+
+    if (
+      typeof maxAttempts !== "number" ||
+      maxAttempts < 1 ||
+      !Number.isInteger(maxAttempts)
+    ) {
+      throw new AppError({
+        code: CLIENT_ERROR_CODES.INVALID_MAX_ATTEMPTS,
+        message: CLIENT_ERROR_MESSAGES[CLIENT_ERROR_CODES.INVALID_MAX_ATTEMPTS],
+        context: { maxAttempts: maxAttemptsInput },
+      });
+    }
+
+    return maxAttempts;
+  }
+
+  public extend(overrides: Partial<ClientConfig>): Client {
+    return new Client({
+      ...this.config,
+      ...overrides,
+      headers: buildHeaders(this.config.headers, overrides.headers),
+      middleware: [...this.config.middleware, ...(overrides.middleware ?? [])],
+    });
   }
 
   public async request<T extends z.ZodTypeAny = z.ZodTypeAny>(

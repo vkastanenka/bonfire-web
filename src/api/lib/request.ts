@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ClientConfig, RequestContext, RequestOptions } from "./types";
+import type { QueryParams } from "./types";
 import {
   ApiNetworkError,
   mapFetchToAppError,
@@ -7,13 +7,38 @@ import {
   ResponseValidationError,
 } from "./errors";
 import { buildFullUrl, buildHeaders } from "./utils";
+import type { ClientConfig } from "./client";
+
+export interface RequestOptions<T extends z.ZodTypeAny> {
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  url: string;
+  schema?: T;
+
+  signal?: AbortSignal;
+  headers?: Record<string, string>;
+  cache?: RequestCache;
+
+  data?: unknown;
+  queryParams?: QueryParams;
+
+  protected?: boolean;
+  skipRetry?: boolean;
+}
+
+export interface RequestContext {
+  id: string;
+  startTime: number;
+  attemptCount: number;
+  maxAttempts: number;
+  isAuthRetry?: boolean;
+}
 
 export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
   config: Required<ClientConfig>,
   options: RequestOptions<T>,
 ): Promise<z.infer<T>> {
   const fullUrl = buildFullUrl(
-    config.baseURL,
+    config.baseUrl,
     options.url,
     options.queryParams,
   );
