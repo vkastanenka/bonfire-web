@@ -4,6 +4,7 @@ import type { RequestMiddleware } from "./middleware";
 import { buildHeaders } from "./utils";
 import { CLIENT_ERROR_CODES, CLIENT_ERROR_MESSAGES } from "./errors";
 import { AppError } from "@/lib";
+import type { Logger } from "./logger";
 
 // TODO: ClientConfig /** Function or static string to resolve Bearer token */
 //   getAuthToken?: () => Promise<string | null> | string | null;
@@ -14,6 +15,7 @@ export type CustomFetch = (
 ) => Promise<Response>;
 
 export interface ClientConfig {
+  logger: Logger;
   baseUrl: string;
   domain?: string;
   headers?: HeadersInit;
@@ -51,6 +53,7 @@ export class Client {
 
     this.config = Object.freeze({
       baseUrl,
+      logger: config.logger,
       domain: config.domain ?? DEFAULT_CLIENT_CONFIG.domain,
       credentials: config.credentials ?? DEFAULT_CLIENT_CONFIG.credentials,
       headers: buildHeaders(DEFAULT_CLIENT_CONFIG.headers, config.headers),
@@ -159,40 +162,32 @@ export class Client {
   }
 
   public async get<T extends z.ZodTypeAny = z.ZodTypeAny>(
-    url: string,
-    options?: Omit<RequestOptions<T>, "method" | "url">,
+    options: Omit<RequestOptions<T>, "method">,
   ): Promise<z.infer<T>> {
-    return this.request({ ...options, method: "GET", url });
+    return this.request({ ...options, method: "GET" });
   }
 
   public async post<T extends z.ZodTypeAny = z.ZodTypeAny>(
-    url: string,
-    data?: unknown,
-    options?: Omit<RequestOptions<T>, "method" | "url" | "data">,
+    options: Omit<RequestOptions<T>, "method">,
   ): Promise<z.infer<T>> {
-    return this.request({ ...options, method: "POST", url, data });
+    return this.request({ ...options, method: "POST" });
   }
 
   public async put<T extends z.ZodTypeAny = z.ZodTypeAny>(
-    url: string,
-    data?: unknown,
-    options?: Omit<RequestOptions<T>, "method" | "url" | "data">,
+    options: Omit<RequestOptions<T>, "method">,
   ): Promise<z.infer<T>> {
-    return this.request({ ...options, method: "PUT", url, data });
+    return this.request({ ...options, method: "PUT" });
   }
 
   public async patch<T extends z.ZodTypeAny = z.ZodTypeAny>(
-    url: string,
-    data?: unknown,
-    options?: Omit<RequestOptions<T>, "method" | "url" | "data">,
+    options: Omit<RequestOptions<T>, "method">,
   ): Promise<z.infer<T>> {
-    return this.request({ ...options, method: "PATCH", url, data });
+    return this.request({ ...options, method: "PATCH" });
   }
 
   public async delete<T extends z.ZodTypeAny = z.ZodTypeAny>(
-    url: string,
-    options?: Omit<RequestOptions<T>, "method" | "url">,
+    options: Omit<RequestOptions<T>, "method">,
   ): Promise<z.infer<T>> {
-    return this.request({ ...options, method: "DELETE", url });
+    return this.request({ ...options, method: "DELETE" });
   }
 }

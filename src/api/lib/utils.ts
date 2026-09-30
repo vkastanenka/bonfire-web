@@ -92,3 +92,25 @@ export const resolveRequestBody = (data: unknown): BodyInit | undefined => {
 
   return JSON.stringify(data);
 };
+
+export const parseJson = async (
+  response: Response,
+): Promise<{ data: unknown; error?: Error }> => {
+  if (response.status === 204 || response.status === 205) {
+    return { data: undefined };
+  }
+
+  const rawText = await response.text();
+  if (!rawText || rawText.trim() === "") {
+    return { data: undefined };
+  }
+
+  try {
+    return { data: JSON.parse(rawText) };
+  } catch (err) {
+    return {
+      data: undefined,
+      error: err instanceof Error ? err : new Error(String(err)),
+    };
+  }
+};

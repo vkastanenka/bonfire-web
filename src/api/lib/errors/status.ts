@@ -60,3 +60,10 @@ export const STATUS_MESSAGES: Record<StatusCode, string> = {
   [STATUS_CODES.GATEWAY_TIMEOUT]:
     "The deadline expired before the operation could complete.",
 };
+
+export const RETRYABLE_STATUS_CODES: ReadonlySet<number> = new Set([
+  STATUS_CODES.TOO_MANY_REQUESTS,
+  STATUS_CODES.BAD_GATEWAY,
+  STATUS_CODES.SERVICE_UNAVAILABLE,
+  STATUS_CODES.GATEWAY_TIMEOUT,
+]);

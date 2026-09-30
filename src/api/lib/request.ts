@@ -7,8 +7,9 @@ import {
   REQUEST_ERROR_MESSAGES,
   RESPONSE_ERROR_CODES,
 } from "./errors";
-import { buildUrl, buildHeaders, resolveRequestBody } from "./utils";
+import { buildUrl, buildHeaders, resolveRequestBody, parseJson } from "./utils";
 import type { CustomFetch, ResolvedClientConfig } from "./client";
+import { REQUEST_LOGS, type Logger } from "./logger";
 
 export type QueryParamValue = string | number | boolean | null | undefined;
 export type QueryParams = Record<string, QueryParamValue | QueryParamValue[]>;
@@ -23,92 +24,101 @@ export interface RequestOptions<T extends z.ZodTypeAny = z.ZodTypeAny> {
   data?: unknown;
   queryParams?: QueryParams;
   protected?: boolean;
+  maxAttempts?: number;
   timeout?: number;
-  retry?: boolean | number;
+  retry?: boolean;
   fetch?: CustomFetch;
 }
 
 export interface RequestContext {
-  id: string;
+  requestId: string;
+  url: URL;
+  headers: Headers;
   startTime: number;
   attemptCount: number;
   maxAttempts: number;
   isAuthRetry?: boolean;
+  logger: Logger;
 }
 
 export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
   config: Required<ResolvedClientConfig>,
   options: RequestOptions<T>,
 ): Promise<z.infer<T>> {
-  const parsedUrl = buildUrl(
-    config.baseUrl,
-    options.urlPath,
-    options.queryParams,
-  );
-
-  const ctx: RequestContext = {
-    id: crypto.randomUUID(),
+  const context: RequestContext = {
+    requestId: crypto.randomUUID(),
+    url: buildUrl(config.baseUrl, options.urlPath, options.queryParams),
+    headers: buildHeaders(config.headers, options.headers, options.data),
     startTime: performance.now(),
     attemptCount: 0,
-    maxAttempts: config.maxAttempts,
+    maxAttempts: options.maxAttempts ?? config.maxAttempts,
+    logger: config.logger,
   };
 
   const executeCall = async (): Promise<unknown> => {
-    ctx.attemptCount++;
+    context.attemptCount++;
 
-    if (ctx.attemptCount > ctx.maxAttempts) {
+    if (context.attemptCount > 1) {
+      context.headers = buildHeaders(
+        config.headers,
+        options.headers,
+        options.data,
+      );
+    }
+
+    if (context.attemptCount > context.maxAttempts) {
       throw new AppError({
         code: REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED,
         message:
           REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED],
         context: {
-          url: parsedUrl.toString(),
-          attemptCount: ctx.attemptCount - 1,
-          maxAttempts: ctx.maxAttempts,
+          url: context.url.toString(),
+          attemptCount: context.attemptCount - 1,
+          maxAttempts: context.maxAttempts,
         },
       });
     }
 
-    const headers = buildHeaders(config.headers, options.headers, options.data);
+    if (context.attemptCount > 1) {
+      context.headers = buildHeaders(
+        config.headers,
+        options.headers,
+        options.data,
+      );
+    }
 
-    await runBeforeRequestMiddleware(config, options, ctx, headers);
+    await runBeforeRequestMiddleware(config, options, context);
 
-    const response = await sendFetchRequest(
-      parsedUrl,
-      headers,
-      config,
-      options,
-    );
+    const response = await sendFetchRequest(config, options, context);
 
     if (!response.ok) {
       return handleResponseError(
         config,
-        response,
         options,
-        ctx,
-        parsedUrl,
+        context,
+        response,
         executeCall,
       );
     }
 
-    await runOnResponseSuccessMiddleware(config, response, options, ctx);
+    await runOnResponseSuccessMiddleware(config, response, options, context);
 
-    return parseResponseBody(response, parsedUrl.toString());
+    return parseResponseBody(response, context.url.toString());
   };
 
   try {
     const rawData = await executeCall();
-    return validateResponseSchema(
-      rawData,
-      options.schema,
-      options.method,
-      options.urlPath,
-    );
+    return validateResponseSchema(rawData, options, context);
   } catch (error) {
-    if (error instanceof AipError || error instanceof AppError) {
-      throw error;
+    if (!(error instanceof AipError) && !(error instanceof AppError)) {
+      context.logger.error(REQUEST_LOGS.FAILED, {
+        requestId: context.requestId,
+        method: options.method,
+        urlPath: options.urlPath,
+        error,
+      });
     }
-    console.error(`[System Error] at ${options.urlPath}:`, error);
+
     throw error;
   }
 }
@@ -117,20 +127,18 @@ const runBeforeRequestMiddleware = async <T extends z.ZodTypeAny>(
   config: Required<ResolvedClientConfig>,
   options: RequestOptions<T>,
   context: RequestContext,
-  headers: Headers,
 ): Promise<void> => {
   for (const layer of config.middleware) {
     if (layer.beforeRequest) {
-      await layer.beforeRequest(options, context, headers);
+      await layer.beforeRequest({ options, context });
     }
   }
 };
 
 const sendFetchRequest = async <T extends z.ZodTypeAny>(
-  fullUrl: URL,
-  headers: Headers,
   config: ResolvedClientConfig,
   options: RequestOptions<T>,
+  context: RequestContext,
 ): Promise<Response> => {
   const timeoutMs = options.timeout ?? config.timeout;
   const timeoutSignal = AbortSignal.timeout(timeoutMs);
@@ -143,11 +151,11 @@ const sendFetchRequest = async <T extends z.ZodTypeAny>(
   const fetchImpl = options.fetch ?? config.fetch;
 
   try {
-    return await fetchImpl(fullUrl.toString(), {
+    return await fetchImpl(context.url.toString(), {
       method: options.method,
       signal,
       cache: options.cache,
-      headers,
+      headers: context.headers,
       credentials: config.credentials,
       body,
     });
@@ -157,7 +165,7 @@ const sendFetchRequest = async <T extends z.ZodTypeAny>(
         code: REQUEST_ERROR_CODES.REQUEST_ABORTED,
         message: REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.REQUEST_ABORTED],
         cause,
-        context: { url: fullUrl.toString() },
+        context: { url: context.url.toString() },
       });
     }
 
@@ -169,14 +177,14 @@ const sendFetchRequest = async <T extends z.ZodTypeAny>(
         code: REQUEST_ERROR_CODES.REQUEST_TIMEOUT,
         message: REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.REQUEST_TIMEOUT],
         cause,
-        context: { url: fullUrl.toString(), timeoutMs },
+        context: { url: context.url.toString(), timeoutMs },
       });
     }
 
     const fallbackAppError = mapFetchToUnknownAipErrorData(
       new Response(null, { status: 0 }),
       null,
-      fullUrl.toString(),
+      context.url.toString(),
       {
         domain: config.domain,
         cause,
@@ -189,31 +197,38 @@ const sendFetchRequest = async <T extends z.ZodTypeAny>(
 
 const handleResponseError = async <T extends z.ZodTypeAny>(
   config: Required<ResolvedClientConfig>,
-  response: Response,
   options: RequestOptions<T>,
   context: RequestContext,
-  fullUrl: URL,
+  response: Response,
   retryCall: () => Promise<unknown>,
-): Promise<unknown> => {
+): Promise<never> => {
   for (const layer of config.middleware) {
     if (layer.onResponseError) {
-      const shortCircuit = await layer.onResponseError(
+      const shortCircuit = await layer.onResponseError({
         response,
         options,
         context,
-        retryCall,
-      );
-      if (shortCircuit) return shortCircuit;
+        retry: retryCall,
+      });
+
+      if (shortCircuit !== undefined) {
+        return shortCircuit as never;
+      }
     }
   }
 
-  const body = await response.json().catch(() => ({}));
+  const { data: body, error: parseError } = await parseJson(response);
+
   const problem = mapFetchToUnknownAipErrorData(
     response,
     body,
-    fullUrl.toString(),
-    { domain: config.domain },
+    context.url.toString(),
+    {
+      domain: config.domain,
+      ...(parseError ? { cause: parseError } : {}),
+    },
   );
+
   throw new AipError(problem);
 };
 
@@ -225,73 +240,59 @@ const runOnResponseSuccessMiddleware = async <T extends z.ZodTypeAny>(
 ): Promise<void> => {
   for (const layer of config.middleware) {
     if (layer.onResponseSuccess) {
-      await layer.onResponseSuccess(response, options, context);
+      await layer.onResponseSuccess({ response, options, context });
     }
   }
 };
 
-/**
- * Safely parses the response body as JSON.
- * Throws AppError if the server returns 2xx with a non-JSON/malformed payload.
- */
 const parseResponseBody = async (
   response: Response,
   url?: string,
 ): Promise<unknown> => {
-  if (response.status === 204) return {};
+  const { data, error } = await parseJson(response);
 
-  const rawText = await response.text();
-  if (!rawText || rawText.trim() === "") {
-    return {};
-  }
-
-  try {
-    return JSON.parse(rawText);
-  } catch (syntaxError) {
+  if (error) {
     throw new AppError({
       code: RESPONSE_ERROR_CODES.PARSE_ERROR,
       message: RESPONSE_ERROR_CODES.PARSE_ERROR,
-      cause: syntaxError,
+      cause: error,
       context: {
         status: response.status,
         url,
-        rawText,
       },
     });
   }
+
+  return data;
 };
 
-/**
- * Validates raw parsed response data against an optional Zod schema.
- * Throws AppError if schema validation fails.
- */
 const validateResponseSchema = <T extends z.ZodTypeAny>(
   rawData: unknown,
-  schema?: T,
-  method?: string,
-  urlPath?: string,
+  options: RequestOptions<T>,
+  context: RequestContext,
 ): z.infer<T> => {
-  if (!schema) {
+  if (!options.schema) {
     return rawData as z.infer<T>;
   }
 
-  const parsed = schema.safeParse(rawData);
+  const parsed = options.schema.safeParse(rawData);
   if (!parsed.success) {
-    console.groupCollapsed(
-      `🚨 [Contract Validation Failed] at ${method ?? "GET"} ${urlPath ?? "unknown"}`,
-    );
-    console.error("Validation Errors:\n" + z.treeifyError(parsed.error));
-    console.info("Raw Payload Received:", rawData);
-    console.dir(parsed.error.issues);
-    console.groupEnd();
+    context.logger.error(REQUEST_LOGS.RESPONSE_VALIDATION_FAILED, {
+      requestId: context.requestId,
+      method: options.method,
+      urlPath: options.urlPath,
+      issues: parsed.error.issues,
+      formattedError: z.treeifyError(parsed.error),
+      rawData,
+    });
 
     throw new AppError({
       code: RESPONSE_ERROR_CODES.VALIDATION_ERROR,
       message: RESPONSE_ERROR_CODES.VALIDATION_ERROR,
       cause: parsed.error,
       context: {
-        method,
-        urlPath,
+        method: options.method,
+        urlPath: options.urlPath,
         issues: parsed.error.issues,
         rawData,
       },
