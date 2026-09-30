@@ -1,67 +1,41 @@
 import { z } from "zod";
-import { httpConfig } from "./config";
-import {
-  AuthMiddleware,
-  LoggingMiddleware,
-  RetryMiddleware,
-  type HttpMiddleware,
-} from "./middleware";
-import {
-  httpRequest,
-  type HttpRequestMeta,
-  type HttpRequestOptions,
-} from "./request";
+import { middleware, type HttpMiddleware } from "./middleware";
+import { httpRequest, type HttpRequestOptions } from "./request";
 
-export type HttpScopedRequest<T extends z.ZodTypeAny = z.ZodTypeAny> = Omit<
-  HttpRequestOptions<T>,
-  "url"
-> & {
-  url?: string;
+export interface HttpClientConfig {
+  baseURL: string;
+  credentials: RequestCredentials;
+  headers?: Record<string, string>;
+  maxAttempts: number;
+  timeout: number;
+  middleware: HttpMiddleware[];
+}
+
+export const httpClientConfig: HttpClientConfig = {
+  baseURL: process.env.BONFIRE_API_URL || "http://localhost:8080/api/v1",
+  credentials:
+    (process.env.BONFIRE_API_CREDENTIALS as RequestCredentials) || "include",
+  maxAttempts: Number(process.env.BONFIRE_API_MAX_ATTEMPTS) || 5,
+  timeout: Number(process.env.BONFIRE_API_TIMEOUT) || 10000,
+  middleware: middleware,
+  headers: {
+    Accept: "application/json",
+    "X-Requested-With": "XMLHttpRequest",
+  },
 };
 
-export type HttpScopedClient = <T extends z.ZodTypeAny = z.ZodTypeAny>(
-  request: HttpScopedRequest<T>,
-) => Promise<z.infer<T>>;
-
 export class HttpClient {
-  private readonly baseURL: string;
-  private readonly middleware: HttpMiddleware[];
+  private readonly config: HttpClientConfig;
 
-  constructor(options: { baseURL: string; middleware?: HttpMiddleware[] }) {
-    this.baseURL = options.baseURL.replace(/\/$/, "");
-    this.middleware = options.middleware || [];
+  constructor(config: HttpClientConfig) {
+    this.config = config;
   }
 
   public async request<T extends z.ZodTypeAny = z.ZodTypeAny>(
     options: HttpRequestOptions<T>,
-    meta?: HttpRequestMeta,
   ): Promise<z.infer<T>> {
-    return httpRequest(
-      { baseURL: this.baseURL, middleware: this.middleware },
-      options,
-      meta,
-    );
-  }
-
-  public scope(baseUrl: string, serviceName = "HttpClient"): HttpScopedClient {
-    return <T extends z.ZodTypeAny>(
-      subOptions: HttpScopedRequest<T>,
-    ): Promise<z.infer<T>> => {
-      const combinedUrl = `${baseUrl}/${subOptions.url ?? ""}`.replace(
-        /\/+/g,
-        "/",
-      );
-
-      return this.request({ ...subOptions, url: combinedUrl }, { serviceName });
-    };
+    return httpRequest(this.config, options);
   }
 }
 
-export const httpClient = new HttpClient({
-  baseURL: httpConfig.baseURL,
-  middleware: [
-    new LoggingMiddleware(),
-    new AuthMiddleware(),
-    new RetryMiddleware(3),
-  ],
-});
+export const httpClient = new HttpClient(httpClientConfig);

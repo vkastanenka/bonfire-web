@@ -1,114 +1,43 @@
 import { ZodError } from "zod";
 
 interface StatusError {
-  code: string;
-  title: string;
-  detail: string;
+  status: string;
+  message: string;
 }
 
 export const STATUS_ERRORS: Record<number, StatusError> = {
   0: {
-    code: "NETWORK_OFFLINE",
-    title: "Network Connection Failed",
-    detail:
-      "Unable to connect to the server. Please verify your internet connection.",
+    status: "UNAVAILABLE",
+    message:
+      "Network connection failed. Please verify your internet connection.",
   },
-  400: {
-    code: "BAD_REQUEST",
-    title: "Bad Request",
-    detail: "The request payload or syntax is malformed.",
-  },
+  400: { status: "INVALID_ARGUMENT", message: "Bad request payload." },
   401: {
-    code: "UNAUTHORIZED",
-    title: "Unauthorized Access",
-    detail: "The provided credentials are invalid or expired.",
+    status: "UNAUTHENTICATED",
+    message: "Authentication credentials required or expired.",
   },
   403: {
-    code: "FORBIDDEN",
-    title: "Permission Denied",
-    detail: "You lack the required permissions for this action.",
+    status: "PERMISSION_DENIED",
+    message: "Permission denied for this resource.",
   },
-  404: {
-    code: "NOT_FOUND",
-    title: "Resource Not Found",
-    detail: "The requested resource could not be found.",
-  },
-  405: {
-    code: "METHOD_NOT_ALLOWED",
-    title: "Method Not Allowed",
-    detail: "The HTTP method is not supported for this path.",
-  },
-  408: {
-    code: "REQUEST_TIMEOUT",
-    title: "Request Timeout",
-    detail: "The operation conflicted with the current state of a resource.",
-  },
+  404: { status: "NOT_FOUND", message: "Requested resource not found." },
   409: {
-    code: "CONFLICT",
-    title: "Resource Conflict",
-    detail: "This operation conflicts with the current state of the resource.",
-  },
-  410: {
-    code: "GONE",
-    title: "Resource No Longer Available",
-    detail: "The requested resource has been permanently deleted.",
+    status: "ALREADY_EXISTS",
+    message: "Resource already exists or state conflicted.",
   },
   412: {
-    code: "PRECONDITION_FAILED",
-    title: "Precondition Failed",
-    detail: "Target resource state has changed. Please refresh and retry.",
-  },
-  413: {
-    code: "PAYLOAD_TOO_LARGE",
-    title: "Payload Too Large",
-    detail: "The request body exceeds the maximum size limit.",
-  },
-  415: {
-    code: "UNSUPPORTED_MEDIA_TYPE",
-    title: "Unsupported Media Type",
-    detail: "Content-Type must be application/json.",
-  },
-  422: {
-    code: "UNPROCESSABLE_ENTITY",
-    title: "Unprocessable Entity",
-    detail: "The request is valid but breaks semantic business logic rules.",
+    status: "FAILED_PRECONDITION",
+    message: "Precondition failed. Please refresh.",
   },
   429: {
-    code: "TOO_MANY_REQUESTS",
-    title: "Too Many Requests",
-    detail: "Rate limit exceeded. Please slow down and retry shortly.",
+    status: "RESOURCE_EXHAUSTED",
+    message: "Rate limit or quota exceeded.",
   },
-  499: {
-    code: "CLIENT_CLOSED_REQUEST",
-    title: "Client Closed Connection",
-    detail:
-      "The connection was terminated by the client before processing finished.",
-  },
-  500: {
-    code: "INTERNAL",
-    title: "Internal Server Error",
-    detail: "An unexpected condition occurred on our servers.",
-  },
-  501: {
-    code: "NOT_IMPLEMENTED",
-    title: "Feature Not Implemented",
-    detail: "This server capability is not yet supported.",
-  },
-  502: {
-    code: "BAD_GATEWAY",
-    title: "Bad Gateway",
-    detail: "An upstream dependency returned an invalid response.",
-  },
-  503: {
-    code: "SERVICE_UNAVAILABLE",
-    title: "Service Temporarily Unavailable",
-    detail: "The server is temporarily down for maintenance or overloaded.",
-  },
-  504: {
-    code: "GATEWAY_TIMEOUT",
-    title: "Gateway Timeout",
-    detail: "An upstream dependency failed to respond in time.",
-  },
+  499: { status: "CANCELLED", message: "Request was cancelled by client." },
+  500: { status: "INTERNAL", message: "An internal server error occurred." },
+  501: { status: "UNIMPLEMENTED", message: "Feature is not supported." },
+  503: { status: "UNAVAILABLE", message: "Service temporarily unavailable." },
+  504: { status: "DEADLINE_EXCEEDED", message: "Upstream request timed out." },
 };
 
 export const API_ERROR_CODES = {
@@ -119,104 +48,199 @@ export const API_ERROR_CODES = {
 export type ApiErrorCode =
   (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES];
 
-export interface InvalidParam {
-  name: string;
+export interface ErrorInfoDetail {
+  "@type": "type.googleapis.com/google.rpc.ErrorInfo" | string;
   reason: string;
+  domain: string;
+  metadata?: Record<string, string>;
 }
 
-export interface ProblemDetails {
-  type: string;
-  title: string;
-  status: number;
-  detail: string;
-  instance: string;
-  code: string;
-  invalid_params?: InvalidParam[];
-  req_id: string;
-  trace_id: string;
-  timestamp: string;
+export interface RetryInfoDetail {
+  "@type": "type.googleapis.com/google.rpc.RetryInfo" | string;
+  retryDelay?: string;
+}
+
+export interface DebugInfoDetail {
+  "@type": "type.googleapis.com/google.rpc.DebugInfo" | string;
+  detail?: string;
+  stackEntries?: string[];
+}
+
+export interface FieldViolation {
+  field: string;
+  description: string;
+  reason?: string;
+}
+
+export interface BadRequestDetail {
+  "@type": "type.googleapis.com/google.rpc.BadRequest" | string;
+  fieldViolations?: FieldViolation[];
+}
+
+export interface RequestInfoDetail {
+  "@type": "type.googleapis.com/google.rpc.RequestInfo" | string;
+  requestId: string;
+  servingData?: string;
+}
+
+export interface ResourceInfoDetail {
+  "@type": "type.googleapis.com/google.rpc.ResourceInfo" | string;
+  resourceType: string;
+  resourceName: string;
+  owner?: string;
+  description?: string;
+}
+
+export interface RawDetail {
+  "@type": string;
+  [key: string]: unknown;
+}
+
+export type ErrorDetail =
+  | ErrorInfoDetail
+  | RetryInfoDetail
+  | DebugInfoDetail
+  | BadRequestDetail
+  | RequestInfoDetail
+  | ResourceInfoDetail
+  | RawDetail;
+
+export interface AppError {
+  code: number;
+  message: string;
+  status: string;
+  details?: ErrorDetail[];
 }
 
 export class ApiNetworkError extends Error {
-  public readonly status: number;
-  public readonly code: string;
-  public readonly details: ProblemDetails;
+  public readonly code: number;
+  public readonly status: string;
+  public readonly details: ErrorDetail[];
 
-  constructor(details: ProblemDetails) {
-    super(details.detail);
+  constructor(err: AppError) {
+    super(err.message);
     this.name = "ApiNetworkError";
-    this.status = details.status;
-    this.code = details.code;
-    this.details = details;
+    this.code = err.code;
+    this.status = err.status;
+    this.details = err.details ?? [];
     Object.setPrototypeOf(this, ApiNetworkError.prototype);
+  }
+
+  public getDetail<T extends ErrorDetail>(typeSuffix: string): T | undefined {
+    return this.details.find((d) => d["@type"]?.endsWith(typeSuffix)) as
+      | T
+      | undefined;
+  }
+
+  public getBadRequest(): BadRequestDetail | undefined {
+    return this.getDetail<BadRequestDetail>("BadRequest");
+  }
+
+  public getErrorInfo(): ErrorInfoDetail | undefined {
+    return this.getDetail<ErrorInfoDetail>("ErrorInfo");
+  }
+
+  public getRetryDelayMs(): number | undefined {
+    const retry = this.getDetail<RetryInfoDetail>("RetryInfo");
+    if (!retry?.retryDelay) return undefined;
+    const seconds = parseFloat(retry.retryDelay.replace("s", ""));
+    return isNaN(seconds) ? undefined : seconds * 1000;
   }
 
   public isValidationFailure(): boolean {
     return (
-      this.code === API_ERROR_CODES.INVALID_INPUT ||
-      (Array.isArray(this.details.invalid_params) &&
-        this.details.invalid_params.length > 0)
+      this.status === STATUS_ERRORS[400].status ||
+      (this.getBadRequest()?.fieldViolations?.length ?? 0) > 0
     );
   }
 
   public getFieldError(fieldName: string): string | undefined {
-    return this.details.invalid_params?.find((p) => p.name === fieldName)
-      ?.reason;
+    const violation = this.getBadRequest()?.fieldViolations?.find(
+      (v) => v.field === fieldName,
+    );
+    return violation ? violation.description || violation.reason : undefined;
   }
 }
 
 export class ResponseValidationError extends Error {
-  public readonly url: string;
   public readonly zodError: ZodError;
-  constructor(zodError: ZodError, message: string, url: string) {
+  constructor(zodError: ZodError, message: string) {
     super(message);
     this.name = "ResponseValidationError";
-    this.url = url;
     this.zodError = zodError;
     Object.setPrototypeOf(this, ResponseValidationError.prototype);
   }
 }
 
-export function isProblemDetails(data: unknown): data is ProblemDetails {
+export function newCascadeLoopError(url: URL): ApiNetworkError {
+  return new ApiNetworkError({
+    code: 0,
+    status: STATUS_ERRORS[0].status,
+    message:
+      "Request Cascade Loop Detected: The execution loop was terminated to prevent a stack overflow.",
+    details: [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        reason: "CASCADE_BREAKDOWN",
+        domain: "client.circuit_breaker",
+        metadata: {
+          instance: url.toString(),
+          timestamp: new Date().toISOString(),
+          type: "https://api.com/errors/cascade-breakdown",
+        },
+      } satisfies ErrorInfoDetail,
+    ],
+  });
+}
+
+export function isAppError(data: unknown): data is AppError {
   return (
     typeof data === "object" &&
     data !== null &&
-    "code" in data &&
-    "detail" in data &&
-    "status" in data
+    typeof (data as Record<string, unknown>).code === "number" &&
+    typeof (data as Record<string, unknown>).status === "string" &&
+    typeof (data as Record<string, unknown>).message === "string"
   );
 }
 
-export const mapFetchToProblem = (
+export const mapFetchToAppError = (
   response: Response,
   data: unknown,
   url: string,
-): ProblemDetails => {
-  if (isProblemDetails(data)) {
+): AppError => {
+  if (isAppError(data)) {
     return data;
   }
 
-  const statusErr = STATUS_ERRORS[response.status] || {
-    code: "UNKNOWN_HTTP_ERROR",
-    title: "Unexpected Network Response",
-    detail: `The server responded with an unhandled status code (${response.status}).`,
+  const fallback = STATUS_ERRORS[response.status] || {
+    status: "UNKNOWN",
+    message: `The server responded with an unhandled HTTP status code (${response.status}).`,
   };
-
-  const getHeader = (key: string): string =>
-    response.headers.get(key) || "unknown";
 
   return {
-    type: `https://api.bonfire.com/errors/${statusErr.code.toLowerCase().replace(/_/g, "-")}`,
-    title: statusErr.title,
-    status: response.status,
-    detail: statusErr.detail,
-    code: statusErr.code,
-    instance: url,
-    req_id:
-      getHeader("x-request-id") !== "unknown"
-        ? getHeader("x-request-id")
-        : getHeader("x-correlation-id"),
-    trace_id: getHeader("x-b3-traceid"),
-    timestamp: new Date().toISOString(),
+    code: response.status,
+    status: fallback.status,
+    message: fallback.message,
+    details: [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        reason: fallback.status,
+        domain: "http.response",
+        metadata: {
+          instance: url,
+          timestamp: new Date().toISOString(),
+        },
+      } satisfies ErrorInfoDetail,
+    ],
   };
 };
+
+export function getErrorInfoReason(error: AppError): string | undefined {
+  if (!error.details) return undefined;
+
+  const errorInfo = error.details.find((d): d is ErrorInfoDetail =>
+    d["@type"]?.endsWith("ErrorInfo"),
+  );
+
+  return errorInfo?.reason;
+}

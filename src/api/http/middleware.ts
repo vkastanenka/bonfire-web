@@ -1,102 +1,105 @@
 import { z } from "zod";
-import type { HttpRequestOptions } from "./request";
-import { API_ERROR_CODES, isProblemDetails } from "./errors";
-import { authManager } from "../auth";
+import type { HttpRequestContext, HttpRequestOptions } from "./request";
+import { API_ERROR_CODES, getErrorInfoReason, isAppError } from "./errors";
+import { authManager, type AuthManager } from "../auth";
 
 export interface HttpMiddleware {
-  name: string;
-
   beforeRequest?<T extends z.ZodTypeAny>(
     options: HttpRequestOptions<T>,
+    context: HttpRequestContext,
     headers: Headers,
   ): Promise<void> | void;
 
   onResponseSuccess?<T extends z.ZodTypeAny>(
     response: Response,
     options: HttpRequestOptions<T>,
+    context: HttpRequestContext,
   ): Promise<void> | void;
 
   onResponseError?<T extends z.ZodTypeAny>(
     response: Response,
     options: HttpRequestOptions<T>,
+    context: HttpRequestContext,
     retry: () => Promise<unknown>,
   ): Promise<unknown> | void;
 }
 
 export class LoggingMiddleware implements HttpMiddleware {
-  public readonly name = "LoggingMiddleware";
-  private startTimes = new WeakMap<HttpRequestOptions<z.ZodTypeAny>, number>();
-
-  async beforeRequest<T extends z.ZodTypeAny>(options: HttpRequestOptions<T>) {
+  beforeRequest<T extends z.ZodTypeAny>(
+    options: HttpRequestOptions<T>,
+    context: HttpRequestContext,
+  ) {
     if (process.env.NODE_ENV === "production") return;
-
-    this.startTimes.set(options, performance.now());
     console.log(
-      `[HTTP Request] ${options.method.toUpperCase()} ${options.url}`,
+      `[HTTP Request] [${context.id}] ${options.method} ${options.url}`,
     );
   }
 
-  async onResponseSuccess<T extends z.ZodTypeAny>(
+  onResponseSuccess<T extends z.ZodTypeAny>(
     response: Response,
     options: HttpRequestOptions<T>,
+    context: HttpRequestContext,
   ) {
     if (process.env.NODE_ENV === "production") return;
-
-    const startTime = this.startTimes.get(options) || performance.now();
-    const duration = (performance.now() - startTime).toFixed(0);
-
+    const duration = (performance.now() - context.startTime).toFixed(0);
     console.log(
-      `[HTTP Success] ${options.method.toUpperCase()} ${options.url} | Status: ${response.status} | Took: ${duration}ms`,
+      `[HTTP Success] [${context.id}] ${options.method} ${options.url} | Status: ${response.status} | Took: ${duration}ms`,
     );
   }
 
-  async onResponseError<T extends z.ZodTypeAny>(
+  onResponseError<T extends z.ZodTypeAny>(
     response: Response,
     options: HttpRequestOptions<T>,
+    context: HttpRequestContext,
   ) {
     if (process.env.NODE_ENV === "production") return;
-
-    const startTime = this.startTimes.get(options) || performance.now();
-    const duration = (performance.now() - startTime).toFixed(0);
-
+    const duration = (performance.now() - context.startTime).toFixed(0);
     console.error(
-      `[HTTP Error] ${options.method.toUpperCase()} ${options.url} | Status: ${response.status} | Took: ${duration}ms`,
+      `[HTTP Error] [${context.id}] ${options.method} ${options.url} | Status: ${response.status} | Took: ${duration}ms`,
     );
   }
-}
-
-export interface HttpAuthManager {
-  getAccessToken(): string | null | Promise<string | null>;
-  refreshAccessToken(): Promise<string | null>;
-  clearTokens(): void | Promise<void>;
 }
 
 export class AuthMiddleware implements HttpMiddleware {
-  public readonly name = "AuthMiddleware";
-  // private authManager: HttpAuthManager;
+  private authManager: AuthManager;
+  private refreshPromise: Promise<string | null> | null = null;
 
-  // constructor(authManager: HttpAuthManager) {
-  //   this.authManager = authManager;
-  // }
+  constructor(authManager: AuthManager) {
+    this.authManager = authManager;
+  }
 
   async beforeRequest<T extends z.ZodTypeAny>(
     options: HttpRequestOptions<T>,
+    _context: HttpRequestContext,
     headers: Headers,
   ) {
     if (!options.protected) return;
-
-    const token = authManager.getAccessToken();
+    const token = await this.authManager.getAccessToken();
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }
   }
 
+  private async safeRefresh(): Promise<string | null> {
+    if (!this.refreshPromise) {
+      this.refreshPromise = Promise.resolve(
+        this.authManager.refreshAccessToken(),
+      ).finally(() => {
+        this.refreshPromise = null;
+      });
+    }
+    return this.refreshPromise;
+  }
+
   async onResponseError<T extends z.ZodTypeAny>(
     response: Response,
     options: HttpRequestOptions<T>,
+    context: HttpRequestContext,
     retry: () => Promise<unknown>,
   ) {
-    if (response.status !== 401 || !options.protected) return;
+    if (response.status !== 401 || !options.protected || context.isAuthRetry) {
+      return;
+    }
 
     try {
       const errorBody = await response
@@ -105,54 +108,34 @@ export class AuthMiddleware implements HttpMiddleware {
         .catch(() => null);
 
       const isExpired =
-        isProblemDetails(errorBody) &&
-        errorBody.code === API_ERROR_CODES.TOKEN_EXPIRED;
+        isAppError(errorBody) &&
+        getErrorInfoReason(errorBody) === API_ERROR_CODES.TOKEN_EXPIRED;
 
       if (!isExpired) return;
 
-      const newToken = await authManager.refreshAccessToken();
+      context.isAuthRetry = true;
+      const newToken = await this.safeRefresh();
       if (!newToken) throw new Error("Token refresh failed.");
 
       return await retry();
     } catch (error) {
-      await authManager.clearTokens();
+      await this.authManager.clearTokens();
       throw error;
     }
   }
 }
 
 export class RetryMiddleware implements HttpMiddleware {
-  public readonly name = "RetryMiddleware";
   private maxRetries: number;
-
-  private attempts = new Map<string, number>();
-
-  private timers = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(maxRetries = 3) {
     this.maxRetries = maxRetries;
   }
 
-  private getKey(options: HttpRequestOptions<z.ZodTypeAny>): string {
-    return `${options.method}:${options.url}`;
-  }
-
-  async onResponseSuccess<T extends z.ZodTypeAny>(
-    _response: Response,
-    options: HttpRequestOptions<T>,
-  ) {
-    const key = this.getKey(options);
-    this.attempts.delete(key);
-
-    if (this.timers.has(key)) {
-      clearTimeout(this.timers.get(key));
-      this.timers.delete(key);
-    }
-  }
-
   async onResponseError<T extends z.ZodTypeAny>(
     response: Response,
     options: HttpRequestOptions<T>,
+    context: HttpRequestContext,
     retry: () => Promise<unknown>,
   ) {
     if (options.skipRetry) return;
@@ -160,25 +143,18 @@ export class RetryMiddleware implements HttpMiddleware {
     const retryableStatuses = [429, 502, 503, 504];
     if (!retryableStatuses.includes(response.status)) return;
 
-    const key = this.getKey(options);
-    const currentAttempt = this.attempts.get(key) ?? 0;
-
-    if (currentAttempt < this.maxRetries) {
-      this.attempts.set(key, currentAttempt + 1);
-
-      if (this.timers.has(key)) clearTimeout(this.timers.get(key));
-      this.timers.set(
-        key,
-        setTimeout(() => {
-          this.attempts.delete(key);
-          this.timers.delete(key);
-        }, 5000),
-      );
-
-      const delay = Math.pow(2, currentAttempt) * 100 + Math.random() * 50;
-      await new Promise((res) => setTimeout(res, delay));
+    if (context.attemptCount <= this.maxRetries) {
+      const backoff = Math.pow(2, context.attemptCount - 1) * 100;
+      const jitter = Math.random() * 50;
+      await new Promise((res) => setTimeout(res, backoff + jitter));
 
       return retry();
     }
   }
 }
+
+export const middleware = [
+  new LoggingMiddleware(),
+  new AuthMiddleware(authManager),
+  new RetryMiddleware(),
+];
