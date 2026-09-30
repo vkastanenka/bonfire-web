@@ -1,41 +1,16 @@
 import { z } from "zod";
+import type { ClientConfig, RequestContext, RequestOptions } from "./types";
 import {
   ApiNetworkError,
   mapFetchToAppError,
   newCascadeLoopError,
   ResponseValidationError,
 } from "./errors";
-import type { HttpClientConfig } from "./client";
+import { buildFullUrl, buildHeaders } from "./utils";
 
-export type QueryParamValue = string | number | boolean | null | undefined;
-export type QueryParams = Record<string, QueryParamValue | QueryParamValue[]>;
-
-export interface HttpRequestOptions<T extends z.ZodTypeAny> {
-  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  url: string;
-  schema?: T;
-
-  signal?: AbortSignal;
-  headers?: Record<string, string>;
-  cache?: RequestCache;
-
-  data?: unknown;
-  queryParams?: QueryParams;
-
-  protected?: boolean;
-  skipRetry?: boolean;
-}
-
-export interface HttpRequestContext {
-  id: string;
-  startTime: number;
-  attemptCount: number;
-  isAuthRetry?: boolean;
-}
-
-export async function httpRequest<T extends z.ZodTypeAny = z.ZodTypeAny>(
-  config: HttpClientConfig,
-  options: HttpRequestOptions<T>,
+export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
+  config: Required<ClientConfig>,
+  options: RequestOptions<T>,
 ): Promise<z.infer<T>> {
   const fullUrl = buildFullUrl(
     config.baseURL,
@@ -43,15 +18,17 @@ export async function httpRequest<T extends z.ZodTypeAny = z.ZodTypeAny>(
     options.queryParams,
   );
 
-  const context: HttpRequestContext = {
+  const context: RequestContext = {
     id: crypto.randomUUID(),
     startTime: performance.now(),
     attemptCount: 0,
+    maxAttempts: config.maxAttempts,
   };
 
   const executeCall = async (): Promise<unknown> => {
     context.attemptCount++;
-    if (context.attemptCount > config.maxAttempts) {
+
+    if (context.attemptCount > context.maxAttempts) {
       throw newCascadeLoopError(fullUrl);
     }
 
@@ -64,6 +41,7 @@ export async function httpRequest<T extends z.ZodTypeAny = z.ZodTypeAny>(
       options,
       headers,
       config.timeout,
+      config.credentials,
     );
 
     if (!response.ok) {
@@ -102,65 +80,10 @@ export async function httpRequest<T extends z.ZodTypeAny = z.ZodTypeAny>(
   }
 }
 
-export const buildFullUrl = (
-  baseUrl: string,
-  path: string,
-  queryParams?: QueryParams,
-): URL => {
-  const cleanBaseURL = baseUrl.replace(/\/+$/, "");
-  const cleanPath = path.replace(/^\//, "");
-  const url = new URL(
-    cleanPath ? `${cleanBaseURL}/${cleanPath}` : cleanBaseURL,
-  );
-
-  if (!queryParams) return url;
-
-  Object.entries(queryParams).forEach(([key, val]) => {
-    if (Array.isArray(val)) {
-      val.forEach((item) => {
-        if (item !== undefined && item !== null) {
-          url.searchParams.append(key, String(item));
-        }
-      });
-    } else if (val !== undefined && val !== null) {
-      url.searchParams.append(key, String(val));
-    }
-  });
-
-  return url;
-};
-
-export const buildHeaders = (
-  defaultHeaders?: Record<string, string>,
-  requestHeaders?: Record<string, string>,
-  data?: unknown,
-): Headers => {
-  const headers = new Headers(defaultHeaders);
-
-  if (requestHeaders) {
-    new Headers(requestHeaders).forEach((value, key) => {
-      headers.set(key, value);
-    });
-  }
-
-  if (
-    data !== undefined &&
-    data !== null &&
-    !headers.has("Content-Type") &&
-    !(data instanceof FormData) &&
-    !(data instanceof URLSearchParams) &&
-    !(data instanceof Blob)
-  ) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  return headers;
-};
-
-export const runBeforeRequestMiddleware = async <T extends z.ZodTypeAny>(
-  config: HttpClientConfig,
-  options: HttpRequestOptions<T>,
-  context: HttpRequestContext,
+const runBeforeRequestMiddleware = async <T extends z.ZodTypeAny>(
+  config: Required<ClientConfig>,
+  options: RequestOptions<T>,
+  context: RequestContext,
   headers: Headers,
 ): Promise<void> => {
   for (const layer of config.middleware) {
@@ -170,22 +93,29 @@ export const runBeforeRequestMiddleware = async <T extends z.ZodTypeAny>(
   }
 };
 
-export const sendFetchRequest = async <T extends z.ZodTypeAny>(
+const sendFetchRequest = async <T extends z.ZodTypeAny>(
   fullUrl: URL,
-  options: HttpRequestOptions<T>,
+  options: RequestOptions<T>,
   headers: Headers,
   timeoutMs: number,
+  credentials?: RequestCredentials,
 ): Promise<Response> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+  const signal = options.signal
+    ? AbortSignal.any
+      ? AbortSignal.any([options.signal, controller.signal])
+      : options.signal
+    : controller.signal;
+
   try {
     return await fetch(fullUrl.toString(), {
       method: options.method,
-      signal: options.signal || controller.signal,
+      signal,
       cache: options.cache,
       headers,
-      credentials: "include",
+      credentials: credentials ?? "include",
       body: options.data ? JSON.stringify(options.data) : undefined,
     });
   } catch {
@@ -200,11 +130,11 @@ export const sendFetchRequest = async <T extends z.ZodTypeAny>(
   }
 };
 
-export const handleResponseError = async <T extends z.ZodTypeAny>(
-  config: HttpClientConfig,
+const handleResponseError = async <T extends z.ZodTypeAny>(
+  config: Required<ClientConfig>,
   response: Response,
-  options: HttpRequestOptions<T>,
-  context: HttpRequestContext,
+  options: RequestOptions<T>,
+  context: RequestContext,
   fullUrl: URL,
   retryCall: () => Promise<unknown>,
 ): Promise<unknown> => {
@@ -225,11 +155,11 @@ export const handleResponseError = async <T extends z.ZodTypeAny>(
   throw new ApiNetworkError(problem);
 };
 
-export const runOnResponseSuccessMiddleware = async <T extends z.ZodTypeAny>(
-  config: HttpClientConfig,
+const runOnResponseSuccessMiddleware = async <T extends z.ZodTypeAny>(
+  config: Required<ClientConfig>,
   response: Response,
-  options: HttpRequestOptions<T>,
-  context: HttpRequestContext,
+  options: RequestOptions<T>,
+  context: RequestContext,
 ): Promise<void> => {
   for (const layer of config.middleware) {
     if (layer.onResponseSuccess) {
@@ -238,9 +168,7 @@ export const runOnResponseSuccessMiddleware = async <T extends z.ZodTypeAny>(
   }
 };
 
-export const parseResponseBody = async (
-  response: Response,
-): Promise<unknown> => {
+const parseResponseBody = async (response: Response): Promise<unknown> => {
   if (response.status === 204) return {};
 
   const rawText = await response.text();
@@ -265,7 +193,7 @@ export const parseResponseBody = async (
   }
 };
 
-export const validateResponseSchema = <T extends z.ZodTypeAny>(
+const validateResponseSchema = <T extends z.ZodTypeAny>(
   rawData: unknown,
   schema?: T,
   method?: string,
