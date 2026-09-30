@@ -1,4 +1,4 @@
-import type { QueryParams } from "./types";
+import { type QueryParams } from "./request";
 
 export const buildFullUrl = (
   baseUrl: string,

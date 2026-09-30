@@ -1,13 +1,18 @@
 import { z } from "zod";
-import type { QueryParams } from "./types";
+import { AppError } from "@/lib";
 import {
-  ApiNetworkError,
-  mapFetchToAppError,
-  newCascadeLoopError,
-  ResponseValidationError,
+  AipError,
+  mapFetchToUnknownAipErrorData,
+  REQUEST_ERROR_CODES,
+  REQUEST_ERROR_MESSAGES,
+  VALIDATION_ERROR_CODES,
+  VALIDATION_ERROR_MESSAGES,
 } from "./errors";
 import { buildFullUrl, buildHeaders } from "./utils";
 import type { ClientConfig } from "./client";
+
+export type QueryParamValue = string | number | boolean | null | undefined;
+export type QueryParams = Record<string, QueryParamValue | QueryParamValue[]>;
 
 export interface RequestOptions<T extends z.ZodTypeAny> {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -54,7 +59,14 @@ export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
     context.attemptCount++;
 
     if (context.attemptCount > context.maxAttempts) {
-      throw newCascadeLoopError(fullUrl);
+      throw new AppError({
+        code: REQUEST_ERROR_CODES.CASCADE_LOOP_DETECTED,
+        message:
+          REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.CASCADE_LOOP_DETECTED],
+        context: {
+          url: fullUrl.toString(),
+        },
+      });
     }
 
     const headers = buildHeaders(config.headers, options.headers, options.data);
@@ -94,10 +106,7 @@ export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
       options.url,
     );
   } catch (error) {
-    if (
-      error instanceof ApiNetworkError ||
-      error instanceof ResponseValidationError
-    ) {
+    if (error instanceof AipError || error instanceof AppError) {
       throw error;
     }
     console.error(`[System Error] at ${options.url}:`, error);
@@ -144,12 +153,12 @@ const sendFetchRequest = async <T extends z.ZodTypeAny>(
       body: options.data ? JSON.stringify(options.data) : undefined,
     });
   } catch {
-    const fallbackAppError = mapFetchToAppError(
+    const fallbackAppError = mapFetchToUnknownAipErrorData(
       new Response(null, { status: 0 }),
       {},
       fullUrl.toString(),
     );
-    throw new ApiNetworkError(fallbackAppError);
+    throw new AipError(fallbackAppError);
   } finally {
     clearTimeout(timeoutId);
   }
@@ -176,8 +185,12 @@ const handleResponseError = async <T extends z.ZodTypeAny>(
   }
 
   const body = await response.json().catch(() => ({}));
-  const problem = mapFetchToAppError(response, body, fullUrl.toString());
-  throw new ApiNetworkError(problem);
+  const problem = mapFetchToUnknownAipErrorData(
+    response,
+    body,
+    fullUrl.toString(),
+  );
+  throw new AipError(problem);
 };
 
 const runOnResponseSuccessMiddleware = async <T extends z.ZodTypeAny>(
@@ -193,7 +206,14 @@ const runOnResponseSuccessMiddleware = async <T extends z.ZodTypeAny>(
   }
 };
 
-const parseResponseBody = async (response: Response): Promise<unknown> => {
+/**
+ * Safely parses the response body as JSON.
+ * Throws AppError if the server returns 2xx with a non-JSON/malformed payload.
+ */
+const parseResponseBody = async (
+  response: Response,
+  url?: string,
+): Promise<unknown> => {
   if (response.status === 204) return {};
 
   const rawText = await response.text();
@@ -204,20 +224,23 @@ const parseResponseBody = async (response: Response): Promise<unknown> => {
   try {
     return JSON.parse(rawText);
   } catch (syntaxError) {
-    const fakeZodError = new z.ZodError([
-      {
-        code: "custom",
-        path: [],
-        message: `Failed to parse payload: ${(syntaxError as Error).message}`,
+    throw new AppError({
+      code: VALIDATION_ERROR_CODES.RESPONSE_PARSE_ERROR,
+      message: VALIDATION_ERROR_MESSAGES.RESPONSE_PARSE_ERROR,
+      cause: syntaxError,
+      context: {
+        status: response.status,
+        url,
+        rawText,
       },
-    ]);
-    throw new ResponseValidationError(
-      fakeZodError,
-      "The server returned a success status code, but the body content was malformed or non-JSON.",
-    );
+    });
   }
 };
 
+/**
+ * Validates raw parsed response data against an optional Zod schema.
+ * Throws AppError if schema validation fails.
+ */
 const validateResponseSchema = <T extends z.ZodTypeAny>(
   rawData: unknown,
   schema?: T,
@@ -231,14 +254,24 @@ const validateResponseSchema = <T extends z.ZodTypeAny>(
   const parsed = schema.safeParse(rawData);
   if (!parsed.success) {
     console.groupCollapsed(
-      `🚨 [Contract Validation Failed] at ${method} ${url}`,
+      `🚨 [Contract Validation Failed] at ${method ?? "GET"} ${url ?? "unknown"}`,
     );
     console.error("Validation Errors:\n" + z.treeifyError(parsed.error));
     console.info("Raw Payload Received:", rawData);
     console.dir(parsed.error.issues);
     console.groupEnd();
 
-    throw new ResponseValidationError(parsed.error, "Contract failed.");
+    throw new AppError({
+      code: VALIDATION_ERROR_CODES.RESPONSE_VALIDATION_ERROR,
+      message: VALIDATION_ERROR_MESSAGES.RESPONSE_VALIDATION_ERROR,
+      cause: parsed.error,
+      context: {
+        method,
+        url,
+        issues: parsed.error.issues,
+        rawData,
+      },
+    });
   }
 
   return parsed.data;

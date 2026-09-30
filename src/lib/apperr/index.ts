@@ -1,22 +1,28 @@
-export interface BaseErrorOptions {
+export interface AppErrorOptions {
+  code?: string;
   message: string;
+  context?: Record<string, unknown>;
   cause?: unknown;
   timestamp?: string;
 }
 
-export class BaseError extends Error {
+export class AppError extends Error {
+  public readonly code: string;
+  public readonly context?: Record<string, unknown>;
   public readonly timestamp: string;
 
-  constructor(options: string | BaseErrorOptions) {
-    const message = typeof options === "string" ? options : options.message;
-    const cause = typeof options === "string" ? undefined : options.cause;
-    const timestamp =
-      typeof options === "string" ? undefined : options.timestamp;
+  constructor(options: string | AppErrorOptions) {
+    const isString = typeof options === "string";
+    const message = isString ? options : options.message;
+    const cause = isString ? undefined : options.cause;
 
     super(message, { cause });
 
     this.name = this.constructor.name;
-    this.timestamp = timestamp ?? new Date().toISOString();
+    this.code = isString ? "UNKNOWN_ERROR" : (options.code ?? "UNKNOWN_ERROR");
+    this.context = isString ? undefined : options.context;
+    this.timestamp =
+      (!isString && options.timestamp) || new Date().toISOString();
 
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
@@ -26,8 +32,10 @@ export class BaseError extends Error {
   public toJSON(): Record<string, unknown> {
     return {
       name: this.name,
+      code: this.code,
       message: this.message,
       timestamp: this.timestamp,
+      context: this.context,
       stack: this.stack,
       cause:
         this.cause instanceof Error
@@ -37,38 +45,6 @@ export class BaseError extends Error {
               stack: this.cause.stack,
             }
           : this.cause,
-    };
-  }
-}
-
-export interface AppErrorOptions {
-  code: string;
-  message: string;
-  context?: Record<string, unknown>;
-  cause?: unknown;
-  timestamp?: string;
-}
-
-export class AppError extends BaseError {
-  public readonly code: string;
-  public readonly context?: Record<string, unknown>;
-
-  constructor(options: AppErrorOptions) {
-    super({
-      message: options.message,
-      cause: options.cause,
-      timestamp: options.timestamp,
-    });
-
-    this.code = options.code;
-    this.context = options.context;
-  }
-
-  public override toJSON(): Record<string, unknown> {
-    return {
-      ...super.toJSON(),
-      code: this.code,
-      context: this.context,
     };
   }
 }
