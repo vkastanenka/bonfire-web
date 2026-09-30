@@ -5,29 +5,27 @@ import {
   mapFetchToUnknownAipErrorData,
   REQUEST_ERROR_CODES,
   REQUEST_ERROR_MESSAGES,
-  VALIDATION_ERROR_CODES,
-  VALIDATION_ERROR_MESSAGES,
+  RESPONSE_ERROR_CODES,
 } from "./errors";
-import { buildFullUrl, buildHeaders } from "./utils";
-import type { ClientConfig } from "./client";
+import { buildUrl, buildHeaders, resolveRequestBody } from "./utils";
+import type { CustomFetch, ResolvedClientConfig } from "./client";
 
 export type QueryParamValue = string | number | boolean | null | undefined;
 export type QueryParams = Record<string, QueryParamValue | QueryParamValue[]>;
 
-export interface RequestOptions<T extends z.ZodTypeAny> {
+export interface RequestOptions<T extends z.ZodTypeAny = z.ZodTypeAny> {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  url: string;
+  urlPath: string;
   schema?: T;
-
   signal?: AbortSignal;
-  headers?: Record<string, string>;
+  headers?: HeadersInit;
   cache?: RequestCache;
-
   data?: unknown;
   queryParams?: QueryParams;
-
   protected?: boolean;
-  skipRetry?: boolean;
+  timeout?: number;
+  retry?: boolean | number;
+  fetch?: CustomFetch;
 }
 
 export interface RequestContext {
@@ -39,16 +37,16 @@ export interface RequestContext {
 }
 
 export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
-  config: Required<ClientConfig>,
+  config: Required<ResolvedClientConfig>,
   options: RequestOptions<T>,
 ): Promise<z.infer<T>> {
-  const fullUrl = buildFullUrl(
+  const parsedUrl = buildUrl(
     config.baseUrl,
-    options.url,
+    options.urlPath,
     options.queryParams,
   );
 
-  const context: RequestContext = {
+  const ctx: RequestContext = {
     id: crypto.randomUUID(),
     startTime: performance.now(),
     attemptCount: 0,
@@ -56,29 +54,30 @@ export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
   };
 
   const executeCall = async (): Promise<unknown> => {
-    context.attemptCount++;
+    ctx.attemptCount++;
 
-    if (context.attemptCount > context.maxAttempts) {
+    if (ctx.attemptCount > ctx.maxAttempts) {
       throw new AppError({
-        code: REQUEST_ERROR_CODES.CASCADE_LOOP_DETECTED,
+        code: REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED,
         message:
-          REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.CASCADE_LOOP_DETECTED],
+          REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED],
         context: {
-          url: fullUrl.toString(),
+          url: parsedUrl.toString(),
+          attemptCount: ctx.attemptCount - 1,
+          maxAttempts: ctx.maxAttempts,
         },
       });
     }
 
     const headers = buildHeaders(config.headers, options.headers, options.data);
 
-    await runBeforeRequestMiddleware(config, options, context, headers);
+    await runBeforeRequestMiddleware(config, options, ctx, headers);
 
     const response = await sendFetchRequest(
-      fullUrl,
-      options,
+      parsedUrl,
       headers,
-      config.timeout,
-      config.credentials,
+      config,
+      options,
     );
 
     if (!response.ok) {
@@ -86,15 +85,15 @@ export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
         config,
         response,
         options,
-        context,
-        fullUrl,
+        ctx,
+        parsedUrl,
         executeCall,
       );
     }
 
-    await runOnResponseSuccessMiddleware(config, response, options, context);
+    await runOnResponseSuccessMiddleware(config, response, options, ctx);
 
-    return parseResponseBody(response);
+    return parseResponseBody(response, parsedUrl.toString());
   };
 
   try {
@@ -103,19 +102,19 @@ export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
       rawData,
       options.schema,
       options.method,
-      options.url,
+      options.urlPath,
     );
   } catch (error) {
     if (error instanceof AipError || error instanceof AppError) {
       throw error;
     }
-    console.error(`[System Error] at ${options.url}:`, error);
+    console.error(`[System Error] at ${options.urlPath}:`, error);
     throw error;
   }
 }
 
 const runBeforeRequestMiddleware = async <T extends z.ZodTypeAny>(
-  config: Required<ClientConfig>,
+  config: Required<ResolvedClientConfig>,
   options: RequestOptions<T>,
   context: RequestContext,
   headers: Headers,
@@ -129,43 +128,67 @@ const runBeforeRequestMiddleware = async <T extends z.ZodTypeAny>(
 
 const sendFetchRequest = async <T extends z.ZodTypeAny>(
   fullUrl: URL,
-  options: RequestOptions<T>,
   headers: Headers,
-  timeoutMs: number,
-  credentials?: RequestCredentials,
+  config: ResolvedClientConfig,
+  options: RequestOptions<T>,
 ): Promise<Response> => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutMs = options.timeout ?? config.timeout;
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
 
   const signal = options.signal
-    ? AbortSignal.any
-      ? AbortSignal.any([options.signal, controller.signal])
-      : options.signal
-    : controller.signal;
+    ? AbortSignal.any([options.signal, timeoutSignal])
+    : timeoutSignal;
+
+  const body = resolveRequestBody(options.data);
+  const fetchImpl = options.fetch ?? config.fetch;
 
   try {
-    return await fetch(fullUrl.toString(), {
+    return await fetchImpl(fullUrl.toString(), {
       method: options.method,
       signal,
       cache: options.cache,
       headers,
-      credentials: credentials ?? "include",
-      body: options.data ? JSON.stringify(options.data) : undefined,
+      credentials: config.credentials,
+      body,
     });
-  } catch {
+  } catch (cause) {
+    if (options.signal?.aborted) {
+      throw new AppError({
+        code: REQUEST_ERROR_CODES.REQUEST_ABORTED,
+        message: REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.REQUEST_ABORTED],
+        cause,
+        context: { url: fullUrl.toString() },
+      });
+    }
+
+    if (
+      (cause instanceof Error && cause.name === "TimeoutError") ||
+      timeoutSignal.aborted
+    ) {
+      throw new AppError({
+        code: REQUEST_ERROR_CODES.REQUEST_TIMEOUT,
+        message: REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.REQUEST_TIMEOUT],
+        cause,
+        context: { url: fullUrl.toString(), timeoutMs },
+      });
+    }
+
     const fallbackAppError = mapFetchToUnknownAipErrorData(
       new Response(null, { status: 0 }),
-      {},
+      null,
       fullUrl.toString(),
+      {
+        domain: config.domain,
+        cause,
+      },
     );
-    throw new AipError(fallbackAppError);
-  } finally {
-    clearTimeout(timeoutId);
+
+    throw new AipError(fallbackAppError, { cause });
   }
 };
 
 const handleResponseError = async <T extends z.ZodTypeAny>(
-  config: Required<ClientConfig>,
+  config: Required<ResolvedClientConfig>,
   response: Response,
   options: RequestOptions<T>,
   context: RequestContext,
@@ -189,12 +212,13 @@ const handleResponseError = async <T extends z.ZodTypeAny>(
     response,
     body,
     fullUrl.toString(),
+    { domain: config.domain },
   );
   throw new AipError(problem);
 };
 
 const runOnResponseSuccessMiddleware = async <T extends z.ZodTypeAny>(
-  config: Required<ClientConfig>,
+  config: Required<ResolvedClientConfig>,
   response: Response,
   options: RequestOptions<T>,
   context: RequestContext,
@@ -225,8 +249,8 @@ const parseResponseBody = async (
     return JSON.parse(rawText);
   } catch (syntaxError) {
     throw new AppError({
-      code: VALIDATION_ERROR_CODES.RESPONSE_PARSE_ERROR,
-      message: VALIDATION_ERROR_MESSAGES.RESPONSE_PARSE_ERROR,
+      code: RESPONSE_ERROR_CODES.PARSE_ERROR,
+      message: RESPONSE_ERROR_CODES.PARSE_ERROR,
       cause: syntaxError,
       context: {
         status: response.status,
@@ -245,7 +269,7 @@ const validateResponseSchema = <T extends z.ZodTypeAny>(
   rawData: unknown,
   schema?: T,
   method?: string,
-  url?: string,
+  urlPath?: string,
 ): z.infer<T> => {
   if (!schema) {
     return rawData as z.infer<T>;
@@ -254,7 +278,7 @@ const validateResponseSchema = <T extends z.ZodTypeAny>(
   const parsed = schema.safeParse(rawData);
   if (!parsed.success) {
     console.groupCollapsed(
-      `🚨 [Contract Validation Failed] at ${method ?? "GET"} ${url ?? "unknown"}`,
+      `🚨 [Contract Validation Failed] at ${method ?? "GET"} ${urlPath ?? "unknown"}`,
     );
     console.error("Validation Errors:\n" + z.treeifyError(parsed.error));
     console.info("Raw Payload Received:", rawData);
@@ -262,12 +286,12 @@ const validateResponseSchema = <T extends z.ZodTypeAny>(
     console.groupEnd();
 
     throw new AppError({
-      code: VALIDATION_ERROR_CODES.RESPONSE_VALIDATION_ERROR,
-      message: VALIDATION_ERROR_MESSAGES.RESPONSE_VALIDATION_ERROR,
+      code: RESPONSE_ERROR_CODES.VALIDATION_ERROR,
+      message: RESPONSE_ERROR_CODES.VALIDATION_ERROR,
       cause: parsed.error,
       context: {
         method,
-        url,
+        urlPath,
         issues: parsed.error.issues,
         rawData,
       },

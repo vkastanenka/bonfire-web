@@ -1,6 +1,6 @@
 import { type QueryParams } from "./request";
 
-export const buildFullUrl = (
+export const buildUrl = (
   baseUrl: string,
   path: string,
   queryParams?: QueryParams,
@@ -28,26 +28,6 @@ export const buildFullUrl = (
   return url;
 };
 
-/**
- * Detects whether data is a native browser/Node body type that manages
- * its own Content-Type (e.g., FormData sets multipart boundaries automatically).
- */
-export const isNativeRequestBody = (data: unknown): boolean => {
-  if (data === null || data === undefined) return false;
-
-  return (
-    data instanceof FormData ||
-    data instanceof URLSearchParams ||
-    data instanceof Blob ||
-    data instanceof ArrayBuffer ||
-    ArrayBuffer.isView(data) // Catches TypedArrays like Uint8Array
-  );
-};
-
-/**
- * Merges default and request-specific headers, automatically inferring
- * or clearing Content-Type based on request payload type.
- */
 export const buildHeaders = (
   defaultHeaders?: HeadersInit,
   requestHeaders?: HeadersInit,
@@ -61,10 +41,8 @@ export const buildHeaders = (
     });
   }
 
-  // Handle Content-Type inference when payload exists
   if (data !== undefined && data !== null) {
     if (isNativeRequestBody(data)) {
-      // Allow fetch to auto-generate boundaries (e.g. multipart/form-data)
       headers.delete("Content-Type");
     } else if (!headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
@@ -72,4 +50,45 @@ export const buildHeaders = (
   }
 
   return headers;
+};
+
+export const isNativeRequestBody = (data: unknown): boolean => {
+  if (data === null || data === undefined) return false;
+
+  if (
+    data instanceof FormData ||
+    data instanceof URLSearchParams ||
+    data instanceof Blob ||
+    data instanceof ArrayBuffer ||
+    ArrayBuffer.isView(data) ||
+    data instanceof ReadableStream
+  ) {
+    return true;
+  }
+
+  const tag = Object.prototype.toString.call(data);
+  return (
+    tag === "[object FormData]" ||
+    tag === "[object URLSearchParams]" ||
+    tag === "[object Blob]" ||
+    tag === "[object File]" ||
+    tag === "[object ArrayBuffer]" ||
+    tag === "[object ReadableStream]"
+  );
+};
+
+export const resolveRequestBody = (data: unknown): BodyInit | undefined => {
+  if (data === undefined || data === null) {
+    return undefined;
+  }
+
+  if (isNativeRequestBody(data)) {
+    return data as BodyInit;
+  }
+
+  if (typeof data === "string") {
+    return data;
+  }
+
+  return JSON.stringify(data);
 };

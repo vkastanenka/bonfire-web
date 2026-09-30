@@ -84,6 +84,7 @@ export function isAipErrorData(data: unknown): data is AipErrorData {
 
 export interface UnknownAipErrorOptions {
   domain?: string;
+  cause?: unknown;
   timestamp?: string | Date | number;
 }
 
@@ -96,16 +97,11 @@ export const UNKNOWN_AIP_ERROR_DATA = {
 export const createUnknownAipErrorData = (
   statusCode: number,
   url: string,
-  data?: unknown,
   options?: UnknownAipErrorOptions,
 ): AipErrorData => {
   const code = statusCode as StatusCode;
   const statusName = STATUS_NAMES[code] ?? UNKNOWN_AIP_ERROR_DATA.STATUS;
-
-  const message =
-    extractBodyMessage(data) ??
-    STATUS_MESSAGES[code] ??
-    UNKNOWN_AIP_ERROR_DATA.MESSAGE;
+  const message = STATUS_MESSAGES[code] ?? UNKNOWN_AIP_ERROR_DATA.MESSAGE;
 
   const formattedTimestamp = options?.timestamp
     ? new Date(options.timestamp).toISOString()
@@ -120,6 +116,9 @@ export const createUnknownAipErrorData = (
     metadata: {
       instance: url,
       timestamp: formattedTimestamp,
+      ...(options?.cause instanceof Error
+        ? { originalError: options.cause.name }
+        : {}),
     },
   };
 
@@ -141,24 +140,5 @@ export const mapFetchToUnknownAipErrorData = (
     return data;
   }
 
-  return createUnknownAipErrorData(response.status, url, data, options);
-};
-
-const extractBodyMessage = (data: unknown): string | null => {
-  if (typeof data !== "object" || data === null) return null;
-  if (
-    "message" in data &&
-    typeof data.message === "string" &&
-    data.message.trim() !== ""
-  ) {
-    return data.message;
-  }
-  if (
-    "error" in data &&
-    typeof data.error === "string" &&
-    data.error.trim() !== ""
-  ) {
-    return data.error;
-  }
-  return null;
+  return createUnknownAipErrorData(response.status, url, options);
 };

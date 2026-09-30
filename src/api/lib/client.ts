@@ -15,6 +15,7 @@ export type CustomFetch = (
 
 export interface ClientConfig {
   baseUrl: string;
+  domain?: string;
   headers?: HeadersInit;
   credentials?: RequestCredentials;
   maxAttempts?: number;
@@ -24,11 +25,14 @@ export interface ClientConfig {
   fetch?: CustomFetch;
 }
 
+export type ResolvedClientConfig = Client["config"];
+
 export const DEFAULT_CLIENT_CONFIG = {
+  domain: "http-client",
   headers: {
     Accept: "application/json",
   },
-  credentials: "same-origin",
+  credentials: "include",
   maxAttempts: 3,
   timeout: 10_000,
   protected: true,
@@ -47,6 +51,7 @@ export class Client {
 
     this.config = Object.freeze({
       baseUrl,
+      domain: config.domain ?? DEFAULT_CLIENT_CONFIG.domain,
       credentials: config.credentials ?? DEFAULT_CLIENT_CONFIG.credentials,
       headers: buildHeaders(DEFAULT_CLIENT_CONFIG.headers, config.headers),
       maxAttempts,

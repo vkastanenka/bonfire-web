@@ -20,19 +20,9 @@ export const CLIENT_ERROR_MESSAGES: Record<ClientErrorCode, string> = {
 };
 
 export const REQUEST_ERROR_CODES = {
-  // Runtime Execution
   REQUEST_ABORTED: "REQUEST_ABORTED",
   REQUEST_TIMEOUT: "REQUEST_TIMEOUT",
   MAX_RETRIES_EXCEEDED: "MAX_RETRIES_EXCEEDED",
-  NETWORK_DISCONNECTED: "NETWORK_DISCONNECTED",
-
-  // Data & Serialization
-  SERIALIZATION_ERROR: "SERIALIZATION_ERROR",
-  INVALID_RESPONSE_HEADER: "INVALID_RESPONSE_HEADER",
-
-  // Circuit Breaker & Lifecycle
-  CASCADE_LOOP_DETECTED: "CASCADE_LOOP_DETECTED",
-  UNEXPECTED_ERROR: "UNEXPECTED_ERROR",
 } as const;
 
 export type RequestErrorCode =
@@ -45,29 +35,19 @@ export const REQUEST_ERROR_MESSAGES: Record<RequestErrorCode, string> = {
     "The request timed out before receiving a response.",
   [REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED]:
     "Maximum retry attempts reached without a successful response.",
-  [REQUEST_ERROR_CODES.NETWORK_DISCONNECTED]:
-    "Failed to execute network request due to lack of connectivity.",
-  [REQUEST_ERROR_CODES.SERIALIZATION_ERROR]:
-    "Failed to serialize request payload to JSON.",
-  [REQUEST_ERROR_CODES.INVALID_RESPONSE_HEADER]:
-    "The response header format was invalid or unparseable.",
-  [REQUEST_ERROR_CODES.CASCADE_LOOP_DETECTED]:
-    "Request execution loop detected and aborted by circuit breaker.",
-  [REQUEST_ERROR_CODES.UNEXPECTED_ERROR]:
-    "An unhandled error occurred during request execution.",
 };
 
-export const VALIDATION_ERROR_CODES = {
-  RESPONSE_PARSE_ERROR: "RESPONSE_PARSE_ERROR",
-  RESPONSE_VALIDATION_ERROR: "RESPONSE_VALIDATION_ERROR",
+export const RESPONSE_ERROR_CODES = {
+  PARSE_ERROR: "PARSE_ERROR",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
 } as const;
 
 export type ValidationErrorCode =
-  (typeof VALIDATION_ERROR_CODES)[keyof typeof VALIDATION_ERROR_CODES];
+  (typeof RESPONSE_ERROR_CODES)[keyof typeof RESPONSE_ERROR_CODES];
 
 export const VALIDATION_ERROR_MESSAGES: Record<ValidationErrorCode, string> = {
-  [VALIDATION_ERROR_CODES.RESPONSE_PARSE_ERROR]:
+  [RESPONSE_ERROR_CODES.PARSE_ERROR]:
     "The server returned a success status code, but the body content was malformed or non-JSON.",
-  [VALIDATION_ERROR_CODES.RESPONSE_VALIDATION_ERROR]:
+  [RESPONSE_ERROR_CODES.VALIDATION_ERROR]:
     "The server response body did not match the expected API schema contract.",
 };
