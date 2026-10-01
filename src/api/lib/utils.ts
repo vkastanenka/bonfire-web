@@ -5,11 +5,15 @@ export const buildUrl = (
   path: string,
   queryParams?: QueryParams,
 ): URL => {
-  const cleanBaseURL = baseUrl.replace(/\/+$/, "");
-  const cleanPath = path.replace(/^\//, "");
-  const url = new URL(
-    cleanPath ? `${cleanBaseURL}/${cleanPath}` : cleanBaseURL,
-  );
+  let url: URL;
+
+  if (/^https?:\/\//i.test(path)) {
+    url = new URL(path);
+  } else {
+    const cleanBaseURL = baseUrl.replace(/\/+$/, "");
+    const cleanPath = path.replace(/^\//, "");
+    url = new URL(cleanPath ? `${cleanBaseURL}/${cleanPath}` : cleanBaseURL);
+  }
 
   if (!queryParams) return url;
 

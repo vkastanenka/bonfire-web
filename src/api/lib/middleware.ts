@@ -80,8 +80,13 @@ export class LoggingMiddleware implements RequestMiddleware {
     response,
   }: ResponseErrorParams<T>) {
     const durationMs = Math.round(performance.now() - context.startTime);
+    const isFinalAttempt = context.attemptCount >= context.maxAttempts;
 
-    context.logger.error(REQUEST_LOGS.FAILED, {
+    const logMethod = isFinalAttempt
+      ? context.logger.error
+      : context.logger.debug;
+
+    logMethod.call(context.logger, REQUEST_LOGS.FAILED, {
       requestId: context.requestId,
       method: options.method,
       urlPath: options.urlPath,

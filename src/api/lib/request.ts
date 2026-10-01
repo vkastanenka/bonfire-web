@@ -48,7 +48,7 @@ export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
   const context: RequestContext = {
     requestId: crypto.randomUUID(),
     url: buildUrl(config.baseUrl, options.urlPath, options.queryParams),
-    headers: buildHeaders(config.headers, options.headers, options.data),
+    headers: new Headers(),
     startTime: performance.now(),
     attemptCount: 0,
     maxAttempts: options.maxAttempts ?? config.maxAttempts,
@@ -71,13 +71,11 @@ export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
       });
     }
 
-    if (context.attemptCount > 1) {
-      context.headers = buildHeaders(
-        config.headers,
-        options.headers,
-        options.data,
-      );
-    }
+    context.headers = buildHeaders(
+      config.headers,
+      options.headers,
+      options.data,
+    );
 
     await runBeforeRequestMiddleware(config, options, context);
 
@@ -98,21 +96,8 @@ export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
     return parseResponseBody(response, context.url.toString());
   };
 
-  try {
-    const rawData = await executeCall();
-    return validateResponseSchema(rawData, options, context);
-  } catch (error) {
-    if (!(error instanceof AipError) && !(error instanceof AppError)) {
-      context.logger.error(REQUEST_LOGS.FAILED, {
-        requestId: context.requestId,
-        method: options.method,
-        urlPath: options.urlPath,
-        error,
-      });
-    }
-
-    throw error;
-  }
+  const rawData = await executeCall();
+  return validateResponseSchema(rawData, options, context);
 }
 
 const runBeforeRequestMiddleware = async <T extends z.ZodTypeAny>(

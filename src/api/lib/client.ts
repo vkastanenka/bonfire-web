@@ -147,7 +147,9 @@ export class Client {
     return new Client({
       ...this.config,
       ...overrides,
-      headers: buildHeaders(this.config.headers, overrides.headers),
+      headers: overrides.headers
+        ? buildHeaders(this.config.headers, overrides.headers)
+        : this.config.headers,
       middleware: [...this.config.middleware, ...(overrides.middleware ?? [])],
     });
   }
