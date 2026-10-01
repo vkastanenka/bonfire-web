@@ -82,7 +82,7 @@ export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
     const response = await sendFetchRequest(config, options, context);
 
     if (!response.ok) {
-      return handleResponseError(
+      return await handleResponseError(
         config,
         options,
         context,
@@ -176,7 +176,7 @@ const handleResponseError = async <T extends z.ZodTypeAny>(
   context: RequestContext,
   response: Response,
   retryCall: () => Promise<unknown>,
-): Promise<never> => {
+): Promise<unknown> => {
   for (const layer of config.middleware) {
     if (layer.onResponseError) {
       const shortCircuit = await layer.onResponseError({
@@ -187,7 +187,7 @@ const handleResponseError = async <T extends z.ZodTypeAny>(
       });
 
       if (shortCircuit !== undefined) {
-        return shortCircuit as never;
+        return shortCircuit;
       }
     }
   }
@@ -224,6 +224,13 @@ const parseResponseBody = async (
   response: Response,
   url?: string,
 ): Promise<unknown> => {
+  if (
+    response.status === 204 ||
+    response.headers.get("content-length") === "0"
+  ) {
+    return null;
+  }
+
   const { data, error } = await parseJson(response);
 
   if (error) {
