@@ -1,6 +1,6 @@
 import * as http from "@/http";
 import { logger } from "@/lib/logger";
-import { authService } from "@/bonfire";
+import { authService, useTokenStore } from "@/bonfire";
 
 const DEFAULT_HEADERS = {
   Accept: "application/json",
@@ -29,7 +29,7 @@ export const bonfireClient = new http.Client({
   protected: true,
   middleware: [
     new http.LoggingMiddleware(),
-    new http.AuthMiddleware(authService),
+    new http.AuthMiddleware(authService, useTokenStore),
     new http.RetryMiddleware(),
   ],
 });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const ERROR_TEMPLATES = {
+export const ERRORS = {
   required: "This field is required.",
   whitespace: "Cannot consist entirely of whitespace.",
   email: "Must be a valid email address.",
@@ -18,41 +18,44 @@ const ERROR_TEMPLATES = {
   maxNumeric: (val: number | bigint) => `Must be ${val} or less.`,
   maxCollection: (val: number | bigint) =>
     `Cannot contain more than ${val} items.`,
-};
+} as const;
 
 z.config({
   customError: (issue) => {
-    if (issue.code === "invalid_type" && issue.input === undefined) {
-      return ERROR_TEMPLATES.required;
+    if (
+      issue.code === "invalid_type" &&
+      (issue.input === undefined || issue.input === null)
+    ) {
+      return ERRORS.required;
     }
 
     if (issue.code === "invalid_format" && issue.format === "email") {
-      return ERROR_TEMPLATES.email;
+      return ERRORS.email;
     }
 
     if (issue.code === "too_small") {
       switch (issue.origin) {
         case "string":
-          return ERROR_TEMPLATES.minString(issue.minimum);
+          return ERRORS.minString(issue.minimum);
         case "number":
         case "bigint":
-          return ERROR_TEMPLATES.minNumeric(issue.minimum);
+          return ERRORS.minNumeric(issue.minimum);
         case "array":
         case "set":
-          return ERROR_TEMPLATES.minCollection(issue.minimum);
+          return ERRORS.minCollection(issue.minimum);
       }
     }
 
     if (issue.code === "too_big") {
       switch (issue.origin) {
         case "string":
-          return ERROR_TEMPLATES.maxString(issue.maximum);
+          return ERRORS.maxString(issue.maximum);
         case "number":
         case "bigint":
-          return ERROR_TEMPLATES.maxNumeric(issue.maximum);
+          return ERRORS.maxNumeric(issue.maximum);
         case "array":
         case "set":
-          return ERROR_TEMPLATES.maxCollection(issue.maximum);
+          return ERRORS.maxCollection(issue.maximum);
       }
     }
 
@@ -60,23 +63,4 @@ z.config({
   },
 });
 
-export const emptyToUndefined = <T extends z.ZodString>(stringSchema: T) =>
-  z
-    .string()
-    .optional()
-    .transform((val) => (val?.trim() === "" ? undefined : val))
-    .pipe(stringSchema.optional());
-
-export const usernameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9_.]?[a-zA-Z0-9])+$/;
-
-export const emailSchema = z.email().max(255);
-
-export const usernameSchema = z
-  .string()
-  .min(3)
-  .max(32)
-  .regex(usernameRegex, ERROR_TEMPLATES.username);
-
-export const passwordSchema = z.string().min(12).max(255);
-
-export const displayNameSchema = z.string().min(3).max(32);
+export { z };

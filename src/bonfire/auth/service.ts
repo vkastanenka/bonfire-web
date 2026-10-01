@@ -29,8 +29,8 @@ export class AuthService {
     this.activeRefreshPromise = (async () => {
       try {
         const data = await this.api.refresh();
-        this.store.getState().setAccessToken(data.access_token);
-        return data.access_token;
+        this.store.getState().setAccessToken(data.accessToken);
+        return data.accessToken;
       } catch {
         this.store.getState().clearTokens();
         return null;

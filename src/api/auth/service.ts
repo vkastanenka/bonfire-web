@@ -4,24 +4,19 @@ import { baseBonfireClient, bonfireClient } from "../client";
 import {
   type RegisterRequest,
   type RegisterResponse,
-  type RegisterResponseSchema,
   registerResponseSchema,
   type LoginRequest,
   type LoginResponse,
-  type LoginResponseSchema,
   loginResponseSchema,
   type RefreshResponse,
-  type RefreshResponseSchema,
   refreshResponseSchema,
   type ForgotPasswordRequest,
   type ResetPasswordRequest,
   type ResetPasswordResponse,
-  type ResetPasswordResponseSchema,
   resetPasswordResponseSchema,
   type VerifyEmailRequest,
   verifyEmailRequestSchema,
   type WsTicketResponse,
-  type WsTicketResponseSchema,
   wsTicketResponseSchema,
 } from "./validation";
 
@@ -36,7 +31,7 @@ export class PublicAuthService extends BaseService {
     data: RegisterRequest,
     options?: http.RequestOptions,
   ): Promise<RegisterResponse> => {
-    return this.client.post<RegisterResponseSchema>({
+    return this.client.post<typeof registerResponseSchema>({
       ...options,
       urlPath: this.url("/register"),
       data,
@@ -48,7 +43,7 @@ export class PublicAuthService extends BaseService {
     data: LoginRequest,
     options?: http.RequestOptions,
   ): Promise<LoginResponse> => {
-    return this.client.post<LoginResponseSchema>({
+    return this.client.post<typeof loginResponseSchema>({
       ...options,
       urlPath: this.url("/login"),
       data,
@@ -59,7 +54,7 @@ export class PublicAuthService extends BaseService {
   public refresh = (
     options?: http.RequestOptions,
   ): Promise<RefreshResponse> => {
-    return this.client.post<RefreshResponseSchema>({
+    return this.client.post<typeof refreshResponseSchema>({
       ...options,
       urlPath: this.url("/refresh"),
       schema: refreshResponseSchema,
@@ -93,7 +88,7 @@ export class PublicAuthService extends BaseService {
     data: ResetPasswordRequest,
     options?: http.RequestOptions,
   ): Promise<ResetPasswordResponse> => {
-    return this.client.post<ResetPasswordResponseSchema>({
+    return this.client.post<typeof resetPasswordResponseSchema>({
       ...options,
       urlPath: this.url("/reset-password"),
       data,
@@ -119,7 +114,7 @@ export class AuthService extends BaseService {
   public wsTicket = (
     options?: http.RequestOptions,
   ): Promise<WsTicketResponse> => {
-    return this.client.post<WsTicketResponseSchema>({
+    return this.client.post<typeof wsTicketResponseSchema>({
       ...options,
       urlPath: this.url("/ws-ticket"),
       schema: wsTicketResponseSchema,

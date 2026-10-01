@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib";
 
 export const VALIDATION_ERRORS = {
   username:
