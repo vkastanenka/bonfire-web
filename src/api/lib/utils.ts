@@ -47,7 +47,10 @@ export const buildHeaders = (
 
   if (data !== undefined && data !== null) {
     if (isNativeRequestBody(data)) {
-      headers.delete("Content-Type");
+      // Let fetch auto-generate multipart boundaries for FormData
+      if (typeof FormData !== "undefined" && data instanceof FormData) {
+        headers.delete("Content-Type");
+      }
     } else if (!headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
     }
@@ -60,12 +63,13 @@ export const isNativeRequestBody = (data: unknown): boolean => {
   if (data === null || data === undefined) return false;
 
   if (
-    data instanceof FormData ||
-    data instanceof URLSearchParams ||
-    data instanceof Blob ||
-    data instanceof ArrayBuffer ||
-    ArrayBuffer.isView(data) ||
-    data instanceof ReadableStream
+    (typeof FormData !== "undefined" && data instanceof FormData) ||
+    (typeof URLSearchParams !== "undefined" &&
+      data instanceof URLSearchParams) ||
+    (typeof Blob !== "undefined" && data instanceof Blob) ||
+    (typeof ArrayBuffer !== "undefined" &&
+      (data instanceof ArrayBuffer || ArrayBuffer.isView(data))) ||
+    (typeof ReadableStream !== "undefined" && data instanceof ReadableStream)
   ) {
     return true;
   }
@@ -88,10 +92,6 @@ export const resolveRequestBody = (data: unknown): BodyInit | undefined => {
 
   if (isNativeRequestBody(data)) {
     return data as BodyInit;
-  }
-
-  if (typeof data === "string") {
-    return data;
   }
 
   return JSON.stringify(data);
