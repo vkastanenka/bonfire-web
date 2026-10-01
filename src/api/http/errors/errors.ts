@@ -31,7 +31,7 @@ export class AipError extends AppError {
     this.details = data.details ?? [];
   }
 
-  private getDetail<T extends AipErrorDetail>(
+  public getDetail<T extends AipErrorDetail>(
     typeUrl: T["@type"],
   ): T | undefined {
     return this.details.find((d): d is T => d["@type"] === typeUrl);

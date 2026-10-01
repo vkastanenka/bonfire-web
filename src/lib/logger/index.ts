@@ -43,18 +43,16 @@ export class Logger {
 
     const payload = JSON.stringify(
       {
+        ...context,
         level,
         message,
         timestamp: new Date().toISOString(),
-        ...context,
       },
       (_key, value) => {
         if (value instanceof Error) {
-          return {
-            name: value.name,
-            message: value.message,
-            stack: value.stack,
-          };
+          return "toJSON" in value && typeof value.toJSON === "function"
+            ? value.toJSON()
+            : { name: value.name, message: value.message, stack: value.stack };
         }
         return value;
       },

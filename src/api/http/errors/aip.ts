@@ -55,6 +55,11 @@ export interface AipResourceInfoDetail {
   description?: string;
 }
 
+export interface AipGenericDetail {
+  "@type": string;
+  [key: string]: unknown;
+}
+
 export type AipKnownErrorDetail =
   | AipErrorInfoDetail
   | AipRetryInfoDetail
@@ -63,7 +68,7 @@ export type AipKnownErrorDetail =
   | AipRequestInfoDetail
   | AipResourceInfoDetail;
 
-export type AipErrorDetail = AipKnownErrorDetail;
+export type AipErrorDetail = AipKnownErrorDetail | AipGenericDetail;
 
 export interface AipErrorData {
   code: number;
@@ -73,13 +78,22 @@ export interface AipErrorData {
 }
 
 export function isAipErrorData(data: unknown): data is AipErrorData {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    typeof (data as Record<string, unknown>).code === "number" &&
-    typeof (data as Record<string, unknown>).status === "string" &&
-    typeof (data as Record<string, unknown>).message === "string"
-  );
+  if (typeof data !== "object" || data === null) return false;
+
+  const candidate = data as Record<string, unknown>;
+
+  const hasBaseFields =
+    typeof candidate.code === "number" &&
+    typeof candidate.status === "string" &&
+    typeof candidate.message === "string";
+
+  if (!hasBaseFields) return false;
+
+  if ("details" in candidate && candidate.details !== undefined) {
+    return Array.isArray(candidate.details);
+  }
+
+  return true;
 }
 
 export interface UnknownAipErrorOptions {
@@ -103,9 +117,14 @@ export const createUnknownAipErrorData = (
   const statusName = STATUS_NAMES[code] ?? UNKNOWN_AIP_ERROR_DATA.STATUS;
   const message = STATUS_MESSAGES[code] ?? UNKNOWN_AIP_ERROR_DATA.MESSAGE;
 
-  const formattedTimestamp = options?.timestamp
-    ? new Date(options.timestamp).toISOString()
-    : new Date().toISOString();
+  let formattedTimestamp: string;
+  try {
+    formattedTimestamp = options?.timestamp
+      ? new Date(options.timestamp).toISOString()
+      : new Date().toISOString();
+  } catch {
+    formattedTimestamp = new Date().toISOString();
+  }
 
   const domain = options?.domain ?? UNKNOWN_AIP_ERROR_DATA.DOMAIN;
 

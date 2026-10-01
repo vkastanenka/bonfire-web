@@ -1,4 +1,4 @@
-import { HttpClient, LoggingMiddleware, RetryMiddleware } from "../lib";
+import { HttpClient, LoggingMiddleware, RetryMiddleware } from "../http";
 import { authManager } from "../auth";
 import { AuthMiddleware } from "./middleware";
 

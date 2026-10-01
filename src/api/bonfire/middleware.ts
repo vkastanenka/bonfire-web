@@ -6,7 +6,7 @@ import {
   type RequestMiddleware,
   type RequestContext,
   type RequestOptions,
-} from "../lib";
+} from "../http";
 import type { AuthManager } from "../auth";
 
 export class AuthMiddleware implements RequestMiddleware {
