@@ -1,6 +1,6 @@
 import { Client, type RequestOptions } from "@/http";
-import { BaseService } from "../service";
 import { baseBonfireClient, bonfireClient } from "../client";
+import { BaseService } from "../service";
 import {
   type RegisterRequest,
   type RegisterResponse,

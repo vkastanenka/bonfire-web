@@ -18,3 +18,5 @@ export class BootstrapService extends BaseService {
     });
   };
 }
+
+export const bootstrapService = new BootstrapService();

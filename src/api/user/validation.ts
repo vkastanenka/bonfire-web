@@ -19,8 +19,57 @@ export const avatarUrlSchema = urlSchema.optional();
 export const bioSchema = z.string().max(190).optional();
 export const bannerColorSchema = hexColorSchema.optional();
 export const preferredPresenceSchema = z
-  .enum(["dnd", "invisible", "offline"])
+  .enum(["BUSY", "DND", "INVISIBLE"])
   .optional();
+export const preferredPresenceDurationSchema = z
+  .enum(["15_MIN", "1_HOUR", "8_HOURS", "24_HOURS", "3_DAYS", "FOREVER"])
+  .optional();
+
+export const updateEmailRequestSchema = z.object({
+  newEmail: emailSchema,
+  password: passwordSchema,
+});
+
+export type UpdateEmailRequest = z.infer<typeof updateEmailRequestSchema>;
+
+export const updateUsernameRequestSchema = z.object({
+  newUsername: usernameSchema,
+  password: passwordSchema,
+});
+
+export type UpdateUsernameRequest = z.infer<typeof updateUsernameRequestSchema>;
+
+export const updatePasswordRequestSchema = z.object({
+  currentPassword: passwordSchema,
+  newPassword: passwordSchema,
+  newPasswordConfirm: passwordSchema,
+});
+
+export type UpdatePasswordRequest = z.infer<typeof updatePasswordRequestSchema>;
+
+export const updatePreferredPresenceRequestSchema = z.object({
+  preferredPresence: preferredPresenceSchema,
+  preferredPresenceDurationSchema: preferredPresenceDurationSchema,
+});
+
+export type UpdatePreferredPresenceRequest = z.infer<
+  typeof updatePreferredPresenceRequestSchema
+>;
+
+export const updateProfileRequestSchema = z.object({
+  displayName: displayNameSchema,
+  bio: bioSchema,
+  avatarUrl: avatarUrlSchema,
+  bannerColor: bannerColorSchema,
+});
+
+export type UpdateProfileRequest = z.infer<typeof updateProfileRequestSchema>;
+
+export const disableRequestSchema = z.object({
+  password: passwordSchema,
+});
+
+export type DisableRequest = z.infer<typeof disableRequestSchema>;
 
 export const summarySchema = z.object({
   id: z.uuid(),
