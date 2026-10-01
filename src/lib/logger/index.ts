@@ -90,3 +90,5 @@ export class Logger {
     this.emit(LOG_LEVELS.ERROR, message, context);
   }
 }
+
+export const logger = new Logger();
