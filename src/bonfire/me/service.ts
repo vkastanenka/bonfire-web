@@ -2,7 +2,7 @@ import {
   httpClient,
   type HttpScopedClient,
   type HttpServiceRequestOptions,
-} from "../http";
+} from "../../http";
 import { meSchema, type Me } from "./schema";
 
 class MeService {
@@ -23,6 +23,4 @@ class MeService {
   };
 }
 
-export const meService = new MeService(
-  httpClient.scope("/users", "MeService"),
-);
+export const meService = new MeService(httpClient.scope("/users", "MeService"));

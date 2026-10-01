@@ -7,7 +7,7 @@ import {
   loginRequestSchema,
   ApiNetworkError,
   type LoginRequest,
-} from "@/api";
+} from "@/bonfire";
 
 export const useLoginForm = () => {
   const navigate = useNavigate();

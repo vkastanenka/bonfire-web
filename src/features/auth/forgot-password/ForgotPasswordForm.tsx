@@ -1,7 +1,7 @@
 import { Form } from "@/components";
 import { LABELS, FORM_FIELDS } from "./forgot-password.constants";
 import type { UseFormReturn } from "react-hook-form";
-import type { ForgotPasswordRequest } from "@/api";
+import type { ForgotPasswordRequest } from "@/bonfire";
 
 interface ForgotPasswordFormProps {
   methods: UseFormReturn<ForgotPasswordRequest>;

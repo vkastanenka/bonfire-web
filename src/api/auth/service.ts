@@ -1,160 +1,131 @@
+import * as http from "@/http";
+import { BaseService } from "../service";
+import { baseBonfireClient, bonfireClient } from "../client";
 import {
-  HttpClient,
-  httpClient,
-  type HttpServiceRequestOptions,
-} from "../http";
-import {
-  type RegisterResponse,
   type RegisterRequest,
+  type RegisterResponse,
+  type RegisterResponseSchema,
+  registerResponseSchema,
   type LoginRequest,
   type LoginResponse,
-  type RefreshResponse,
-  type WSTicketResponse,
-  registerResponseSchema,
+  type LoginResponseSchema,
   loginResponseSchema,
+  type RefreshResponse,
+  type RefreshResponseSchema,
   refreshResponseSchema,
-  wsTicketResponseSchema,
   type ForgotPasswordRequest,
   type ResetPasswordRequest,
-  type VerifyEmailRequest,
   type ResetPasswordResponse,
+  type ResetPasswordResponseSchema,
   resetPasswordResponseSchema,
-} from "./schema";
+  type VerifyEmailRequest,
+  verifyEmailRequestSchema,
+  type WsTicketResponse,
+  type WsTicketResponseSchema,
+  wsTicketResponseSchema,
+} from "./validation";
 
-class AuthService {
-  private readonly client: HttpClient;
-  private readonly routePrefix = "/auth";
-  private readonly serviceMeta = { serviceName: "AuthService" };
+export class PublicAuthService extends BaseService {
+  protected readonly routePrefix = "/auth";
 
-  constructor(client: HttpClient = httpClient) {
-    this.client = client;
-  }
-
-  private url(path: string): string {
-    return `${this.routePrefix}${path}`;
+  constructor(client: http.Client = baseBonfireClient) {
+    super(client);
   }
 
   public register = (
     data: RegisterRequest,
-    options?: HttpServiceRequestOptions,
+    options?: http.RequestOptions,
   ): Promise<RegisterResponse> => {
-    return this.client.request(
-      {
-        method: "POST",
-        url: this.url("/register"),
-        data,
-        schema: registerResponseSchema,
-        ...options,
-      },
-      this.serviceMeta,
-    );
+    return this.client.post<RegisterResponseSchema>({
+      ...options,
+      urlPath: this.url("/register"),
+      data,
+      schema: registerResponseSchema,
+    });
   };
 
   public login = (
     data: LoginRequest,
-    options?: HttpServiceRequestOptions,
+    options?: http.RequestOptions,
   ): Promise<LoginResponse> => {
-    return this.client.request(
-      {
-        method: "POST",
-        url: this.url("/login"),
-        data,
-        schema: loginResponseSchema,
-        ...options,
-      },
-      this.serviceMeta,
-    );
+    return this.client.post<LoginResponseSchema>({
+      ...options,
+      urlPath: this.url("/login"),
+      data,
+      schema: loginResponseSchema,
+    });
   };
 
   public refresh = (
-    options?: HttpServiceRequestOptions,
+    options?: http.RequestOptions,
   ): Promise<RefreshResponse> => {
-    return this.client.request(
-      {
-        method: "POST",
-        url: this.url("/refresh"),
-        schema: refreshResponseSchema,
-        ...options,
-      },
-      this.serviceMeta,
-    );
+    return this.client.post<RefreshResponseSchema>({
+      ...options,
+      urlPath: this.url("/refresh"),
+      schema: refreshResponseSchema,
+    });
   };
 
   public verify = (
     data: VerifyEmailRequest,
-    options?: HttpServiceRequestOptions,
+    options?: http.RequestOptions,
   ): Promise<unknown> => {
-    return this.client.request(
-      {
-        method: "POST",
-        url: this.url("/verify"),
-        data,
-        protected: true,
-        ...options,
-      },
-      this.serviceMeta,
-    );
-  };
-
-  public resendVerify = (
-    options?: HttpServiceRequestOptions,
-  ): Promise<unknown> => {
-    return this.client.request(
-      {
-        method: "POST",
-        url: this.url("/resend-verify"),
-        protected: true,
-        ...options,
-      },
-      this.serviceMeta,
-    );
+    return this.client.post({
+      ...options,
+      urlPath: this.url("/verify"),
+      data,
+      schema: verifyEmailRequestSchema,
+    });
   };
 
   public forgotPassword = (
     data: ForgotPasswordRequest,
-    options?: HttpServiceRequestOptions,
+    options?: http.RequestOptions,
   ): Promise<unknown> => {
-    return this.client.request(
-      {
-        method: "POST",
-        url: this.url("/forgot-password"),
-        data,
-        ...options,
-      },
-      this.serviceMeta,
-    );
+    return this.client.post({
+      ...options,
+      urlPath: this.url("/forgot-password"),
+      data,
+    });
   };
 
   public resetPassword = (
     data: ResetPasswordRequest,
-    options?: HttpServiceRequestOptions,
+    options?: http.RequestOptions,
   ): Promise<ResetPasswordResponse> => {
-    return this.client.request(
-      {
-        method: "POST",
-        url: this.url("/reset-password"),
-        schema: resetPasswordResponseSchema,
-        data,
-        ...options,
-      },
-      this.serviceMeta,
-    );
-  };
-
-  public wsTicket = (
-    options?: HttpServiceRequestOptions,
-  ): Promise<WSTicketResponse> => {
-    return this.client.request(
-      {
-        method: "POST",
-        url: this.url("/ws-ticket"),
-        schema: wsTicketResponseSchema,
-        protected: true,
-        ...options,
-      },
-      this.serviceMeta,
-    );
+    return this.client.post<ResetPasswordResponseSchema>({
+      ...options,
+      urlPath: this.url("/reset-password"),
+      data,
+      schema: resetPasswordResponseSchema,
+    });
   };
 }
 
+export class AuthService extends BaseService {
+  protected readonly routePrefix = "/auth";
+
+  constructor(client: http.Client = bonfireClient) {
+    super(client);
+  }
+
+  public resendVerify = (options?: http.RequestOptions): Promise<unknown> => {
+    return this.client.post({
+      ...options,
+      urlPath: this.url("/resend-verify"),
+    });
+  };
+
+  public wsTicket = (
+    options?: http.RequestOptions,
+  ): Promise<WsTicketResponse> => {
+    return this.client.post<WsTicketResponseSchema>({
+      ...options,
+      urlPath: this.url("/ws-ticket"),
+      schema: wsTicketResponseSchema,
+    });
+  };
+}
+
+export const publicAuthService = new PublicAuthService();
 export const authService = new AuthService();

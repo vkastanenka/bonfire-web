@@ -15,7 +15,7 @@ import "@fontsource/quicksand/700.css";
 
 import { routeTree } from "./routeTree.gen";
 import { toast, ToastProvider } from "./lib";
-import { ApiNetworkError, authManager } from "@/api";
+import { ApiNetworkError, authManager } from "@/bonfire";
 
 declare module "@tanstack/react-query" {
   interface Register {

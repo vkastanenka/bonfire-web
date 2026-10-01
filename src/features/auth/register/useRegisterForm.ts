@@ -7,7 +7,7 @@ import {
   registerRequestSchema,
   ApiNetworkError,
   type RegisterRequest,
-} from "@/api";
+} from "@/bonfire";
 
 export const useRegisterForm = () => {
   const navigate = useNavigate();

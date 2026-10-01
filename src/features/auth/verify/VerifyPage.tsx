@@ -4,7 +4,7 @@ import { PATHS } from "@/constants";
 import { AuthLayout } from "../auth-layout";
 import { LABELS } from "./verify.constants";
 import { getRouteApi } from "@tanstack/react-router";
-import { useVerifyEmail } from "@/api";
+import { useVerifyEmail } from "@/bonfire";
 import { useEffect, useRef } from "react";
 
 const routeApi = getRouteApi("/_public/verify");

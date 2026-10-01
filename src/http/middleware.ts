@@ -97,41 +97,35 @@ export class LoggingMiddleware implements RequestMiddleware {
   }
 }
 
-export interface AuthManager {
-  getAccessToken(): Promise<string | null> | string | null;
+export interface AuthService {
   refreshAccessToken(): Promise<string | null>;
-  clearTokens(): Promise<void> | void;
+}
+
+export interface TokenStore {
+  getState: () => {
+    accessToken: string | null;
+  };
 }
 
 export class AuthMiddleware implements RequestMiddleware {
-  private authManager: AuthManager;
-  private refreshPromise: Promise<string | null> | null = null;
+  private readonly authService: AuthService;
+  private readonly tokenStore: TokenStore;
 
-  constructor(authManager: AuthManager) {
-    this.authManager = authManager;
+  constructor(authService: AuthService, tokenStore: TokenStore) {
+    this.authService = authService;
+    this.tokenStore = tokenStore;
   }
 
   async beforeRequest<T extends z.ZodTypeAny>({
     options,
     context,
-  }: BeforeRequestParams<T>) {
+  }: BeforeRequestParams<T>): Promise<void> {
     if (!options.protected) return;
-    const token = await this.authManager.getAccessToken();
+
+    const token = this.tokenStore.getState().accessToken;
     if (token) {
       context.headers.set("Authorization", `Bearer ${token}`);
     }
-  }
-
-  private async safeRefresh(): Promise<string | null> {
-    if (!this.refreshPromise) {
-      this.refreshPromise = Promise.resolve(
-        this.authManager.refreshAccessToken(),
-      ).finally(() => {
-        this.refreshPromise = null;
-      });
-    }
-
-    return this.refreshPromise;
   }
 
   async onResponseError<T extends z.ZodTypeAny>({
@@ -172,7 +166,7 @@ export class AuthMiddleware implements RequestMiddleware {
 
       context.isAuthRetry = true;
 
-      const newToken = await this.safeRefresh();
+      const newToken = await this.authService.refreshAccessToken();
 
       if (!newToken) {
         throw new AppError({
@@ -201,7 +195,6 @@ export class AuthMiddleware implements RequestMiddleware {
         error,
       });
 
-      await this.authManager.clearTokens();
       throw error;
     }
   }

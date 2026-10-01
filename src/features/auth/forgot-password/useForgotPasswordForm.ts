@@ -6,7 +6,7 @@ import {
   forgotPasswordRequestSchema,
   useForgotPassword,
   type ForgotPasswordRequest,
-} from "@/api";
+} from "@/bonfire";
 
 export const useForgotPasswordForm = () => {
   const [email, setEmail] = useState<string | null>(null);

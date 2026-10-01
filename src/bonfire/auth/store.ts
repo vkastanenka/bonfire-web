@@ -6,6 +6,14 @@ interface TokenState {
   clearTokens: () => void;
 }
 
+export interface TokenStore {
+  getState: () => {
+    accessToken: string | null;
+    setAccessToken: (token: string) => void;
+    clearTokens: () => void;
+  };
+}
+
 export const useTokenStore = create<TokenState>((set) => ({
   accessToken: null,
   setAccessToken: (accessToken) => set({ accessToken }),

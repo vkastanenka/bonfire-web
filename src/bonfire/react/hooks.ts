@@ -4,7 +4,10 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
 } from "@tanstack/react-query";
-import type { ApiNetworkError, ResponseValidationError } from "../http/errors";
+import type {
+  ApiNetworkError,
+  ResponseValidationError,
+} from "../../http/errors";
 import type {
   RegisterRequest,
   RegisterResponse,
