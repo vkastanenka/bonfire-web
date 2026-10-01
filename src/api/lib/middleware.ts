@@ -189,6 +189,8 @@ export class AuthMiddleware implements RequestMiddleware {
         attemptCount: context.attemptCount,
       });
 
+      context.headers.set("Authorization", `Bearer ${newToken}`);
+
       return await retry();
     } catch (error) {
       context.logger.error(REQUEST_LOGS.AUTH_SESSION_CLEARED, {
@@ -211,7 +213,7 @@ export class RetryMiddleware implements RequestMiddleware {
     context,
     response,
     retry,
-  }: ResponseErrorParams<T>) {
+  }: ResponseErrorParams<T>): Promise<unknown> {
     if (options.retry === false) return;
     if (!RETRYABLE_STATUS_CODES.has(response.status)) return;
 
@@ -231,7 +233,7 @@ export class RetryMiddleware implements RequestMiddleware {
 
       await new Promise((res) => setTimeout(res, backoff + jitter));
 
-      return retry();
+      return await retry();
     }
   }
 }
