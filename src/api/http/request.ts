@@ -45,59 +45,45 @@ export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
   config: Required<ResolvedClientConfig>,
   options: RequestOptions<T>,
 ): Promise<z.infer<T>> {
-  const context: RequestContext = {
-    requestId: crypto.randomUUID(),
-    url: buildUrl(config.baseUrl, options.urlPath, options.queryParams),
-    headers: new Headers(),
-    startTime: performance.now(),
-    attemptCount: 0,
-    maxAttempts: options.maxAttempts ?? config.maxAttempts,
-    logger: config.logger,
-  };
+  const ctx = newRequestContext(config, options);
 
   const executeCall = async (): Promise<unknown> => {
-    context.attemptCount++;
+    ctx.attemptCount++;
 
-    if (context.attemptCount > context.maxAttempts) {
+    if (ctx.attemptCount > ctx.maxAttempts) {
       throw new AppError({
         code: REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED,
         message:
           REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED],
         context: {
-          url: context.url.toString(),
-          attemptCount: context.attemptCount - 1,
-          maxAttempts: context.maxAttempts,
+          url: ctx.url.toString(),
+          attemptCount: ctx.attemptCount - 1,
+          maxAttempts: ctx.maxAttempts,
         },
       });
     }
 
-    context.headers = buildHeaders(
-      config.headers,
-      options.headers,
-      options.data,
-    );
+    ctx.headers = buildHeaders(config.headers, options.headers, options.data);
 
-    await runBeforeRequestMiddleware(config, options, context);
-
-    const response = await sendFetchRequest(config, options, context);
+    await runBeforeRequestMiddleware(config, options, ctx);
+    const response = await sendFetchRequest(config, options, ctx);
 
     if (!response.ok) {
       return await handleResponseError(
         config,
         options,
-        context,
+        ctx,
         response,
         executeCall,
       );
     }
 
-    await runOnResponseSuccessMiddleware(config, response, options, context);
-
-    return parseResponseBody(response, context.url.toString());
+    await runOnResponseSuccessMiddleware(config, response, options, ctx);
+    return parseResponseBody(response, ctx.url.toString());
   };
 
   const rawData = await executeCall();
-  return validateResponseSchema(rawData, options, context);
+  return validateResponseSchema(rawData, options, ctx);
 }
 
 const runBeforeRequestMiddleware = async <T extends z.ZodTypeAny>(
@@ -169,6 +155,19 @@ const sendFetchRequest = async <T extends z.ZodTypeAny>(
     });
   }
 };
+
+const newRequestContext = <T extends z.ZodTypeAny = z.ZodTypeAny>(
+  config: Required<ResolvedClientConfig>,
+  options: RequestOptions<T>,
+): RequestContext => ({
+  requestId: crypto.randomUUID(),
+  url: buildUrl(config.baseUrl, options.urlPath, options.queryParams),
+  headers: new Headers(),
+  startTime: performance.now(),
+  attemptCount: 0,
+  maxAttempts: options.maxAttempts ?? config.maxAttempts,
+  logger: config.logger,
+});
 
 const handleResponseError = async <T extends z.ZodTypeAny>(
   config: Required<ResolvedClientConfig>,

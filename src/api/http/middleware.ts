@@ -217,7 +217,7 @@ export class RetryMiddleware implements RequestMiddleware {
     if (options.retry === false) return;
     if (!RETRYABLE_STATUS_CODES.has(response.status)) return;
 
-    if (context.attemptCount < context.maxAttempts) {
+    if (context.attemptCount <= context.maxAttempts) {
       const backoff = Math.pow(2, context.attemptCount - 1) * 100;
       const jitter = Math.random() * 50;
 
