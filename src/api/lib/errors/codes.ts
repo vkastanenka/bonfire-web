@@ -1,3 +1,10 @@
+export const API_ERROR_CODES = {
+  TOKEN_EXPIRED: "TOKEN_EXPIRED",
+} as const;
+
+export type ApiErrorCode =
+  (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES];
+
 export const CLIENT_ERROR_CODES = {
   MISSING_FETCH: "MISSING_FETCH",
   INVALID_BASE_URL: "INVALID_BASE_URL",
@@ -23,6 +30,8 @@ export const REQUEST_ERROR_CODES = {
   REQUEST_ABORTED: "REQUEST_ABORTED",
   REQUEST_TIMEOUT: "REQUEST_TIMEOUT",
   MAX_RETRIES_EXCEEDED: "MAX_RETRIES_EXCEEDED",
+  FETCH_FAILED: "FETCH_FAILED",
+  TOKEN_REFRESH_FAILED: "TOKEN_REFRESH_FAILED",
 } as const;
 
 export type RequestErrorCode =
@@ -35,6 +44,10 @@ export const REQUEST_ERROR_MESSAGES: Record<RequestErrorCode, string> = {
     "The request timed out before receiving a response.",
   [REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED]:
     "Maximum retry attempts reached without a successful response.",
+  [REQUEST_ERROR_CODES.FETCH_FAILED]:
+    "The network request failed before reaching the server.",
+  [REQUEST_ERROR_CODES.TOKEN_REFRESH_FAILED]:
+    "Failed to refresh authentication token.",
 };
 
 export const RESPONSE_ERROR_CODES = {

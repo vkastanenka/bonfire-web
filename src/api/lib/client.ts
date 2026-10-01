@@ -6,9 +6,6 @@ import { CLIENT_ERROR_CODES, CLIENT_ERROR_MESSAGES } from "./errors";
 import { AppError } from "@/lib";
 import type { Logger } from "./logger";
 
-// TODO: ClientConfig /** Function or static string to resolve Bearer token */
-//   getAuthToken?: () => Promise<string | null> | string | null;
-
 export type CustomFetch = (
   input: RequestInfo | URL,
   init?: RequestInit,

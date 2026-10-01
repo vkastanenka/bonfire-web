@@ -37,8 +37,8 @@ export interface RequestContext {
   startTime: number;
   attemptCount: number;
   maxAttempts: number;
-  isAuthRetry?: boolean;
   logger: Logger;
+  isAuthRetry?: boolean;
 }
 
 export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
@@ -57,14 +57,6 @@ export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
 
   const executeCall = async (): Promise<unknown> => {
     context.attemptCount++;
-
-    if (context.attemptCount > 1) {
-      context.headers = buildHeaders(
-        config.headers,
-        options.headers,
-        options.data,
-      );
-    }
 
     if (context.attemptCount > context.maxAttempts) {
       throw new AppError({
@@ -181,17 +173,15 @@ const sendFetchRequest = async <T extends z.ZodTypeAny>(
       });
     }
 
-    const fallbackAppError = mapFetchToUnknownAipErrorData(
-      new Response(null, { status: 0 }),
-      null,
-      context.url.toString(),
-      {
-        domain: config.domain,
-        cause,
-      },
-    );
-
-    throw new AipError(fallbackAppError, { cause });
+    throw new AppError({
+      code: REQUEST_ERROR_CODES.FETCH_FAILED,
+      message:
+        cause instanceof Error && cause.message
+          ? cause.message
+          : REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.FETCH_FAILED],
+      cause,
+      context: { url: context.url.toString() },
+    });
   }
 };
 
