@@ -12,7 +12,7 @@ import {
   type UpdateUsernameRequest,
 } from "./validation";
 
-export class AuthService extends BaseService {
+export class UserService extends BaseService {
   protected readonly routePrefix = "/users";
 
   constructor(client: Client = bonfireClient) {
