@@ -18,14 +18,14 @@ import type {
   ResetPasswordRequest,
   ResetPasswordResponse,
 } from "../auth";
-import { useGatewayStore } from "../gateway/store";
+import { useGatewayStore } from "../_gateway/store";
 import { useEffect } from "react";
 import { authManager, authService } from "../auth";
-import { meService } from "../me/service";
-import { meManager } from "../me/manager";
-import type { Me } from "../me";
-import { activityTracker } from "../presence";
-import { gatewayManager } from "../gateway/manager";
+import { meService } from "../user/service";
+import { meManager } from "../user/manager";
+import type { Me } from "../user";
+import { activityTracker } from "../../_presence";
+import { gatewayManager } from "../_gateway/manager";
 
 export const authKeys = {
   all: ["auth"] as const,

@@ -1,8 +1,8 @@
 // api/me/manager.ts
-import type { Presence } from "../presence";
+import type { Presence } from "../../_presence";
 import type { Me } from "./schema";
 import { useMeStore, type UpdateProfileParams } from "./store";
-import { gatewayManager } from "../gateway/manager";
+import { gatewayManager } from "../_gateway/manager";
 
 class MeManager {
   public get() {

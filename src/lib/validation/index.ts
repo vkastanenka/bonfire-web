@@ -5,8 +5,8 @@ export const ERRORS = {
   whitespace: "Cannot consist entirely of whitespace.",
   email: "Must be a valid email address.",
   alphanum: "Must contain only letters and numbers.",
-  username:
-    "Must start and end with a letter or number. May contain only letters, numbers, and non-consecutive underscores or periods.",
+  hexColor: "Must be a valid 6-character hex color (e.g. #FF5733).",
+  phone: "Must be a valid E.164 phone number (e.g. +14155552671).",
 
   minString: (val: number | bigint) => `Must be at least ${val} characters.`,
   minNumeric: (val: number | bigint) => `Must be ${val} or greater.`,
@@ -62,5 +62,13 @@ z.config({
     return undefined;
   },
 });
+
+export const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
+export const phoneRegex = /^\+[1-9]\d{1,14}$/;
+
+export const emailSchema = z.email().min(3).max(255);
+export const hexColorSchema = z.string().regex(hexColorRegex, ERRORS.hexColor);
+export const phoneSchema = z.string().regex(phoneRegex, ERRORS.phone);
+export const urlSchema = z.url().max(2048);
 
 export { z };

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { type Presence } from "../presence";
+import { type Presence } from "../../_presence";
 import { type Me } from "./schema";
 
 export type UpdateProfileParams = Partial<

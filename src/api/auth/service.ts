@@ -1,4 +1,4 @@
-import * as http from "@/http";
+import { Client, type RequestOptions } from "@/http";
 import { BaseService } from "../service";
 import { baseBonfireClient, bonfireClient } from "../client";
 import {
@@ -23,13 +23,13 @@ import {
 export class PublicAuthService extends BaseService {
   protected readonly routePrefix = "/auth";
 
-  constructor(client: http.Client = baseBonfireClient) {
+  constructor(client: Client = baseBonfireClient) {
     super(client);
   }
 
   public register = (
     data: RegisterRequest,
-    options?: http.RequestOptions,
+    options?: RequestOptions,
   ): Promise<RegisterResponse> => {
     return this.client.post<typeof registerResponseSchema>({
       ...options,
@@ -41,7 +41,7 @@ export class PublicAuthService extends BaseService {
 
   public login = (
     data: LoginRequest,
-    options?: http.RequestOptions,
+    options?: RequestOptions,
   ): Promise<LoginResponse> => {
     return this.client.post<typeof loginResponseSchema>({
       ...options,
@@ -51,9 +51,7 @@ export class PublicAuthService extends BaseService {
     });
   };
 
-  public refresh = (
-    options?: http.RequestOptions,
-  ): Promise<RefreshResponse> => {
+  public refresh = (options?: RequestOptions): Promise<RefreshResponse> => {
     return this.client.post<typeof refreshResponseSchema>({
       ...options,
       urlPath: this.url("/refresh"),
@@ -63,7 +61,7 @@ export class PublicAuthService extends BaseService {
 
   public verify = (
     data: VerifyEmailRequest,
-    options?: http.RequestOptions,
+    options?: RequestOptions,
   ): Promise<unknown> => {
     return this.client.post({
       ...options,
@@ -75,7 +73,7 @@ export class PublicAuthService extends BaseService {
 
   public forgotPassword = (
     data: ForgotPasswordRequest,
-    options?: http.RequestOptions,
+    options?: RequestOptions,
   ): Promise<unknown> => {
     return this.client.post({
       ...options,
@@ -86,7 +84,7 @@ export class PublicAuthService extends BaseService {
 
   public resetPassword = (
     data: ResetPasswordRequest,
-    options?: http.RequestOptions,
+    options?: RequestOptions,
   ): Promise<ResetPasswordResponse> => {
     return this.client.post<typeof resetPasswordResponseSchema>({
       ...options,
@@ -100,20 +98,18 @@ export class PublicAuthService extends BaseService {
 export class AuthService extends BaseService {
   protected readonly routePrefix = "/auth";
 
-  constructor(client: http.Client = bonfireClient) {
+  constructor(client: Client = bonfireClient) {
     super(client);
   }
 
-  public resendVerify = (options?: http.RequestOptions): Promise<unknown> => {
+  public resendVerify = (options?: RequestOptions): Promise<unknown> => {
     return this.client.post({
       ...options,
       urlPath: this.url("/resend-verify"),
     });
   };
 
-  public wsTicket = (
-    options?: http.RequestOptions,
-  ): Promise<WsTicketResponse> => {
+  public wsTicket = (options?: RequestOptions): Promise<WsTicketResponse> => {
     return this.client.post<typeof wsTicketResponseSchema>({
       ...options,
       urlPath: this.url("/ws-ticket"),

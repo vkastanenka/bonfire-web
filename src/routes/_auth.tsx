@@ -1,6 +1,6 @@
 // routes/_auth.tsx
 import { meKeys, requireAuth, useGateway } from "@/bonfire";
-import { meManager, meService } from "@/bonfire/me";
+import { meManager, meService } from "@/bonfire/user";
 import { queryClient } from "@/main";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 

@@ -1,11 +1,11 @@
-import { z } from "@/lib";
-import * as userValidation from "../user/validation";
+import { z, emailSchema } from "@/lib";
+import { displayNameSchema, usernameSchema, passwordSchema } from "../user";
 
 export const registerRequestSchema = z.object({
-  email: userValidation.emailSchema,
-  displayName: userValidation.displayNameSchema.optional(),
-  username: userValidation.usernameSchema,
-  password: userValidation.passwordSchema,
+  email: emailSchema,
+  displayName: displayNameSchema,
+  username: usernameSchema,
+  password: passwordSchema,
 });
 
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;
@@ -17,8 +17,8 @@ export const registerResponseSchema = z.object({
 export type RegisterResponse = z.infer<typeof registerResponseSchema>;
 
 export const loginRequestSchema = z.object({
-  email: userValidation.emailSchema,
-  password: userValidation.passwordSchema,
+  email: emailSchema,
+  password: passwordSchema,
 });
 
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
@@ -42,14 +42,14 @@ export const verifyEmailRequestSchema = z.object({
 export type VerifyEmailRequest = z.infer<typeof verifyEmailRequestSchema>;
 
 export const forgotPasswordRequestSchema = z.object({
-  email: userValidation.emailSchema,
+  email: emailSchema,
 });
 
 export type ForgotPasswordRequest = z.infer<typeof forgotPasswordRequestSchema>;
 
 export const resetPasswordRequestSchema = z.object({
   token: z.string(),
-  password: userValidation.passwordSchema,
+  password: passwordSchema,
 });
 
 export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;

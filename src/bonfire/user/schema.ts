@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { emailSchema, usernameSchema, displayNameSchema } from "../pkg";
-import { presenceSchema } from "../presence";
+import { presenceSchema } from "../../_presence";
 
 export const meSchema = z.object({
   id: z.uuid(),
