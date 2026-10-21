@@ -4,6 +4,7 @@ import { type UserClient, userClient } from "./client";
 import {
   type DisableRequest,
   type UpdateEmailRequest,
+  type UpdatePasswordRequest,
   type UpdatePreferredPresenceRequest,
   type UpdateProfileRequest,
   type UpdateUsernameRequest,
@@ -48,6 +49,13 @@ export class UserService {
   ) {
     const data = await this.client.updateProfile(req, options);
     this.authStore.getState().setMe(data);
+  }
+
+  public async updatePassword(
+    req: UpdatePasswordRequest,
+    options?: RequestOptions,
+  ) {
+    return this.client.updatePassword(req, options);
   }
 
   public async disable(req: DisableRequest, options?: RequestOptions) {
