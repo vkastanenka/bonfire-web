@@ -1,5 +1,5 @@
 import { Client, type RequestOptions } from "@/http";
-import { bonfireClient, BaseClient } from "../client";
+import { bonfireClient } from "../client";
 import {
   meSchema,
   type DisableRequest,
@@ -11,11 +11,11 @@ import {
   type UpdateUsernameRequest,
 } from "./validation";
 
-export class UserService extends BaseClient {
-  protected readonly routePrefix = "/users";
+export class UserClient {
+  protected readonly client: Client;
 
   constructor(client: Client = bonfireClient) {
-    super(client);
+    this.client = client;
   }
 
   private patchMe = <TData>(
@@ -25,7 +25,7 @@ export class UserService extends BaseClient {
   ): Promise<Me> => {
     return this.client.patch<typeof meSchema>({
       ...options,
-      urlPath: this.url(path),
+      urlPath: `/users/@me/${path}`,
       data,
       schema: meSchema,
     });
@@ -44,7 +44,7 @@ export class UserService extends BaseClient {
   public updatePreferredPresence = (
     data: UpdatePreferredPresenceRequest,
     options?: RequestOptions,
-  ): Promise<Me> => this.patchMe("/preferred-presence", data, options);
+  ): Promise<Me> => this.patchMe("/presence", data, options);
 
   public updateProfile = (
     data: UpdateProfileRequest,
@@ -55,9 +55,9 @@ export class UserService extends BaseClient {
     data: UpdatePasswordRequest,
     options?: RequestOptions,
   ): Promise<unknown> => {
-    return this.client.patch({
+    return this.client.post({
       ...options,
-      urlPath: this.url("/password"),
+      urlPath: "/users/@me/password",
       data,
     });
   };
@@ -66,9 +66,9 @@ export class UserService extends BaseClient {
     data: DisableRequest,
     options?: RequestOptions,
   ): Promise<unknown> => {
-    return this.client.patch({
+    return this.client.post({
       ...options,
-      urlPath: this.url("/disable"),
+      urlPath: "/users/@me/disable",
       data,
     });
   };
@@ -77,9 +77,9 @@ export class UserService extends BaseClient {
     data: DisableRequest,
     options?: RequestOptions,
   ): Promise<unknown> => {
-    return this.client.patch({
+    return this.client.delete({
       ...options,
-      urlPath: this.url("/delete"),
+      urlPath: "/users/@me",
       data,
     });
   };

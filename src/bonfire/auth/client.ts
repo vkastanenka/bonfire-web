@@ -1,5 +1,5 @@
 import { Client, type RequestOptions } from "@/http";
-import { baseBonfireClient, bonfireClient, BaseClient } from "../client";
+import { baseBonfireClient, bonfireClient } from "../client";
 import {
   type RegisterRequest,
   type RegisterResponse,
@@ -19,11 +19,11 @@ import {
   wsTicketResponseSchema,
 } from "./validation";
 
-export class PublicAuthClient extends BaseClient {
-  protected readonly routePrefix = "/auth";
+export class PublicAuthClient {
+  protected readonly client: Client;
 
   constructor(client: Client = baseBonfireClient) {
-    super(client);
+    this.client = client;
   }
 
   public register = (
@@ -32,7 +32,7 @@ export class PublicAuthClient extends BaseClient {
   ): Promise<RegisterResponse> => {
     return this.client.post<typeof registerResponseSchema>({
       ...options,
-      urlPath: this.url("/register"),
+      urlPath: "/auth/register",
       data,
       schema: registerResponseSchema,
     });
@@ -44,7 +44,7 @@ export class PublicAuthClient extends BaseClient {
   ): Promise<LoginResponse> => {
     return this.client.post<typeof loginResponseSchema>({
       ...options,
-      urlPath: this.url("/login"),
+      urlPath: "/auth/login",
       data,
       schema: loginResponseSchema,
     });
@@ -53,7 +53,7 @@ export class PublicAuthClient extends BaseClient {
   public refresh = (options?: RequestOptions): Promise<RefreshResponse> => {
     return this.client.post<typeof refreshResponseSchema>({
       ...options,
-      urlPath: this.url("/refresh"),
+      urlPath: "/auth/refresh",
       schema: refreshResponseSchema,
     });
   };
@@ -64,7 +64,7 @@ export class PublicAuthClient extends BaseClient {
   ): Promise<unknown> => {
     return this.client.post({
       ...options,
-      urlPath: this.url("/verify"),
+      urlPath: "/auth/verify",
       data,
       schema: verifyEmailRequestSchema,
     });
@@ -76,7 +76,7 @@ export class PublicAuthClient extends BaseClient {
   ): Promise<unknown> => {
     return this.client.post({
       ...options,
-      urlPath: this.url("/forgot-password"),
+      urlPath: "/auth/forgot-password",
       data,
     });
   };
@@ -87,31 +87,31 @@ export class PublicAuthClient extends BaseClient {
   ): Promise<ResetPasswordResponse> => {
     return this.client.post<typeof resetPasswordResponseSchema>({
       ...options,
-      urlPath: this.url("/reset-password"),
+      urlPath: "/auth/reset-password",
       data,
       schema: resetPasswordResponseSchema,
     });
   };
 }
 
-export class AuthClient extends BaseClient {
-  protected readonly routePrefix = "/auth";
+export class AuthClient {
+  protected readonly client: Client;
 
   constructor(client: Client = bonfireClient) {
-    super(client);
+    this.client = client;
   }
 
   public resendVerify = (options?: RequestOptions): Promise<unknown> => {
     return this.client.post({
       ...options,
-      urlPath: this.url("/resend-verify"),
+      urlPath: "/auth/resend-verify",
     });
   };
 
   public wsTicket = (options?: RequestOptions): Promise<WsTicketResponse> => {
     return this.client.post<typeof wsTicketResponseSchema>({
       ...options,
-      urlPath: this.url("/ws-ticket"),
+      urlPath: "/auth/ws-ticket",
       schema: wsTicketResponseSchema,
     });
   };

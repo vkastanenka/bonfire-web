@@ -39,21 +39,3 @@ export const bonfireClient = new Client({
     new RetryMiddleware(),
   ],
 });
-
-export abstract class BaseClient {
-  protected readonly client: Client;
-  protected abstract readonly routePrefix: string;
-
-  constructor(client: Client) {
-    this.client = client;
-  }
-
-  protected url(path: string = ""): string {
-    const formattedPath = path
-      ? path.startsWith("/")
-        ? path
-        : `/${path}`
-      : "";
-    return `${this.routePrefix}${formattedPath}`;
-  }
-}

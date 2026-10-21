@@ -1,18 +1,18 @@
 import { Client, type RequestOptions } from "@/http";
-import { bonfireClient, BaseClient } from "../client";
+import { bonfireClient } from "../client";
 import { type BootstrapResponse, bootstrapResponseSchema } from "./validation";
 
-export class BootstrapClient extends BaseClient {
-  protected readonly routePrefix = "/bootstrap";
+export class BootstrapClient {
+  protected readonly client: Client;
 
   constructor(client: Client = bonfireClient) {
-    super(client);
+    this.client = client;
   }
 
   public bootstrap = (options?: RequestOptions): Promise<BootstrapResponse> => {
     return this.client.get<typeof bootstrapResponseSchema>({
       ...options,
-      urlPath: this.url(),
+      urlPath: "/users/@me",
       schema: bootstrapResponseSchema,
     });
   };
