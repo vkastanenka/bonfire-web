@@ -41,6 +41,11 @@ export class AuthService {
     this.store.getState().setAccessToken(data.accessToken);
   }
 
+  public async logout(options?: RequestOptions) {
+    await this.client.logout(options);
+    this.store.getState().clearSession();
+  }
+
   public async refresh(): Promise<string | null> {
     if (this.activeRefreshPromise) {
       return this.activeRefreshPromise;
@@ -74,11 +79,15 @@ export class AuthService {
     this.store.getState().setMe(data);
   }
 
+  public async resendVerify(options?: RequestOptions) {
+    this.client.resendVerify(options);
+  }
+
   public async forgotPassword(
     req: ForgotPasswordRequest,
     options?: RequestOptions,
   ) {
-    return this.pClient.forgotPassword(req, options);
+    this.pClient.forgotPassword(req, options);
   }
 
   public async resetPassword(
@@ -87,15 +96,6 @@ export class AuthService {
   ) {
     const data = await this.pClient.resetPassword(req, options);
     this.store.getState().setAccessToken(data.accessToken);
-  }
-
-  public async logout(options?: RequestOptions) {
-    await this.client.logout(options);
-    this.store.getState().clearSession();
-  }
-
-  public async resendVerify(options?: RequestOptions) {
-    return this.client.resendVerify(options);
   }
 
   public async listValidSessions(
