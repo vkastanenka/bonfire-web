@@ -6,7 +6,7 @@ import {
   type ClientConfig,
 } from "@/http";
 import { logger } from "@/lib/logger";
-import { authService, useTokenStore } from "@/bonfire";
+import { authService, useAuthStore } from "./auth";
 
 const DEFAULT_HEADERS = {
   Accept: "application/json",
@@ -35,7 +35,7 @@ export const bonfireClient = new Client({
   protected: true,
   middleware: [
     new LoggingMiddleware(),
-    new AuthMiddleware(authService, useTokenStore),
+    new AuthMiddleware(authService, useAuthStore),
     new RetryMiddleware(),
   ],
 });

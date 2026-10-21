@@ -1,30 +1,30 @@
 // routes/_auth.tsx
-import { meKeys, requireAuth, useGateway } from "@/bonfire";
-import { meManager, meService } from "@/bonfire/user";
+import {
+  requireAuth,
+  bootstrapKeys,
+  bootstrapService,
+  useBootstrap,
+  useGateway,
+} from "@/bonfire";
 import { queryClient } from "@/main";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
-export const meLoader = async () => {
-  const data = await queryClient.ensureQueryData({
-    queryKey: meKeys.get(),
-    queryFn: () => meService.get(),
+export const authLoader = async () => {
+  await queryClient.ensureQueryData({
+    queryKey: bootstrapKeys.all,
+    queryFn: () => bootstrapService.bootstrap(),
   });
-
-  // console.log("meLoader", data);
-
-  meManager.set(data);
-  return data;
 };
 
 function AuthLayout() {
+  useBootstrap();
   useGateway();
-
   return <Outlet />;
 }
 
 export const Route = createFileRoute("/_auth")({
   beforeLoad: requireAuth(),
-  loader: meLoader,
+  loader: authLoader,
   pendingComponent: () => <div>Restoring Session...</div>,
-  component: () => <AuthLayout />,
+  component: AuthLayout,
 });

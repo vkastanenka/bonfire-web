@@ -98,10 +98,10 @@ export class LoggingMiddleware implements RequestMiddleware {
 }
 
 export interface AuthService {
-  refreshAccessToken(): Promise<string | null>;
+  refresh(): Promise<string | null>;
 }
 
-export interface TokenStore {
+export interface AuthStore {
   getState: () => {
     accessToken: string | null;
   };
@@ -109,9 +109,9 @@ export interface TokenStore {
 
 export class AuthMiddleware implements RequestMiddleware {
   private readonly authService: AuthService;
-  private readonly tokenStore: TokenStore;
+  private readonly tokenStore: AuthStore;
 
-  constructor(authService: AuthService, tokenStore: TokenStore) {
+  constructor(authService: AuthService, tokenStore: AuthStore) {
     this.authService = authService;
     this.tokenStore = tokenStore;
   }
@@ -166,7 +166,7 @@ export class AuthMiddleware implements RequestMiddleware {
 
       context.isAuthRetry = true;
 
-      const newToken = await this.authService.refreshAccessToken();
+      const newToken = await this.authService.refresh();
 
       if (!newToken) {
         throw new AppError({

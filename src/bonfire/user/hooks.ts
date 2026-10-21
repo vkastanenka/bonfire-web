@@ -1,9 +1,6 @@
-import {
-  useMutation,
-  useQueryClient,
-  type UseMutationOptions,
-} from "@tanstack/react-query";
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import type { AppError } from "@/lib";
+import { queryClient } from "@/main";
 import { userService } from "./service";
 import {
   type DisableRequest,
@@ -85,13 +82,12 @@ export const useUpdatePassword = (
 export const useDisableAccount = (
   options?: Partial<UseMutationOptions<void, AppError, DisableRequest>>,
 ) => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: userKeys.disable(),
     mutationFn: (data: DisableRequest) => userService.disable(data),
     ...options,
     onSuccess: async (data, variables, context, mutation) => {
-      queryClient.clear(); // Clear entire cache since session is destroyed
+      queryClient.clear();
       await options?.onSuccess?.(data, variables, context, mutation);
     },
   });
@@ -100,13 +96,12 @@ export const useDisableAccount = (
 export const useScheduleDeleteAccount = (
   options?: Partial<UseMutationOptions<void, AppError, DisableRequest>>,
 ) => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: userKeys.scheduleDelete(),
     mutationFn: (data: DisableRequest) => userService.scheduleDelete(data),
     ...options,
     onSuccess: async (data, variables, context, mutation) => {
-      queryClient.clear(); // Clear entire cache since account is scheduled for deletion & session cleared
+      queryClient.clear();
       await options?.onSuccess?.(data, variables, context, mutation);
     },
   });

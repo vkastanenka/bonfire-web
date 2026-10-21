@@ -1,11 +1,11 @@
 import {
   useMutation,
   useQuery,
-  useQueryClient,
   type UseMutationOptions,
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import type { AppError } from "@/lib";
+import { queryClient } from "@/main";
 import { authService } from "./service";
 import {
   type ForgotPasswordRequest,
@@ -53,7 +53,6 @@ export const useLogin = (
 export const useLogout = (
   options?: Partial<UseMutationOptions<void, AppError, void>>,
 ) => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: authKeys.logout(),
     mutationFn: () => authService.logout(),
@@ -123,7 +122,6 @@ export const useListValidSessions = (
 export const useRevokeAllSessions = (
   options?: Partial<UseMutationOptions<void, AppError, void>>,
 ) => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: authKeys.revokeAllSessions(),
     mutationFn: () => authService.revokeAllSessions(),
@@ -140,7 +138,6 @@ export const useRevokeSession = (
     UseMutationOptions<void, AppError, { id: string; isCurrent: boolean }>
   >,
 ) => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: authKeys.revokeSession(),
     mutationFn: (data: { id: string; isCurrent: boolean }) =>
