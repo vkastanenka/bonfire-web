@@ -1,5 +1,6 @@
 import { bootstrapClient, type BootstrapClient } from "./client";
 import { useAuthStore, type AuthStore } from "../auth";
+import type { RequestOptions } from "@/http";
 
 export class BootstrapService {
   private readonly client: BootstrapClient;
@@ -13,8 +14,8 @@ export class BootstrapService {
     this.authStore = authStore;
   }
 
-  public async bootstrap() {
-    const data = await this.client.bootstrap();
+  public async bootstrap(options?: RequestOptions) {
+    const data = await this.client.bootstrap(options);
     this.authStore.getState().setMe(data.me);
   }
 }
