@@ -1,6 +1,25 @@
 import { z, emailSchema } from "@/lib";
 import { displayNameSchema, usernameSchema, passwordSchema } from "../user";
 
+export const sessionSchema = z.object({
+  id: z.uuid(),
+  clientIp: z.string(),
+  userAgent: z.string(),
+  os: z.string(),
+  client: z.string(),
+  expiresAt: z.coerce.date(),
+  lastSeenAt: z.coerce.date(),
+  createdAt: z.coerce.date(),
+});
+
+export type Session = z.infer<typeof sessionSchema>;
+
+export const accessTokenResponseSchema = z.object({
+  accessToken: z.string(),
+});
+
+export type AccessTokenResponse = z.infer<typeof accessTokenResponseSchema>;
+
 export const registerRequestSchema = z.object({
   email: emailSchema,
   displayName: displayNameSchema,
@@ -10,30 +29,12 @@ export const registerRequestSchema = z.object({
 
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;
 
-export const registerResponseSchema = z.object({
-  accessToken: z.string(),
-});
-
-export type RegisterResponse = z.infer<typeof registerResponseSchema>;
-
 export const loginRequestSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
 });
 
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
-
-export const loginResponseSchema = z.object({
-  accessToken: z.string(),
-});
-
-export type LoginResponse = z.infer<typeof loginResponseSchema>;
-
-export const refreshResponseSchema = z.object({
-  accessToken: z.string(),
-});
-
-export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
 
 export const verifyEmailRequestSchema = z.object({
   token: z.string(),
@@ -54,14 +55,8 @@ export const resetPasswordRequestSchema = z.object({
 
 export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
 
-export const resetPasswordResponseSchema = z.object({
-  accessToken: z.string(),
-});
+export const listValidSessionsResponseSchema = z.array(sessionSchema);
 
-export type ResetPasswordResponse = z.infer<typeof resetPasswordResponseSchema>;
-
-export const wsTicketResponseSchema = z.object({
-  ticket: z.uuid(),
-});
-
-export type WsTicketResponse = z.infer<typeof wsTicketResponseSchema>;
+export type ListValidSessionsResponse = z.infer<
+  typeof listValidSessionsResponseSchema
+>;

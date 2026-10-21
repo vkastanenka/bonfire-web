@@ -2,22 +2,16 @@ import { Client, type RequestOptions } from "@/http";
 import { baseBonfireClient, bonfireClient } from "../client";
 import {
   type RegisterRequest,
-  type RegisterResponse,
-  registerResponseSchema,
+  type AccessTokenResponse,
+  accessTokenResponseSchema,
   type LoginRequest,
-  type LoginResponse,
-  loginResponseSchema,
-  type RefreshResponse,
-  refreshResponseSchema,
   type ForgotPasswordRequest,
   type ResetPasswordRequest,
-  type ResetPasswordResponse,
-  resetPasswordResponseSchema,
   type VerifyEmailRequest,
-  verifyEmailRequestSchema,
-  type WsTicketResponse,
-  wsTicketResponseSchema,
+  type ListValidSessionsResponse,
+  listValidSessionsResponseSchema,
 } from "./validation";
+import { type Me, meSchema } from "../user";
 
 export class PublicAuthClient {
   protected readonly client: Client;
@@ -29,44 +23,44 @@ export class PublicAuthClient {
   public register = (
     data: RegisterRequest,
     options?: RequestOptions,
-  ): Promise<RegisterResponse> => {
-    return this.client.post<typeof registerResponseSchema>({
+  ): Promise<AccessTokenResponse> => {
+    return this.client.post<typeof accessTokenResponseSchema>({
       ...options,
       urlPath: "/auth/register",
       data,
-      schema: registerResponseSchema,
+      schema: accessTokenResponseSchema,
     });
   };
 
   public login = (
     data: LoginRequest,
     options?: RequestOptions,
-  ): Promise<LoginResponse> => {
-    return this.client.post<typeof loginResponseSchema>({
+  ): Promise<AccessTokenResponse> => {
+    return this.client.post<typeof accessTokenResponseSchema>({
       ...options,
       urlPath: "/auth/login",
       data,
-      schema: loginResponseSchema,
+      schema: accessTokenResponseSchema,
     });
   };
 
-  public refresh = (options?: RequestOptions): Promise<RefreshResponse> => {
-    return this.client.post<typeof refreshResponseSchema>({
+  public refresh = (options?: RequestOptions): Promise<AccessTokenResponse> => {
+    return this.client.post<typeof accessTokenResponseSchema>({
       ...options,
       urlPath: "/auth/refresh",
-      schema: refreshResponseSchema,
+      schema: accessTokenResponseSchema,
     });
   };
 
   public verify = (
     data: VerifyEmailRequest,
     options?: RequestOptions,
-  ): Promise<unknown> => {
-    return this.client.post({
+  ): Promise<Me> => {
+    return this.client.post<typeof meSchema>({
       ...options,
       urlPath: "/auth/verify",
       data,
-      schema: verifyEmailRequestSchema,
+      schema: meSchema,
     });
   };
 
@@ -84,12 +78,12 @@ export class PublicAuthClient {
   public resetPassword = (
     data: ResetPasswordRequest,
     options?: RequestOptions,
-  ): Promise<ResetPasswordResponse> => {
-    return this.client.post<typeof resetPasswordResponseSchema>({
+  ): Promise<AccessTokenResponse> => {
+    return this.client.post<typeof accessTokenResponseSchema>({
       ...options,
       urlPath: "/auth/reset-password",
       data,
-      schema: resetPasswordResponseSchema,
+      schema: accessTokenResponseSchema,
     });
   };
 }
@@ -108,11 +102,30 @@ export class AuthClient {
     });
   };
 
-  public wsTicket = (options?: RequestOptions): Promise<WsTicketResponse> => {
-    return this.client.post<typeof wsTicketResponseSchema>({
+  public listValidSessions = (
+    options?: RequestOptions,
+  ): Promise<ListValidSessionsResponse> => {
+    return this.client.get<typeof listValidSessionsResponseSchema>({
       ...options,
-      urlPath: "/auth/ws-ticket",
-      schema: wsTicketResponseSchema,
+      urlPath: "/users/@me/sessions",
+      schema: listValidSessionsResponseSchema,
+    });
+  };
+
+  public revokeAllSessions = (options?: RequestOptions): Promise<unknown> => {
+    return this.client.delete({
+      ...options,
+      urlPath: "/users/@me/sessions",
+    });
+  };
+
+  public revokeSession = (
+    id: string,
+    options?: RequestOptions,
+  ): Promise<unknown> => {
+    return this.client.delete({
+      ...options,
+      urlPath: `/users/@me/sessions/${id}`,
     });
   };
 }
