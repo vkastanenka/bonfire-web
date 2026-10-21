@@ -1,45 +1,14 @@
 import { create } from "zustand";
-import { type Presence } from "../../_presence";
-import { type Me } from "./schema";
+import type { Me } from "./validation";
 
-export type UpdateProfileParams = Partial<
-  Pick<Me, "display_name" | "avatar_url">
->;
-
-interface MeState {
+interface UserState {
   me: Me | null;
-  set: (me: Me | null) => void;
-  updateProfile: (params: UpdateProfileParams) => void;
-  updatePresence: (presence: Presence | null) => void;
-  clear: () => void;
+  setMe: (me: Me | null) => void;
+  clearUser: () => void;
 }
 
-export const useMeStore = create<MeState>((set) => ({
+export const useUserStore = create<UserState>((set) => ({
   me: null,
-
-  set: (me) => set({ me }),
-
-  updateProfile: (params) =>
-    set((state) => {
-      if (!state.me) return state;
-      return {
-        me: {
-          ...state.me,
-          ...params,
-        },
-      };
-    }),
-
-  updatePresence: (presence) =>
-    set((state) => {
-      if (!state.me) return state;
-      return {
-        me: {
-          ...state.me,
-          presence,
-        },
-      };
-    }),
-
-  clear: () => set({ me: null }),
+  setMe: (me) => set({ me }),
+  clearUser: () => set({ me: null }),
 }));

@@ -1,16 +1,16 @@
-import * as api from "@/api";
+import { publicAuthClient, type PublicAuthClient } from "./client";
 import { useTokenStore, type TokenStore } from "./store";
 
 export class AuthService {
-  private readonly api: api.PublicAuthService;
+  private readonly publicClient: PublicAuthClient;
   private readonly store: TokenStore;
   private activeRefreshPromise: Promise<string | null> | null = null;
 
   constructor(
-    apiService: api.PublicAuthService = api.publicAuthService,
+    publicClient: PublicAuthClient = publicAuthClient,
     store: TokenStore = useTokenStore,
   ) {
-    this.api = apiService;
+    this.publicClient = publicClient;
     this.store = store;
   }
 
@@ -28,7 +28,7 @@ export class AuthService {
 
     this.activeRefreshPromise = (async () => {
       try {
-        const data = await this.api.refresh();
+        const data = await this.publicClient.refresh();
         this.store.getState().setAccessToken(data.accessToken);
         return data.accessToken;
       } catch {

@@ -1,6 +1,5 @@
 import { Client, type RequestOptions } from "@/http";
-import { baseBonfireClient, bonfireClient } from "../client";
-import { BaseService } from "../service";
+import { baseBonfireClient, bonfireClient, BaseClient } from "../client";
 import {
   type RegisterRequest,
   type RegisterResponse,
@@ -20,7 +19,7 @@ import {
   wsTicketResponseSchema,
 } from "./validation";
 
-export class PublicAuthService extends BaseService {
+export class PublicAuthClient extends BaseClient {
   protected readonly routePrefix = "/auth";
 
   constructor(client: Client = baseBonfireClient) {
@@ -95,7 +94,7 @@ export class PublicAuthService extends BaseService {
   };
 }
 
-export class AuthService extends BaseService {
+export class AuthClient extends BaseClient {
   protected readonly routePrefix = "/auth";
 
   constructor(client: Client = bonfireClient) {
@@ -118,5 +117,5 @@ export class AuthService extends BaseService {
   };
 }
 
-export const publicAuthService = new PublicAuthService();
-export const authService = new AuthService();
+export const publicAuthClient = new PublicAuthClient();
+export const authClient = new AuthClient();

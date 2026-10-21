@@ -47,7 +47,6 @@ export const buildHeaders = (
 
   if (data !== undefined && data !== null) {
     if (isNativeRequestBody(data)) {
-      // Let fetch auto-generate multipart boundaries for FormData
       if (typeof FormData !== "undefined" && data instanceof FormData) {
         headers.delete("Content-Type");
       }

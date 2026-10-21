@@ -1,9 +1,8 @@
 import { Client, type RequestOptions } from "@/http";
-import { bonfireClient } from "../client";
-import { BaseService } from "../service";
+import { bonfireClient, BaseClient } from "../client";
 import { type BootstrapResponse, bootstrapResponseSchema } from "./validation";
 
-export class BootstrapService extends BaseService {
+export class BootstrapClient extends BaseClient {
   protected readonly routePrefix = "/bootstrap";
 
   constructor(client: Client = bonfireClient) {
@@ -19,4 +18,4 @@ export class BootstrapService extends BaseService {
   };
 }
 
-export const bootstrapService = new BootstrapService();
+export const bootstrapClient = new BootstrapClient();

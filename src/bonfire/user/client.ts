@@ -1,6 +1,5 @@
 import { Client, type RequestOptions } from "@/http";
-import { bonfireClient } from "../client";
-import { BaseService } from "../service";
+import { bonfireClient, BaseClient } from "../client";
 import {
   meSchema,
   type DisableRequest,
@@ -12,7 +11,7 @@ import {
   type UpdateUsernameRequest,
 } from "./validation";
 
-export class UserService extends BaseService {
+export class UserService extends BaseClient {
   protected readonly routePrefix = "/users";
 
   constructor(client: Client = bonfireClient) {
