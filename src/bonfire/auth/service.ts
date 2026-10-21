@@ -74,6 +74,10 @@ export class AuthService {
     return this.refresh();
   }
 
+  public getAccessToken(): string | null {
+    return this.store.getState().accessToken;
+  }
+
   public async verify(req: VerifyEmailRequest, options?: RequestOptions) {
     const data = await this.pClient.verify(req, options);
     this.store.getState().setMe(data);
