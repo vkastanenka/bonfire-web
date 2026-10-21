@@ -95,6 +95,13 @@ export class AuthClient {
     this.client = client;
   }
 
+  public logout = (options?: RequestOptions): Promise<unknown> => {
+    return this.client.post({
+      ...options,
+      urlPath: "/auth/logout",
+    });
+  };
+
   public resendVerify = (options?: RequestOptions): Promise<unknown> => {
     return this.client.post({
       ...options,
