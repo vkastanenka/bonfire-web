@@ -1,21 +1,22 @@
 import { create } from "zustand";
+import type { Me } from "../user";
 
-interface TokenState {
+interface AuthState {
   accessToken: string | null;
-  setAccessToken: (accessToken: string) => void;
-  clearTokens: () => void;
+  me: Me | null;
+  setAccessToken: (accessToken: string | null) => void;
+  setMe: (me: Me | null) => void;
+  clearSession: () => void;
 }
 
-export interface TokenStore {
-  getState: () => {
-    accessToken: string | null;
-    setAccessToken: (token: string) => void;
-    clearTokens: () => void;
-  };
+export interface AuthStore {
+  getState: () => AuthState;
 }
 
-export const useTokenStore = create<TokenState>((set) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   accessToken: null,
+  me: null,
   setAccessToken: (accessToken) => set({ accessToken }),
-  clearTokens: () => set({ accessToken: null }),
+  setMe: (me) => set({ me }),
+  clearSession: () => set({ accessToken: null, me: null }),
 }));

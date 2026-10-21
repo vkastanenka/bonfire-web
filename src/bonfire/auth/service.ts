@@ -1,14 +1,14 @@
 import { publicAuthClient, type PublicAuthClient } from "./client";
-import { useTokenStore, type TokenStore } from "./store";
+import { useAuthStore, type AuthStore } from "./store";
 
 export class AuthService {
   private readonly publicClient: PublicAuthClient;
-  private readonly store: TokenStore;
+  private readonly store: AuthStore;
   private activeRefreshPromise: Promise<string | null> | null = null;
 
   constructor(
     publicClient: PublicAuthClient = publicAuthClient,
-    store: TokenStore = useTokenStore,
+    store: AuthStore = useAuthStore,
   ) {
     this.publicClient = publicClient;
     this.store = store;
@@ -32,7 +32,7 @@ export class AuthService {
         this.store.getState().setAccessToken(data.accessToken);
         return data.accessToken;
       } catch {
-        this.store.getState().clearTokens();
+        this.store.getState().clearSession();
         return null;
       } finally {
         this.activeRefreshPromise = null;
