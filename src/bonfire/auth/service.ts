@@ -80,14 +80,14 @@ export class AuthService {
   }
 
   public async resendVerify(options?: RequestOptions) {
-    this.client.resendVerify(options);
+    await this.client.resendVerify(options);
   }
 
   public async forgotPassword(
     req: ForgotPasswordRequest,
     options?: RequestOptions,
   ) {
-    this.pClient.forgotPassword(req, options);
+    await this.pClient.forgotPassword(req, options);
   }
 
   public async resetPassword(

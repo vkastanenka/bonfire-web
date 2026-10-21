@@ -55,7 +55,7 @@ export class UserService {
     req: UpdatePasswordRequest,
     options?: RequestOptions,
   ) {
-    return this.client.updatePassword(req, options);
+    await this.client.updatePassword(req, options);
   }
 
   public async disable(req: DisableRequest, options?: RequestOptions) {
