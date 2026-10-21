@@ -3,6 +3,7 @@ import { displayNameSchema, usernameSchema, passwordSchema } from "../user";
 
 export const sessionSchema = z.object({
   id: z.uuid(),
+  isCurrent: z.boolean(),
   clientIp: z.string(),
   userAgent: z.string(),
   os: z.string(),
