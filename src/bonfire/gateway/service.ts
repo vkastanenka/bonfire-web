@@ -22,6 +22,8 @@ export interface GatewayMessage<T = unknown> {
 type StatusListener = (status: GatewayStatus) => void;
 type MessageListener = (message: GatewayMessage) => void;
 
+// TODO: Handle max connections
+
 export class GatewayService {
   private ws: WebSocket | null = null;
   private client: GatewayClient;
