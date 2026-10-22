@@ -1,5 +1,7 @@
-// export const wsTicketResponseSchema = z.object({
-//   ticket: z.uuid(),
-// });
+import { z } from "zod";
 
-// export type WsTicketResponse = z.infer<typeof wsTicketResponseSchema>;
+export const printTicketResponseSchema = z.object({
+  ticket: z.uuid(),
+});
+
+export type PrintTicketResponse = z.infer<typeof printTicketResponseSchema>;
