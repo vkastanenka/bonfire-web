@@ -14,6 +14,8 @@ import type {
   ResetPasswordRequest,
   VerifyEmailRequest,
 } from "./validation";
+import type { Me } from "../user";
+import { Presence } from "../gateway/presence";
 
 export class AuthService {
   private readonly pClient: PublicAuthClient;
@@ -29,6 +31,26 @@ export class AuthService {
     this.pClient = pClient;
     this.client = client;
     this.store = store;
+  }
+
+  public getMe(): Me | null {
+    return this.store.getState().me;
+  }
+
+  public getEffectivePresence(): Presence | null {
+    const me = this.getMe();
+    const preferred = me?.preferredPresence;
+    const preferredUntil = me?.preferredPresenceUntil;
+
+    if (preferredUntil && new Date() > preferredUntil) {
+      return null;
+    }
+
+    if (preferred) {
+      return preferred === Presence.invisible ? Presence.offline : preferred;
+    }
+
+    return preferred ?? null;
   }
 
   public async register(req: RegisterRequest, options?: RequestOptions) {

@@ -61,3 +61,20 @@ export const listValidSessionsResponseSchema = z.array(sessionSchema);
 export type ListValidSessionsResponse = z.infer<
   typeof listValidSessionsResponseSchema
 >;
+
+// export const authGatewayMessageSchemas = {
+//   "auth.session_revoked": z.object({
+//     userID: z.uuid(),
+//     revokeSessionID: z.uuid(),
+//   }),
+
+//   "auth.session_revoked_all": z.null(),
+// } as const;
+
+// export type AuthGatewayPayloads = {
+//   [K in keyof typeof authGatewayMessageSchemas]: z.infer<
+//     (typeof authGatewayMessageSchemas)[K]
+//   >;
+// };
+
+// export type AuthGatewayMessageType = keyof AuthGatewayPayloads;

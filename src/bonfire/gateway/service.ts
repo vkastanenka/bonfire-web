@@ -1,53 +1,35 @@
-import { authService } from "../auth";
-import { type Presence } from "../presence";
-import { resolvePresenceState } from "./resolver";
+import { bonfireClient } from "../client";
+import { gatewayClient, type GatewayClient } from "./client";
+import { Presence } from "./presence";
+import type { PrintTicketResponse } from "./validation";
 
-export type GatewayStatus =
-  | "CONNECTING"
-  | "CONNECTED"
-  | "DISCONNECTED"
-  | "RECONNECTING";
+export const GatewayStatus = {
+  connecting: "CONNECTING",
+  connected: "CONNECTED",
+  disconnected: "DISCONNECTED",
+  reconnecting: "RECONNECTING",
+} as const;
+
+export type GatewayStatus = (typeof GatewayStatus)[keyof typeof GatewayStatus];
 
 export interface GatewayMessage<T = unknown> {
   t: string;
   d: T;
 }
 
-type MessageListener = (message: GatewayMessage) => void;
 type StatusListener = (status: GatewayStatus) => void;
+type MessageListener = (message: GatewayMessage) => void;
 
-interface GatewayConfig {
-  getTicket: () => Promise<string>;
-  getPresence: () => Presence;
-}
-
-export function buildGatewayUrl(ticketId: string, presence: Presence): string {
-  const httpUrl =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
-  const url = new URL(httpUrl);
-  // Convert http/https to ws/wss safely
-  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-
-  // Normalize path appending
-  url.pathname = `${url.pathname.replace(/\/$/, "")}/gateway/ws`;
-
-  url.searchParams.set("ticket_id", ticketId);
-  url.searchParams.set("presence", presence);
-
-  return url.toString();
-}
-
-export class GatewayManager {
+export class GatewayService {
   private ws: WebSocket | null = null;
-  private config: GatewayConfig;
-  private status: GatewayStatus = "DISCONNECTED";
+  private client: GatewayClient;
+  private status: GatewayStatus = GatewayStatus.disconnected;
 
   private connectionVersion = 0;
-  private activeTicketPromise: Promise<string> | null = null;
+  private printTicketPromise: Promise<PrintTicketResponse> | null = null;
 
-  private messageListeners = new Set<MessageListener>();
   private statusListeners = new Set<StatusListener>();
+  private messageListeners = new Set<MessageListener>();
 
   private reconnectAttempts = 0;
   private readonly maxReconnectDelay = 30000;
@@ -59,10 +41,17 @@ export class GatewayManager {
   private readonly watchdogTimeout = 35000;
 
   private heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
-  private readonly heartbeatInterval = 20000; // 20 Seconds
+  private readonly heartbeatInterval = 20000;
 
-  constructor(config: GatewayConfig) {
-    this.config = config;
+  constructor(client: GatewayClient = gatewayClient) {
+    this.client = client;
+  }
+
+  // DONE
+  public subscribeToStatus(listener: StatusListener): () => void {
+    this.statusListeners.add(listener);
+    listener(this.status);
+    return () => this.statusListeners.delete(listener);
   }
 
   public subscribeToMessages(listener: MessageListener): () => void {
@@ -70,64 +59,58 @@ export class GatewayManager {
     return () => this.messageListeners.delete(listener);
   }
 
-  public subscribeToStatus(listener: StatusListener): () => void {
-    this.statusListeners.add(listener);
-    listener(this.status);
-    return () => this.statusListeners.delete(listener);
-  }
-
+  // DONE
   public getStatus(): GatewayStatus {
     return this.status;
   }
 
-  public async connect(): Promise<void> {
-    if (this.status === "CONNECTED" || this.status === "CONNECTING") return;
+  public async connect(presence: Presence): Promise<void> {
+    if (
+      this.status === GatewayStatus.connected ||
+      this.status === GatewayStatus.connecting
+    )
+      return;
 
     this.forcedClose = false;
+
     this.updateStatus(
-      this.reconnectAttempts > 0 ? "RECONNECTING" : "CONNECTING",
+      this.reconnectAttempts > 0
+        ? GatewayStatus.reconnecting
+        : GatewayStatus.connecting,
     );
 
     this.connectionVersion++;
     const currentVersion = this.connectionVersion;
 
     try {
-      if (!this.activeTicketPromise) {
-        this.activeTicketPromise = this.config.getTicket().finally(() => {
-          this.activeTicketPromise = null;
+      if (!this.printTicketPromise) {
+        this.printTicketPromise = this.client.printTicket().finally(() => {
+          this.printTicketPromise = null;
         });
       }
 
-      const ticketId = await this.activeTicketPromise;
+      const res = await this.printTicketPromise;
 
       if (
         this.forcedClose ||
-        this.status === "DISCONNECTED" ||
+        this.status === GatewayStatus.disconnected ||
         this.connectionVersion !== currentVersion
       ) {
-        console.log(
-          "[Gateway] Stale connection sequence superseded. Aborting stream initialization.",
-        );
         return;
       }
 
-      const wsUrl = buildGatewayUrl(ticketId, this.config.getPresence());
+      const wsUrl = this.buildGatewayUrl(res.ticket, presence);
 
       this.ws = new WebSocket(wsUrl);
       this.setupEventListeners();
     } catch (error) {
-      if (this.connectionVersion === currentVersion) {
-        if (!this.forcedClose) {
-          console.error("[Gateway] Connection sequence failed:", error);
-
-          // Detect rate limits from network error structure (e.g. 429)
-          const isRateLimit =
-            error instanceof Error &&
-            (error.message.includes("429") ||
-              error.message.toLowerCase().includes("rate limit"));
-
-          this.handleReconnect(isRateLimit);
-        }
+      if (this.connectionVersion === currentVersion && !this.forcedClose) {
+        console.error("[Gateway] Connection sequence failed:", error);
+        const isRateLimit =
+          error instanceof Error &&
+          (error.message.includes("429") ||
+            error.message.toLowerCase().includes("rate limit"));
+        this.handleReconnect(isRateLimit);
       }
     }
   }
@@ -135,12 +118,10 @@ export class GatewayManager {
   public disconnect(): void {
     this.forcedClose = true;
     this.connectionVersion++;
-
     this.clearTimeouts();
-    this.updateStatus("DISCONNECTED");
+    this.updateStatus(GatewayStatus.disconnected);
 
     if (this.ws) {
-      // Safe guard socket state closure
       if (
         this.ws.readyState === WebSocket.OPEN ||
         this.ws.readyState === WebSocket.CONNECTING
@@ -154,25 +135,27 @@ export class GatewayManager {
   }
 
   public send(type: string, data: unknown): void {
-    if (!this.ws || this.status !== "CONNECTED") {
+    if (!this.ws || this.status !== GatewayStatus.connected) {
       console.warn(`[Gateway] Outbound frame dropped. Status: ${this.status}`);
       return;
     }
     this.ws.send(JSON.stringify({ t: type, d: data }));
   }
 
-  public syncPresence(): void {
-    if (this.status !== "CONNECTED") return;
-    const current = this.config.getPresence();
-    this.send("UPDATE_PRESENCE", { presence: current });
+  private buildGatewayUrl(ticket: string, presence: Presence): string {
+    const url = new URL(bonfireClient.config.baseUrl);
+    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    url.pathname = `${url.pathname.replace(/\/$/, "")}/gateway/ws`;
+    url.searchParams.set("ticket", ticket);
+    url.searchParams.set("presence", presence);
+    return url.toString();
   }
 
   private setupEventListeners(): void {
     if (!this.ws) return;
 
     this.ws.onopen = () => {
-      console.log("[Gateway] Real-time stream established.");
-      this.updateStatus("CONNECTED");
+      this.updateStatus(GatewayStatus.connected);
       this.reconnectAttempts = 0;
       this.startWatchdog();
       this.startHeartbeatLoop();
@@ -182,12 +165,10 @@ export class GatewayManager {
       this.feedWatchdog();
       try {
         const message: GatewayMessage = JSON.parse(event.data);
-
         if (message.t === "PING") {
           this.send("PONG", null);
           return;
         }
-
         if (message.t) {
           this.messageListeners.forEach((listener) => listener(message));
         }
@@ -197,40 +178,26 @@ export class GatewayManager {
     };
 
     this.ws.onclose = (event) => {
-      console.log(`[Gateway] Stream terminated by host (Code: ${event.code})`);
       this.cleanupSocket();
       if (!this.forcedClose) {
         this.handleReconnect();
       }
     };
-
-    this.ws.onerror = (err) => {
-      console.debug(
-        "[Gateway] Transport channel encountered a pipeline exception:",
-        err,
-      );
-    };
   }
 
   private handleReconnect(isRateLimit = false): void {
     if (this.forcedClose) return;
-    this.updateStatus("RECONNECTING");
+    this.updateStatus(GatewayStatus.reconnecting);
     this.cleanupSocket();
 
     const baseDelay = isRateLimit
       ? Math.max(5000, this.baseReconnectDelay)
       : this.baseReconnectDelay;
-
     const delay = Math.min(
       this.maxReconnectDelay,
       baseDelay * Math.pow(2, this.reconnectAttempts),
     );
-    // Add simple jitter to spread cluster attempts on backend reconnection
     const jitteredDelay = delay + Math.random() * 1000;
-
-    console.log(
-      `[Gateway] Stream recovery scheduled in ${Math.round(jitteredDelay)}ms (Rate Limited: ${isRateLimit})`,
-    );
 
     this.reconnectTimeoutId = setTimeout(() => {
       this.reconnectAttempts++;
@@ -238,17 +205,11 @@ export class GatewayManager {
     }, jitteredDelay);
   }
 
-  public sendHeartbeat(): void {
-    if (this.status !== "CONNECTED") return;
-    this.send("HEARTBEAT", null);
-  }
-
   private startHeartbeatLoop(): void {
-    this.stopHeartbeatLoop();
-    this.sendHeartbeat();
-
     this.heartbeatIntervalId = setInterval(() => {
-      this.sendHeartbeat();
+      if (this.status === GatewayStatus.connected) {
+        this.send("HEARTBEAT", null);
+      }
     }, this.heartbeatInterval);
   }
 
@@ -262,12 +223,7 @@ export class GatewayManager {
   private startWatchdog(): void {
     this.clearWatchdog();
     this.watchdogTimeoutId = setTimeout(() => {
-      console.warn(
-        "[Gateway] Keep-alive threshold exceeded. Severing pipeline.",
-      );
-      if (this.ws) {
-        this.ws.close(4000, "Heartbeat Timeout");
-      }
+      if (this.ws) this.ws.close(4000, "Heartbeat Timeout");
     }, this.watchdogTimeout);
   }
 
@@ -304,10 +260,4 @@ export class GatewayManager {
   }
 }
 
-export const gatewayManager = new GatewayManager({
-  getTicket: async () => {
-    const response = await authService.wsTicket();
-    return response.ticket;
-  },
-  getPresence: resolvePresenceState,
-});
+export const gatewayService = new GatewayService();
