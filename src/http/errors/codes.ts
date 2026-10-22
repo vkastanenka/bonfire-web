@@ -1,5 +1,6 @@
 export const API_ERROR_CODES = {
   TOKEN_EXPIRED: "TOKEN_EXPIRED",
+  RATE_LIMIT_EXCEEDED: "RATE_LIMIT_EXCEEDED",
 } as const;
 
 export type ApiErrorCode =
