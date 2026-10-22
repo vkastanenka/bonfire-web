@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { authService, useAuthStore } from "../auth";
 import { gatewayService, GatewayStatus } from "./service";
-import { Presence } from "./presence";
-// import { gatewayDispatcher } from "./dispatcher";
+import { Presence, presenceService } from "./presence";
 
 interface GatewayState {
   status: GatewayStatus;
@@ -10,9 +9,7 @@ interface GatewayState {
   init: () => void;
   close: () => void;
   send: (type: string, data: unknown) => void;
-  getPresence: () => Presence;
-  setPresence: (presence: Presence) => void;
-  syncPresence: () => void;
+  sendPresence: () => void;
 }
 
 let isInit = false;
@@ -27,17 +24,33 @@ export const useGatewayStore = create<GatewayState>((set, get) => ({
         set({ status });
       });
 
-      // gatewayDispatcher.initialize();
+      presenceService.subscribe((presence: Presence) => {
+        const effectivePresence =
+          authService.getEffectivePresence() ?? presence;
 
+        if (get().presence !== effectivePresence) {
+          set({ presence: effectivePresence });
+          get().sendPresence();
+        }
+      });
+
+      presenceService.start();
       isInit = true;
     }
 
-    set({ status: gatewayService.getStatus() });
+    const initialPresence =
+      authService.getEffectivePresence() ?? Presence.online;
 
-    gatewayService.connect(get().getPresence());
+    set({
+      status: gatewayService.getStatus(),
+      presence: initialPresence,
+    });
+
+    gatewayService.connect(initialPresence);
   },
 
   close: () => {
+    presenceService.stop();
     set({
       status: GatewayStatus.disconnected,
       presence: Presence.online,
@@ -49,17 +62,9 @@ export const useGatewayStore = create<GatewayState>((set, get) => ({
     gatewayService.send(type, data);
   },
 
-  getPresence: () => {
-    return authService.getEffectivePresence() ?? get().presence;
-  },
-
-  setPresence: (presence) => set({ presence }),
-
-  syncPresence: () => {
+  sendPresence: () => {
     if (get().status === GatewayStatus.connected) {
-      gatewayService.send("UPDATE_PRESENCE", {
-        presence: get().getPresence(),
-      });
+      get().send("UPDATE_PRESENCE", { presence: get().presence });
     }
   },
 }));

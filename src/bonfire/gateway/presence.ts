@@ -1,6 +1,3 @@
-import { authService } from "../auth";
-import { useGatewayStore } from "./store";
-
 export const Presence = {
   online: "ONLINE",
   offline: "OFFLINE",
@@ -12,42 +9,35 @@ export const Presence = {
 
 export type Presence = (typeof Presence)[keyof typeof Presence];
 
-export function resolvePresence(): Presence {
-  const preferred = authService.getEffectivePresence();
+export type PresenceListener = (presence: Presence) => void;
 
-  if (preferred) {
-    return preferred;
-  }
-
-  return useGatewayStore.getState().presence;
-}
-
-const presenceEvents = [
+const PRESENCE_EVENTS = [
   "mousemove",
   "keydown",
   "mousedown",
   "touchstart",
   "scroll",
-];
+] as const;
 
-export type PresenceListener = (presence: Presence) => void;
+const THROTTLE_MS = 2000;
+const DEFAULT_IDLE_TIMEOUT_MS = 60000;
 
 class PresenceService {
   private isRunning = false;
-  private readonly idleTimeoutMs: number = 60000;
-  private timeoutId: ReturnType<typeof setTimeout> | null = null;
   private isIdle = false;
-  private listeners = new Set<PresenceListener>();
-  private lastActivityTime = Date.now();
+  private timeoutId: ReturnType<typeof setTimeout> | null = null;
+  private lastActivityTime = 0;
+  private readonly listeners = new Set<PresenceListener>();
+  private readonly idleTimeoutMs: number;
 
-  constructor(idleTimeoutMs: number = 60000) {
+  constructor(idleTimeoutMs: number = DEFAULT_IDLE_TIMEOUT_MS) {
     this.idleTimeoutMs = idleTimeoutMs;
   }
 
-  public start() {
+  public start(): void {
     if (typeof window === "undefined" || this.isRunning) return;
 
-    presenceEvents.forEach((event) => {
+    PRESENCE_EVENTS.forEach((event) => {
       window.addEventListener(event, this.handleEvent, { passive: true });
     });
 
@@ -55,14 +45,14 @@ class PresenceService {
     this.isRunning = true;
   }
 
-  public stop() {
+  public stop(): void {
     if (typeof window === "undefined" || !this.isRunning) return;
 
-    presenceEvents.forEach((event) => {
+    PRESENCE_EVENTS.forEach((event) => {
       window.removeEventListener(event, this.handleEvent);
     });
 
-    this.clearTimeouts();
+    this.clearTimeout();
     this.listeners.clear();
     this.isRunning = false;
   }
@@ -73,33 +63,38 @@ class PresenceService {
     return () => this.listeners.delete(callback);
   }
 
-  private handleEvent = () => {
+  private handleEvent = (): void => {
     const now = Date.now();
-    if (now - this.lastActivityTime < 2000) return;
+    if (now - this.lastActivityTime < THROTTLE_MS) return;
     this.lastActivityTime = now;
 
     if (this.isIdle) {
-      this.isIdle = false;
-      this.dispatch(Presence.online);
+      this.updateIdleState(false);
     }
 
     this.resetTimeout();
   };
 
-  private resetTimeout() {
-    if (this.timeoutId) clearTimeout(this.timeoutId);
+  private updateIdleState(isIdle: boolean): void {
+    if (this.isIdle === isIdle) return;
+    this.isIdle = isIdle;
+
+    const presence = isIdle ? Presence.idle : Presence.online;
+    this.listeners.forEach((callback) => callback(presence));
+  }
+
+  private resetTimeout(): void {
+    this.clearTimeout();
     this.timeoutId = setTimeout(() => {
-      this.isIdle = true;
-      this.dispatch(Presence.idle);
+      this.updateIdleState(true);
     }, this.idleTimeoutMs);
   }
 
-  private clearTimeouts() {
-    if (this.timeoutId) clearTimeout(this.timeoutId);
-  }
-
-  private dispatch(presence: Presence) {
-    this.listeners.forEach((callback) => callback(presence));
+  private clearTimeout(): void {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
   }
 }
 
