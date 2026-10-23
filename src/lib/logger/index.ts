@@ -18,8 +18,9 @@ export type LogContext = Record<string, unknown>;
 
 export class Logger {
   private minLevel: LogLevel;
+  private defaultContext: LogContext;
 
-  constructor(minLevel?: LogLevel) {
+  constructor(minLevel?: LogLevel, defaultContext: LogContext = {}) {
     const defaultLevel =
       process.env.NODE_ENV === "production"
         ? LOG_LEVELS.INFO
@@ -32,6 +33,15 @@ export class Logger {
     this.minLevel =
       minLevel ??
       (envLevel && envLevel in LOG_LEVEL_WEIGHTS ? envLevel : defaultLevel);
+
+    this.defaultContext = defaultContext;
+  }
+
+  public child(context: LogContext): Logger {
+    return new Logger(this.minLevel, {
+      ...this.defaultContext,
+      ...context,
+    });
   }
 
   private shouldLog(level: LogLevel): boolean {
@@ -43,6 +53,7 @@ export class Logger {
 
     const payload = JSON.stringify(
       {
+        ...this.defaultContext,
         ...context,
         level,
         message,
