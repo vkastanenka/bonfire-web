@@ -1,13 +1,22 @@
-import { logger } from "@/lib";
+import { logger as baseLogger, Logger } from "@/lib";
 
 type MessageHandler<T = unknown> = (data: T) => void;
 
-export class GatewayDispatcher {
+export class Dispatcher {
   private handlers = new Map<string, Set<MessageHandler<unknown>>>();
+  private logger: Logger;
+
+  constructor(logger: Logger = baseLogger) {
+    this.logger = logger.child({
+      package: "Gateway",
+      module: "Dispatcher",
+    });
+  }
 
   public register<T = unknown>(
     type: string,
     handler: MessageHandler<T>,
+    source?: string,
   ): () => void {
     let handlers = this.handlers.get(type);
 
@@ -19,10 +28,13 @@ export class GatewayDispatcher {
     const castHandler = handler as MessageHandler<unknown>;
     handlers.add(castHandler);
 
+    this.logger.info("Registered message handler.", { type, source });
+
     return () => {
       const currentHandlers = this.handlers.get(type);
       if (currentHandlers) {
         currentHandlers.delete(castHandler);
+        this.logger.info("Unregistered message handler.", { type, source });
         if (currentHandlers.size === 0) {
           this.handlers.delete(type);
         }
@@ -30,13 +42,10 @@ export class GatewayDispatcher {
     };
   }
 
-  public dispatch(type: string, data: unknown): void {
+  public dispatch(type: string, data: unknown, source?: string): void {
     const handlers = this.handlers.get(type);
     if (!handlers) {
-      logger.warn(
-        `[GatewayDispatcher] No message handlers for provided type.`,
-        { type },
-      );
+      this.logger.warn(`No message handlers for type.`, { type, source });
       return;
     }
 
@@ -44,10 +53,13 @@ export class GatewayDispatcher {
       try {
         handler(data);
       } catch (error) {
-        logger.error(`[GatewayDispatcher] Handler execution error.`, { error });
+        this.logger.error(`Message handler execution error.`, {
+          error,
+          source,
+        });
       }
     });
   }
 }
 
-export const gatewayDispatcher = new GatewayDispatcher();
+export const dispatcher = new Dispatcher();
