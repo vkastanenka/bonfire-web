@@ -1,10 +1,10 @@
 import { logger as baseLogger, Logger } from "@/lib";
 
-type MessageHandler<T = unknown> = (data: T) => void;
+type Handler<T = unknown> = (data: T) => void;
 
 export class Dispatcher {
-  private handlers = new Map<string, Set<MessageHandler<unknown>>>();
-  private logger: Logger;
+  private readonly handlers = new Map<string, Set<Handler<unknown>>>();
+  private readonly logger: Logger;
 
   constructor(logger: Logger = baseLogger) {
     this.logger = logger.child({
@@ -15,18 +15,35 @@ export class Dispatcher {
 
   public register<T = unknown>(
     type: string,
-    handler: MessageHandler<T>,
+    handler: Handler<T>,
     source?: string,
   ): () => void {
     let handlers = this.handlers.get(type);
 
     if (!handlers) {
-      handlers = new Set<MessageHandler<unknown>>();
+      handlers = new Set<Handler<unknown>>();
       this.handlers.set(type, handlers);
     }
 
-    const castHandler = handler as MessageHandler<unknown>;
-    handlers.add(castHandler);
+    const castHandler = handler as Handler<unknown>;
+
+    const wrappedHandler: Handler<unknown> = (data) => {
+      try {
+        castHandler(data);
+        this.logger.debug("Dispatched message to handler.", {
+          type,
+          source,
+        });
+      } catch (error) {
+        this.logger.error("Message handler execution error.", {
+          type,
+          source,
+          error,
+        });
+      }
+    };
+
+    handlers.add(wrappedHandler);
 
     this.logger.info("Registered message handler.", {
       type,
@@ -36,8 +53,9 @@ export class Dispatcher {
 
     return () => {
       const currentHandlers = this.handlers.get(type);
+
       if (currentHandlers) {
-        currentHandlers.delete(castHandler);
+        currentHandlers.delete(wrappedHandler);
 
         this.logger.info("Unregistered message handler.", {
           type,
@@ -52,24 +70,14 @@ export class Dispatcher {
     };
   }
 
-  public dispatch(type: string, data: unknown, source?: string): void {
+  public dispatch(type: string, data: unknown): void {
     const handlers = this.handlers.get(type);
     if (!handlers) {
-      this.logger.warn("No message handlers for type.", { type, source });
+      this.logger.warn("No message handlers for type.", { type });
       return;
     }
 
-    handlers.forEach((handler) => {
-      try {
-        handler(data);
-      } catch (error) {
-        this.logger.error("Message handler execution error.", {
-          error,
-          source,
-          type,
-        });
-      }
-    });
+    handlers.forEach((handler) => handler(data));
   }
 }
 

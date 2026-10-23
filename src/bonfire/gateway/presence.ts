@@ -11,8 +11,6 @@ export const Presence = {
 
 export type Presence = (typeof Presence)[keyof typeof Presence];
 
-export type PresenceListener = (presence: Presence) => void;
-
 const PresenceEvents = [
   "mousemove",
   "keydown",
@@ -24,14 +22,16 @@ const PresenceEvents = [
 const THROTTLE_MS = 2000;
 const DEFAULT_IDLE_TIMEOUT_MS = 60000;
 
-export class PresenceService {
+export type PresenceListener = (presence: Presence) => void;
+
+export class PresenceTracker {
   private isRunning = false;
   private isIdle = false;
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
   private lastActivityTime = 0;
   private readonly listeners = new Set<PresenceListener>();
   private readonly idleTimeoutMs: number;
-  private logger: Logger;
+  private readonly logger: Logger;
 
   constructor(
     idleTimeoutMs: number = DEFAULT_IDLE_TIMEOUT_MS,
@@ -46,12 +46,12 @@ export class PresenceService {
 
   public start(): void {
     if (typeof window === "undefined") {
-      this.logger.warn("Window undefined, start aborted.");
+      this.logger.debug("Window undefined, start aborted.");
       return;
     }
 
     if (this.isRunning) {
-      this.logger.warn("Service already running, start aborted.");
+      this.logger.debug("Service already running, start aborted.");
       return;
     }
 
@@ -62,17 +62,17 @@ export class PresenceService {
     this.resetTimeout();
     this.isRunning = true;
 
-    this.logger.info("Started service.");
+    this.logger.info("Started presence service.");
   }
 
   public stop(): void {
     if (typeof window === "undefined") {
-      this.logger.warn("Window undefined, stop aborted.");
+      this.logger.debug("Window undefined, stop aborted.");
       return;
     }
 
     if (!this.isRunning) {
-      this.logger.warn("Service not running, stop aborted.");
+      this.logger.debug("Service not running, stop aborted.");
       return;
     }
 
@@ -84,18 +84,42 @@ export class PresenceService {
     this.listeners.clear();
     this.isRunning = false;
 
-    this.logger.info("Stopped service.");
+    this.logger.info("Stopped presence service.");
   }
 
   public subscribe(callback: PresenceListener, source?: string): () => void {
-    this.listeners.add(callback);
-    callback(this.isIdle ? Presence.idle : Presence.online);
+    const wrappedListener: PresenceListener = (presence) => {
+      try {
+        callback(presence);
+        this.logger.debug("Dispatched presence to listener.", {
+          presence,
+          source,
+        });
+      } catch (error) {
+        this.logger.error("Presence listener execution error.", {
+          presence,
+          source,
+          error,
+        });
+      }
+    };
 
-    this.logger.info("Subscribed to service.", { source });
+    this.listeners.add(wrappedListener);
+
+    wrappedListener(this.isIdle ? Presence.idle : Presence.online);
+
+    this.logger.info("Subscribed to presence service.", {
+      source,
+      listenerCount: this.listeners.size,
+    });
 
     return () => {
-      this.listeners.delete(callback);
-      this.logger.info("Unsubscribed from service.", { source });
+      this.listeners.delete(wrappedListener);
+
+      this.logger.info("Unsubscribed from presence service.", {
+        source,
+        listenerCount: this.listeners.size,
+      });
     };
   }
 
@@ -121,13 +145,13 @@ export class PresenceService {
 
     const presence = isIdle ? Presence.idle : Presence.online;
 
-    this.logger.info("Presence state updated.", {
+    this.listeners.forEach((listener) => listener(presence));
+
+    this.logger.info("Presence state updated and broadcasted.", {
       isIdle,
       presence,
       listenerCount: this.listeners.size,
     });
-
-    this.listeners.forEach((callback) => callback(presence));
   }
 
   private resetTimeout(): void {
@@ -146,4 +170,4 @@ export class PresenceService {
   }
 }
 
-export const presenceService = new PresenceService();
+export const presenceTracker = new PresenceTracker();

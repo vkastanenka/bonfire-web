@@ -3,25 +3,25 @@ import { logger as baseLogger, Logger } from "@/lib";
 const CHANNEL_NAME = "bonfire_gateway_broadcast";
 
 export const BroadcastType = {
-  event: "EVENT",
-  status: "STATUS",
+  message: "MESSAGE",
   presence: "PRESENCE",
+  status: "STATUS",
 } as const;
 
 export type BroadcastType = (typeof BroadcastType)[keyof typeof BroadcastType];
 
-export interface BroadcastMessage<T = unknown> {
+interface Message<T = unknown> {
   senderId: string;
   type: BroadcastType;
   payload: T;
 }
 
 export class Broadcaster {
-  private id: string = crypto.randomUUID();
+  private readonly id: string = crypto.randomUUID();
   private channel: BroadcastChannel | null = null;
-  private logger: Logger;
+  private readonly logger: Logger;
   private readonly listeners = new Set<
-    (event: MessageEvent<BroadcastMessage>) => void
+    (event: MessageEvent<Message>) => void
   >();
 
   constructor(logger: Logger = baseLogger) {
@@ -35,21 +35,9 @@ export class Broadcaster {
     if (typeof window !== "undefined" && "BroadcastChannel" in window) {
       this.channel = new BroadcastChannel(CHANNEL_NAME);
       this.logger.info("Set broadcast channel.");
+    } else {
+      this.logger.debug("BroadcastChannel not supported.");
     }
-  }
-
-  public post<T>(type: BroadcastType, payload: T, source?: string): void {
-    if (!this.channel) {
-      this.logger.warn("No channel to post a message to.", {
-        type,
-        payload,
-        source,
-      });
-      return;
-    }
-
-    this.channel.postMessage({ senderId: this.id, type, payload });
-    this.logger.info("Posted message to channel.", { type, payload, source });
   }
 
   public subscribe(
@@ -57,19 +45,27 @@ export class Broadcaster {
     source?: string,
   ): () => void {
     if (!this.channel) {
-      this.logger.warn("No channel to subscribe to.", { source });
+      this.logger.debug("No channel to subscribe to.", { source });
       return () => {};
     }
 
-    const listener = (event: MessageEvent<BroadcastMessage>) => {
+    const listener = (event: MessageEvent<Message>) => {
       if (event.data && event.data.type) {
-        callback(event.data.type, event.data.payload);
-        this.logger.info("Received broadcasted message from channel.", {
-          senderId: event.data.senderId,
-          type: event.data.type,
-          payload: event.data.payload,
-          source,
-        });
+        try {
+          callback(event.data.type, event.data.payload);
+          this.logger.debug("Received broadcasted message from channel.", {
+            senderId: event.data.senderId,
+            type: event.data.type,
+            source,
+          });
+        } catch (error) {
+          this.logger.error("Broadcast listener execution error.", {
+            type: event.data.type,
+            senderId: event.data.senderId,
+            source,
+            error,
+          });
+        }
       }
     };
 
@@ -90,6 +86,19 @@ export class Broadcaster {
         listenerCount: this.listeners.size,
       });
     };
+  }
+
+  public post<T>(type: BroadcastType, payload: T, source?: string): void {
+    if (!this.channel) {
+      this.logger.debug("No channel to post a message to.", {
+        type,
+        source,
+      });
+      return;
+    }
+
+    this.channel.postMessage({ senderId: this.id, type, payload });
+    this.logger.debug("Posted message to channel.", { type, source });
   }
 
   public close(): void {

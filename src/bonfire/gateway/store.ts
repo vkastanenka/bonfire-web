@@ -1,50 +1,42 @@
 import { create } from "zustand";
 import { authService, useAuthStore } from "../auth";
-import { gatewayService, GatewayStatus, type GatewayMessage } from "./service";
-import { Presence, presenceService } from "./presence";
-import { BroadcastType, gatewayBroadcaster } from "./broadcaster";
+import { service, Status, type Message } from "./service";
+import { Presence, presenceTracker } from "./presence";
+import { BroadcastType, broadcaster } from "./broadcaster";
 
-interface GatewayState {
-  status: GatewayStatus;
+interface State {
+  status: Status;
   presence: Presence;
   init: () => void;
   close: () => void;
   send: (type: string, data: unknown) => void;
-  sendPresence: () => void;
 }
 
 let isInit = false;
 
-export const useGatewayStore = create<GatewayState>((set, get) => ({
-  status: GatewayStatus.disconnected,
+export const useStore = create<State>((set, get) => ({
+  status: Status.disconnected,
   presence: Presence.online,
 
   init: () => {
     if (!isInit) {
-      gatewayService.subscribeToStatus((status: GatewayStatus) => {
+      service.subscribeStatus((status: Status) => {
         set({ status });
-        // [Leader Tab Pattern]: Broadcast status changes from the leader tab to follower tabs
-        gatewayBroadcaster.post(BroadcastType.gatewayStatusChange, status);
+        broadcaster.post(BroadcastType.status, status);
       });
 
-      // [Leader Tab Pattern]: Broadcast incoming socket messages from the leader tab to follower tabs
-      gatewayService.subscribeToMessages((message: GatewayMessage) => {
-        gatewayBroadcaster.post(BroadcastType.gatewayEvent, message);
+      service.subscribeMessage((message: Message) => {
+        broadcaster.post(BroadcastType.message, message);
       });
 
-      presenceService.subscribe((presence: Presence) => {
+      presenceTracker.subscribe((presence: Presence) => {
         const effectivePresence =
           authService.getEffectivePresence() ?? presence;
 
         if (get().presence !== effectivePresence) {
           set({ presence: effectivePresence });
-          get().sendPresence();
-
-          // [Leader Tab Pattern]: Instantly sync presence change to follower tabs
-          gatewayBroadcaster.post(
-            BroadcastType.presenceSync,
-            effectivePresence,
-          );
+          service.send("UPDATE_PRESENCE", { presence: effectivePresence });
+          broadcaster.post(BroadcastType.presence, effectivePresence);
         }
       });
 
@@ -54,37 +46,32 @@ export const useGatewayStore = create<GatewayState>((set, get) => ({
     const initialPresence =
       authService.getEffectivePresence() ?? Presence.online;
 
-    presenceService.start();
-    gatewayService.connect(initialPresence);
+    presenceTracker.start();
+    service.connect(initialPresence);
 
-    const initialStatus = gatewayService.getStatus();
+    const initialStatus = service.getStatus();
 
     set({
       status: initialStatus,
       presence: initialPresence,
     });
 
-    gatewayBroadcaster.post(BroadcastType.gatewayStatusChange, initialStatus);
-    gatewayBroadcaster.post(BroadcastType.presenceSync, initialPresence);
+    broadcaster.post(BroadcastType.status, initialStatus);
+    broadcaster.post(BroadcastType.presence, initialPresence);
   },
 
   close: () => {
-    presenceService.stop();
+    presenceTracker.stop();
+    service.disconnect();
+
     set({
-      status: GatewayStatus.disconnected,
+      status: service.getStatus(),
       presence: Presence.online,
     });
-    gatewayService.disconnect();
   },
 
   send: (type, data) => {
-    gatewayService.send(type, data);
-  },
-
-  sendPresence: () => {
-    if (get().status === GatewayStatus.connected) {
-      get().send("UPDATE_PRESENCE", { presence: get().presence });
-    }
+    service.send(type, data);
   },
 }));
 
@@ -92,7 +79,7 @@ let previousToken = useAuthStore.getState().accessToken;
 
 useAuthStore.subscribe((state) => {
   if (previousToken && !state.accessToken) {
-    useGatewayStore.getState().close();
+    useStore.getState().close();
   }
   previousToken = state.accessToken;
 });

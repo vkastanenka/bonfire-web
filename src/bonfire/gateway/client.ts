@@ -1,14 +1,14 @@
-import { Client, type RequestOptions } from "@/http";
+import { Client as BaseClient, type RequestOptions } from "@/http";
 import { bonfireClient } from "../client";
 import {
   printTicketResponseSchema,
   type PrintTicketResponse,
 } from "./validation";
 
-export class GatewayClient {
-  protected readonly client: Client;
+export class Client {
+  protected readonly client: BaseClient;
 
-  constructor(client: Client = bonfireClient) {
+  constructor(client: BaseClient = bonfireClient) {
     this.client = client;
   }
 
@@ -23,4 +23,4 @@ export class GatewayClient {
   };
 }
 
-export const gatewayClient = new GatewayClient();
+export const client = new Client();
