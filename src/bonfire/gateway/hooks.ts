@@ -1,16 +1,16 @@
 import { useEffect } from "react";
-import { useGatewayStore } from "./store";
-import { gatewayBroadcaster, BroadcastType } from "./broadcaster";
-import { GatewayStatus, type GatewayMessage } from "./service";
+import { useStore } from "./store";
+import { broadcaster, BroadcastType } from "./broadcaster";
+import { Status, type Message } from "./service";
 import { Presence } from "./presence";
 import { logger } from "@/lib";
-import { gatewayDispatcher } from "./dispatcher";
+import { dispatcher } from "./dispatcher";
 
 const LEADER_LOCK_NAME = "bonfire_gateway_leader_lock";
 
 export function useGateway() {
-  const init = useGatewayStore((state) => state.init);
-  const close = useGatewayStore((state) => state.close);
+  const init = useStore((state) => state.init);
+  const close = useStore((state) => state.close);
 
   useEffect(() => {
     let isMounted = true;
@@ -19,28 +19,23 @@ export function useGateway() {
     // -----------------------------------------------------------------
     // 1. FOLLOWER SETUP: Listen for broadcasts from the Leader tab
     // -----------------------------------------------------------------
-    const unsubscribeBroadcast = gatewayBroadcaster.subscribe(
-      (type, payload) => {
-        switch (type) {
-          case BroadcastType.gatewayStatusChange:
-            // [Leader Tab Pattern]: Synchronize connection status on follower tabs
-            useGatewayStore.setState({ status: payload as GatewayStatus });
-            break;
-
-          case BroadcastType.gatewayEvent: {
-            // [Leader Tab Pattern]: Dispatch broadcasted events to follower tab message listeners
-            const message = payload as GatewayMessage;
-            gatewayDispatcher.dispatch(message.t, message.d);
-            break;
-          }
-
-          case BroadcastType.presenceSync:
-            // [Leader Tab Pattern]: Synchronize presence state across follower tabs
-            useGatewayStore.setState({ presence: payload as Presence });
-            break;
+    const unsubscribeBroadcast = broadcaster.subscribe((type, payload) => {
+      switch (type) {
+        case BroadcastType.message: {
+          const message = payload as Message;
+          dispatcher.dispatch(message.t, message.d);
+          break;
         }
-      },
-    );
+
+        case BroadcastType.presence:
+          useStore.setState({ presence: payload as Presence });
+          break;
+
+        case BroadcastType.status:
+          useStore.setState({ status: payload as Status });
+          break;
+      }
+    });
 
     // -----------------------------------------------------------------
     // 2. LEADER ELECTION LOOP (Web Locks API)
@@ -68,11 +63,8 @@ export function useGateway() {
               init(); // Active Leader opens the WebSocket connection
 
               // Broadcast current status to followers upon becoming leader
-              const currentStatus = useGatewayStore.getState().status;
-              gatewayBroadcaster.post(
-                BroadcastType.gatewayStatusChange,
-                currentStatus,
-              );
+              const currentStatus = useStore.getState().status;
+              broadcaster.post(BroadcastType.status, currentStatus);
 
               // Hold the lock until tab becomes hidden, unmounts, or closes
               return new Promise<void>((resolve) => {

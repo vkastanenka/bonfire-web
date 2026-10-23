@@ -100,15 +100,6 @@ export class Broadcaster {
     this.channel.postMessage({ senderId: this.id, type, payload });
     this.logger.debug("Posted message to channel.", { type, source });
   }
-
-  public close(): void {
-    if (this.channel) {
-      this.channel.close();
-      this.channel = null;
-      this.listeners.clear();
-      this.logger.info("Closed broadcaster.");
-    }
-  }
 }
 
 export const broadcaster = new Broadcaster();

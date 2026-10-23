@@ -102,8 +102,6 @@ export class Service {
 
     this.statusListeners.add(wrappedListener);
 
-    wrappedListener(this.status);
-
     this.logger.info("Subscribed to status updates.", {
       listenerCount: this.statusListeners.size,
       source,
@@ -229,6 +227,8 @@ export class Service {
     this.forcedClose = true;
     this.connectionVersion++;
     this.clearTimeouts();
+    this.statusListeners.clear();
+    this.messageListeners.clear();
     this.updateStatus(Status.disconnected);
 
     if (this.ws) {

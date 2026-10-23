@@ -12,41 +12,37 @@ interface State {
   send: (type: string, data: unknown) => void;
 }
 
-let isInit = false;
-
 export const useStore = create<State>((set, get) => ({
-  status: Status.disconnected,
   presence: Presence.online,
+  status: Status.disconnected,
 
   init: () => {
-    if (!isInit) {
-      service.subscribeStatus((status: Status) => {
-        set({ status });
-        broadcaster.post(BroadcastType.status, status);
-      });
+    get().close();
 
-      service.subscribeMessage((message: Message) => {
-        broadcaster.post(BroadcastType.message, message);
-      });
+    service.subscribeMessage((message: Message) => {
+      broadcaster.post(BroadcastType.message, message);
+    });
 
-      presenceTracker.subscribe((presence: Presence) => {
-        const effectivePresence =
-          authService.getEffectivePresence() ?? presence;
+    service.subscribeStatus((status: Status) => {
+      set({ status });
+      broadcaster.post(BroadcastType.status, status);
+    });
 
-        if (get().presence !== effectivePresence) {
-          set({ presence: effectivePresence });
-          service.send("UPDATE_PRESENCE", { presence: effectivePresence });
-          broadcaster.post(BroadcastType.presence, effectivePresence);
-        }
-      });
+    presenceTracker.subscribe((presence: Presence) => {
+      const effectivePresence = authService.getEffectivePresence() ?? presence;
 
-      isInit = true;
-    }
+      if (get().presence !== effectivePresence) {
+        set({ presence: effectivePresence });
+        service.send("UPDATE_PRESENCE", { presence: effectivePresence });
+        broadcaster.post(BroadcastType.presence, effectivePresence);
+      }
+    });
+
+    presenceTracker.start();
 
     const initialPresence =
       authService.getEffectivePresence() ?? Presence.online;
 
-    presenceTracker.start();
     service.connect(initialPresence);
 
     const initialStatus = service.getStatus();
