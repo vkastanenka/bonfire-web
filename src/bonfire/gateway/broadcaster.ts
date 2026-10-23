@@ -20,6 +20,9 @@ export class Broadcaster {
   private id: string = crypto.randomUUID();
   private channel: BroadcastChannel | null = null;
   private logger: Logger;
+  private readonly listeners = new Set<
+    (event: MessageEvent<BroadcastMessage>) => void
+  >();
 
   constructor(logger: Logger = baseLogger) {
     this.logger = logger.child({
@@ -70,13 +73,21 @@ export class Broadcaster {
       }
     };
 
+    this.listeners.add(listener);
     this.channel.addEventListener("message", listener);
-    this.logger.info("Subscribed to broadcast channel messages.", { source });
+
+    this.logger.info("Subscribed to broadcast channel messages.", {
+      source,
+      listenerCount: this.listeners.size,
+    });
 
     return () => {
       this.channel?.removeEventListener("message", listener);
+      this.listeners.delete(listener);
+
       this.logger.info("Unsubscribed from broadcast channel messages.", {
         source,
+        listenerCount: this.listeners.size,
       });
     };
   }
@@ -85,6 +96,7 @@ export class Broadcaster {
     if (this.channel) {
       this.channel.close();
       this.channel = null;
+      this.listeners.clear();
       this.logger.info("Closed broadcaster.");
     }
   }

@@ -28,13 +28,23 @@ export class Dispatcher {
     const castHandler = handler as MessageHandler<unknown>;
     handlers.add(castHandler);
 
-    this.logger.info("Registered message handler.", { type, source });
+    this.logger.info("Registered message handler.", {
+      type,
+      source,
+      handlerCount: handlers.size,
+    });
 
     return () => {
       const currentHandlers = this.handlers.get(type);
       if (currentHandlers) {
         currentHandlers.delete(castHandler);
-        this.logger.info("Unregistered message handler.", { type, source });
+
+        this.logger.info("Unregistered message handler.", {
+          type,
+          source,
+          handlerCount: currentHandlers.size,
+        });
+
         if (currentHandlers.size === 0) {
           this.handlers.delete(type);
         }
@@ -45,7 +55,7 @@ export class Dispatcher {
   public dispatch(type: string, data: unknown, source?: string): void {
     const handlers = this.handlers.get(type);
     if (!handlers) {
-      this.logger.warn(`No message handlers for type.`, { type, source });
+      this.logger.warn("No message handlers for type.", { type, source });
       return;
     }
 
@@ -53,9 +63,10 @@ export class Dispatcher {
       try {
         handler(data);
       } catch (error) {
-        this.logger.error(`Message handler execution error.`, {
+        this.logger.error("Message handler execution error.", {
           error,
           source,
+          type,
         });
       }
     });
