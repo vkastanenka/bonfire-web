@@ -1,7 +1,11 @@
 import { useEffect } from "react";
 import { useStore } from "./store";
-import { broadcaster, BroadcastType } from "./broadcaster";
-import { logger } from "@/lib";
+import { logger as baseLogger } from "@/lib";
+
+const logger = baseLogger.child({
+  package: "Gateway",
+  module: "useGateway",
+});
 
 const LEADER_LOCK_NAME = "bonfire_gateway_leader_lock";
 
@@ -15,10 +19,12 @@ export function useGateway() {
 
     const acquireLeadershipLoop = async () => {
       if (typeof navigator === "undefined" || !navigator.locks) {
-        logger.warn(
-          "[Gateway] Web Locks API unavailable. Falling back to standard connection.",
-        );
-        if (isMounted) init();
+        if (isMounted) {
+          logger.warn(
+            "Web Locks API unavailable. Falling back to standard connection.",
+          );
+          init();
+        }
         return;
       }
 
@@ -30,20 +36,14 @@ export function useGateway() {
             async () => {
               if (!isMounted || abortController.signal.aborted) return;
 
-              logger.info(
-                "[Gateway] Tab elected as LEADER. Initializing WebSocket...",
-              );
-              init();
+              logger.info("Tab elected as LEADER. Initializing WebSocket...");
 
-              const currentStatus = useStore.getState().status;
-              broadcaster.post(BroadcastType.status, currentStatus);
+              init();
 
               return new Promise<void>((resolve) => {
                 const handleVisibilityChange = () => {
                   if (document.visibilityState === "hidden") {
-                    logger.info(
-                      "[Gateway] Leader tab hidden. Yielding lock...",
-                    );
+                    logger.info("Leader tab hidden. Yielding lock...");
                     resolve();
                   }
                 };
@@ -68,7 +68,7 @@ export function useGateway() {
             },
           );
         } catch (err) {
-          logger.error("[Gateway] Leader lock acquisition error:", { err });
+          logger.error("Leader lock acquisition error.", { err });
         }
 
         close();
