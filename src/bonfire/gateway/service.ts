@@ -4,6 +4,7 @@ import { bonfireClient } from "../client";
 import { gatewayClient, type GatewayClient } from "./client";
 import { Presence } from "./presence";
 import type { PrintTicketResponse } from "./validation";
+import { gatewayDispatcher, type GatewayDispatcher } from "./dispatcher";
 
 export const GatewayStatus = {
   connecting: "CONNECTING",
@@ -25,6 +26,7 @@ type MessageListener = (message: GatewayMessage) => void;
 export class GatewayService {
   private ws: WebSocket | null = null;
   private client: GatewayClient;
+  private dispatcher: GatewayDispatcher;
   private status: GatewayStatus = GatewayStatus.disconnected;
 
   private connectionVersion = 0;
@@ -43,8 +45,12 @@ export class GatewayService {
   private watchdogTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private readonly watchdogTimeout = 35000;
 
-  constructor(client: GatewayClient = gatewayClient) {
+  constructor(
+    client: GatewayClient = gatewayClient,
+    dispatcher: GatewayDispatcher = gatewayDispatcher,
+  ) {
     this.client = client;
+    this.dispatcher = dispatcher;
   }
 
   public getStatus(): GatewayStatus {
@@ -62,22 +68,10 @@ export class GatewayService {
     return () => this.statusListeners.delete(listener);
   }
 
+  // Used purely by the leader tab to broadcast raw frames to follower tabs
   public subscribeToMessages(listener: MessageListener): () => void {
     this.messageListeners.add(listener);
     return () => this.messageListeners.delete(listener);
-  }
-
-  // [Leader Tab Pattern]: Added to allow follower tabs to dispatch broadcasted messages to local listeners
-  public dispatchMessage(message: GatewayMessage): void {
-    this.messageListeners.forEach((listener) => {
-      try {
-        listener(message);
-      } catch (err) {
-        logger.error(`[Gateway] Error in broadcasted message listener.`, {
-          error: err,
-        });
-      }
-    });
   }
 
   public async connect(presence: Presence): Promise<void> {
@@ -183,6 +177,10 @@ export class GatewayService {
         const message: GatewayMessage = JSON.parse(event.data);
 
         if (message.t) {
+          // 1. Route through the dispatcher for feature handlers
+          this.dispatcher.dispatch(message.t, message.d);
+
+          // 2. Notify raw infrastructure listeners (e.g., leader-tab broadcaster)
           this.messageListeners.forEach((listener) => {
             try {
               listener(message);

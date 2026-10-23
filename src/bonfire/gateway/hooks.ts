@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useGatewayStore } from "./store";
 import { gatewayBroadcaster, BroadcastType } from "./broadcaster";
-import { gatewayService, GatewayStatus, type GatewayMessage } from "./service";
+import { GatewayStatus, type GatewayMessage } from "./service";
 import { Presence } from "./presence";
 import { logger } from "@/lib";
+import { gatewayDispatcher } from "./dispatcher";
 
 const LEADER_LOCK_NAME = "bonfire_gateway_leader_lock";
 
@@ -25,10 +26,14 @@ export function useGateway() {
             // [Leader Tab Pattern]: Synchronize connection status on follower tabs
             useGatewayStore.setState({ status: payload as GatewayStatus });
             break;
-          case BroadcastType.gatewayEvent:
+
+          case BroadcastType.gatewayEvent: {
             // [Leader Tab Pattern]: Dispatch broadcasted events to follower tab message listeners
-            gatewayService.dispatchMessage(payload as GatewayMessage);
+            const message = payload as GatewayMessage;
+            gatewayDispatcher.dispatch(message.t, message.d);
             break;
+          }
+
           case BroadcastType.presenceSync:
             // [Leader Tab Pattern]: Synchronize presence state across follower tabs
             useGatewayStore.setState({ presence: payload as Presence });

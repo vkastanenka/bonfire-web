@@ -15,7 +15,7 @@ export interface BroadcastMessage<T = unknown> {
   payload: T;
 }
 
-class GatewayBroadcaster {
+export class GatewayBroadcaster {
   private channel: BroadcastChannel | null = null;
 
   constructor() {
