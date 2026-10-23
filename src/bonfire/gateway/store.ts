@@ -3,6 +3,7 @@ import { authService, useAuthStore } from "../auth";
 import { service, Status, type Message } from "./service";
 import { Presence, presenceTracker } from "./presence";
 import { BroadcastType, broadcaster } from "./broadcaster";
+import { dispatcher } from "./dispatcher";
 
 interface State {
   status: Status;
@@ -70,6 +71,24 @@ export const useStore = create<State>((set, get) => ({
     service.send(type, data);
   },
 }));
+
+broadcaster.subscribe((type, payload) => {
+  switch (type) {
+    case BroadcastType.message: {
+      const message = payload as Message;
+      dispatcher.dispatch(message.t, message.d);
+      break;
+    }
+
+    case BroadcastType.presence:
+      useStore.setState({ presence: payload as Presence });
+      break;
+
+    case BroadcastType.status:
+      useStore.setState({ status: payload as Status });
+      break;
+  }
+});
 
 let previousToken = useAuthStore.getState().accessToken;
 
