@@ -22,8 +22,6 @@ export interface GatewayMessage<T = unknown> {
 type StatusListener = (status: GatewayStatus) => void;
 type MessageListener = (message: GatewayMessage) => void;
 
-// TODO: Handle max connections
-
 export class GatewayService {
   private ws: WebSocket | null = null;
   private client: GatewayClient;
@@ -67,6 +65,19 @@ export class GatewayService {
   public subscribeToMessages(listener: MessageListener): () => void {
     this.messageListeners.add(listener);
     return () => this.messageListeners.delete(listener);
+  }
+
+  // [Leader Tab Pattern]: Added to allow follower tabs to dispatch broadcasted messages to local listeners
+  public dispatchMessage(message: GatewayMessage): void {
+    this.messageListeners.forEach((listener) => {
+      try {
+        listener(message);
+      } catch (err) {
+        logger.error(`[Gateway] Error in broadcasted message listener.`, {
+          error: err,
+        });
+      }
+    });
   }
 
   public async connect(presence: Presence): Promise<void> {
