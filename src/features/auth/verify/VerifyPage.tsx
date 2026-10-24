@@ -1,7 +1,7 @@
 import { Link, Text } from "@/components";
 import Alert from "@mui/material/Alert";
 import { PATHS } from "@/constants";
-import { AuthLayout } from "../auth-layout";
+import { AuthLayout } from "../AuthLayout";
 import { LABELS } from "./verify.constants";
 import { getRouteApi } from "@tanstack/react-router";
 import { useVerifyEmail } from "@/bonfire";
