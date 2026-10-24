@@ -6,7 +6,7 @@ import {
   type ClientConfig,
 } from "@/http";
 import { logger } from "@/logger";
-import { authService, useAuthStore } from "./auth";
+import { publicAuthClient, useAuthStore } from "./auth";
 
 const DEFAULT_HEADERS = {
   Accept: "application/json",
@@ -35,7 +35,22 @@ export const bonfireClient = new Client({
   protected: true,
   middleware: [
     new LoggingMiddleware(),
-    new AuthMiddleware(authService, useAuthStore),
+    new AuthMiddleware({
+      // Read token directly from the store primitive
+      getToken: () => useAuthStore.getState().accessToken,
+
+      // Perform low-level refresh directly via transport client
+      refreshToken: async () => {
+        try {
+          const data = await publicAuthClient.refresh();
+          useAuthStore.getState().setAccessToken(data.accessToken);
+          return data.accessToken;
+        } catch {
+          useAuthStore.getState().clearSession();
+          return null;
+        }
+      },
+    }),
     new RetryMiddleware(),
   ],
 });

@@ -1,5 +1,5 @@
 import { Client as BaseClient, type RequestOptions } from "@/http";
-import { bonfireClient } from "../client";
+import { baseBonfireClient } from "../client";
 import {
   printTicketResponseSchema,
   type PrintTicketResponse,
@@ -8,7 +8,7 @@ import {
 export class Client {
   protected readonly client: BaseClient;
 
-  constructor(client: BaseClient = bonfireClient) {
+  constructor(client: BaseClient = baseBonfireClient) {
     this.client = client;
   }
 

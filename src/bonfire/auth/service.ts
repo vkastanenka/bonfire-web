@@ -1,14 +1,13 @@
 import { type RequestOptions } from "@/http";
 import {
-  authClient,
-  AuthClient,
+  // authClient,
+  // AuthClient,
   publicAuthClient,
-  type PublicAuthClient,
 } from "./client";
-import { useAuthStore, type AuthStore } from "./store";
+import { useAuthStore } from "./store";
 import type {
   ForgotPasswordRequest,
-  ListValidSessionsResponse,
+  // ListValidSessionsResponse,
   LoginRequest,
   RegisterRequest,
   ResetPasswordRequest,
@@ -18,23 +17,10 @@ import type { Me } from "../user";
 import { Presence } from "../gateway/presence";
 
 export class AuthService {
-  private readonly pClient: PublicAuthClient;
-  private readonly client: AuthClient;
-  private readonly store: AuthStore;
   private activeRefreshPromise: Promise<string | null> | null = null;
 
-  constructor(
-    pClient: PublicAuthClient = publicAuthClient,
-    client: AuthClient = authClient,
-    store: AuthStore = useAuthStore,
-  ) {
-    this.pClient = pClient;
-    this.client = client;
-    this.store = store;
-  }
-
   public getMe(): Me | null {
-    return this.store.getState().me;
+    return useAuthStore.getState().me;
   }
 
   public getEffectivePresence(): Presence | null {
@@ -54,19 +40,19 @@ export class AuthService {
   }
 
   public async register(req: RegisterRequest, options?: RequestOptions) {
-    const data = await this.pClient.register(req, options);
-    this.store.getState().setAccessToken(data.accessToken);
+    const data = await publicAuthClient.register(req, options);
+    useAuthStore.getState().setAccessToken(data.accessToken);
   }
 
   public async login(req: LoginRequest, options?: RequestOptions) {
-    const data = await this.pClient.login(req, options);
-    this.store.getState().setAccessToken(data.accessToken);
+    const data = await publicAuthClient.login(req, options);
+    useAuthStore.getState().setAccessToken(data.accessToken);
   }
 
-  public async logout(options?: RequestOptions) {
-    await this.client.logout(options);
-    this.store.getState().clearSession();
-  }
+  // public async logout(options?: RequestOptions) {
+  //   await this.client.logout(options);
+  //   useAuthStore.getState().clearSession();
+  // }
 
   public async refresh(): Promise<string | null> {
     if (this.activeRefreshPromise) {
@@ -75,11 +61,11 @@ export class AuthService {
 
     this.activeRefreshPromise = (async () => {
       try {
-        const data = await this.pClient.refresh();
-        this.store.getState().setAccessToken(data.accessToken);
+        const data = await publicAuthClient.refresh();
+        useAuthStore.getState().setAccessToken(data.accessToken);
         return data.accessToken;
       } catch {
-        this.store.getState().clearSession();
+        useAuthStore.getState().clearSession();
         return null;
       } finally {
         this.activeRefreshPromise = null;
@@ -90,61 +76,61 @@ export class AuthService {
   }
 
   public async restore(): Promise<string | null> {
-    const activeToken = this.store.getState().accessToken;
+    const activeToken = useAuthStore.getState().accessToken;
     if (activeToken) return activeToken;
 
     return this.refresh();
   }
 
   public getAccessToken(): string | null {
-    return this.store.getState().accessToken;
+    return useAuthStore.getState().accessToken;
   }
 
   public async verify(req: VerifyEmailRequest, options?: RequestOptions) {
-    const data = await this.pClient.verify(req, options);
-    this.store.getState().setMe(data);
+    const data = await publicAuthClient.verify(req, options);
+    useAuthStore.getState().setMe(data);
   }
 
-  public async resendVerify(options?: RequestOptions) {
-    await this.client.resendVerify(options);
-  }
+  // public async resendVerify(options?: RequestOptions) {
+  //   await this.client.resendVerify(options);
+  // }
 
   public async forgotPassword(
     req: ForgotPasswordRequest,
     options?: RequestOptions,
   ) {
-    await this.pClient.forgotPassword(req, options);
+    await publicAuthClient.forgotPassword(req, options);
   }
 
   public async resetPassword(
     req: ResetPasswordRequest,
     options?: RequestOptions,
   ) {
-    const data = await this.pClient.resetPassword(req, options);
-    this.store.getState().setAccessToken(data.accessToken);
+    const data = await publicAuthClient.resetPassword(req, options);
+    useAuthStore.getState().setAccessToken(data.accessToken);
   }
 
-  public async listValidSessions(
-    options?: RequestOptions,
-  ): Promise<ListValidSessionsResponse> {
-    return this.client.listValidSessions(options);
-  }
+  // public async listValidSessions(
+  //   options?: RequestOptions,
+  // ): Promise<ListValidSessionsResponse> {
+  //   return this.client.listValidSessions(options);
+  // }
 
-  public async revokeAllSessions(options?: RequestOptions) {
-    await this.client.revokeAllSessions(options);
-    this.store.getState().clearSession();
-  }
+  // public async revokeAllSessions(options?: RequestOptions) {
+  //   await this.client.revokeAllSessions(options);
+  //   useAuthStore.getState().clearSession();
+  // }
 
-  public async revokeSession(
-    id: string,
-    isCurrent: boolean,
-    options?: RequestOptions,
-  ) {
-    await this.client.revokeSession(id, options);
-    if (isCurrent) {
-      this.store.getState().clearSession();
-    }
-  }
+  // public async revokeSession(
+  //   id: string,
+  //   isCurrent: boolean,
+  //   options?: RequestOptions,
+  // ) {
+  //   await this.client.revokeSession(id, options);
+  //   if (isCurrent) {
+  //     useAuthStore.getState().clearSession();
+  //   }
+  // }
 }
 
 export const authService = new AuthService();

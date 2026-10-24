@@ -1,6 +1,5 @@
 import { type RequestOptions } from "@/http";
-import { useAuthStore, type AuthStore } from "../auth";
-import { type UserClient, userClient } from "./client";
+import { userClient } from "./client";
 import {
   type DisableRequest,
   type UpdateEmailRequest,
@@ -9,63 +8,53 @@ import {
   type UpdateProfileRequest,
   type UpdateUsernameRequest,
 } from "./validation";
+import { useAuthStore } from "../auth";
 
 export class UserService {
-  private readonly client: UserClient;
-  private readonly authStore: AuthStore;
-
-  constructor(
-    client: UserClient = userClient,
-    authStore: AuthStore = useAuthStore,
-  ) {
-    this.client = client;
-    this.authStore = authStore;
-  }
-
   public async updateEmail(req: UpdateEmailRequest, options?: RequestOptions) {
-    const data = await this.client.updateEmail(req, options);
-    this.authStore.getState().setMe(data);
+    const data = await userClient.updateEmail(req, options);
+    useAuthStore.getState().setMe(data);
   }
 
   public async updateUsername(
     req: UpdateUsernameRequest,
     options?: RequestOptions,
   ) {
-    const data = await this.client.updateUsername(req, options);
-    this.authStore.getState().setMe(data);
+    const data = await userClient.updateUsername(req, options);
+    useAuthStore.getState().setMe(data);
   }
 
   public async updatePreferredPresence(
     req: UpdatePreferredPresenceRequest,
     options?: RequestOptions,
   ) {
-    const data = await this.client.updatePreferredPresence(req, options);
-    this.authStore.getState().setMe(data);
+    const data = await userClient.updatePreferredPresence(req, options);
+    useAuthStore.getState().setMe(data);
   }
 
   public async updateProfile(
     req: UpdateProfileRequest,
     options?: RequestOptions,
   ) {
-    const data = await this.client.updateProfile(req, options);
-    this.authStore.getState().setMe(data);
+    const data = await userClient.updateProfile(req, options);
+    useAuthStore.getState().setMe(data);
   }
 
   public async updatePassword(
     req: UpdatePasswordRequest,
     options?: RequestOptions,
   ) {
-    await this.client.updatePassword(req, options);
+    await userClient.updatePassword(req, options);
   }
 
   public async disable(req: DisableRequest, options?: RequestOptions) {
-    await this.client.disable(req, options);
-    this.authStore.getState().clearSession();
+    await userClient.disable(req, options);
+    useAuthStore.getState().clearSession();
   }
 
   public async scheduleDelete(req: DisableRequest, options?: RequestOptions) {
-    await this.client.scheduleDelete(req, options);
-    this.authStore.getState().clearSession();
+    await userClient.scheduleDelete(req, options);
+    useAuthStore.getState().clearSession();
   }
 }
 

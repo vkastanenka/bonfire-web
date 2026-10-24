@@ -1,5 +1,5 @@
 import { Client, type RequestOptions } from "@/http";
-import { bonfireClient } from "../client";
+import { baseBonfireClient } from "../client";
 import {
   meSchema,
   type DisableRequest,
@@ -14,7 +14,7 @@ import {
 export class UserClient {
   protected readonly client: Client;
 
-  constructor(client: Client = bonfireClient) {
+  constructor(client: Client = baseBonfireClient) {
     this.client = client;
   }
 

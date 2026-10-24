@@ -1,5 +1,8 @@
 import { Client, type RequestOptions } from "@/http";
-import { baseBonfireClient, bonfireClient } from "../client";
+import {
+  baseBonfireClient,
+  //  bonfireClient
+} from "../client";
 import {
   type RegisterRequest,
   type AccessTokenResponse,
@@ -8,8 +11,8 @@ import {
   type ForgotPasswordRequest,
   type ResetPasswordRequest,
   type VerifyEmailRequest,
-  type ListValidSessionsResponse,
-  listValidSessionsResponseSchema,
+  // type ListValidSessionsResponse,
+  // listValidSessionsResponseSchema,
 } from "./validation";
 import { type Me, meSchema } from "../user";
 
@@ -88,54 +91,54 @@ export class PublicAuthClient {
   };
 }
 
-export class AuthClient {
-  protected readonly client: Client;
+// export class AuthClient {
+//   protected readonly client: Client;
 
-  constructor(client: Client = bonfireClient) {
-    this.client = client;
-  }
+//   constructor(client: Client = bonfireClient) {
+//     this.client = client;
+//   }
 
-  public logout = (options?: RequestOptions): Promise<unknown> => {
-    return this.client.post({
-      ...options,
-      urlPath: "/auth/logout",
-    });
-  };
+//   public logout = (options?: RequestOptions): Promise<unknown> => {
+//     return this.client.post({
+//       ...options,
+//       urlPath: "/auth/logout",
+//     });
+//   };
 
-  public resendVerify = (options?: RequestOptions): Promise<unknown> => {
-    return this.client.post({
-      ...options,
-      urlPath: "/auth/resend-verify",
-    });
-  };
+//   public resendVerify = (options?: RequestOptions): Promise<unknown> => {
+//     return this.client.post({
+//       ...options,
+//       urlPath: "/auth/resend-verify",
+//     });
+//   };
 
-  public listValidSessions = (
-    options?: RequestOptions,
-  ): Promise<ListValidSessionsResponse> => {
-    return this.client.get<typeof listValidSessionsResponseSchema>({
-      ...options,
-      urlPath: "/users/@me/sessions",
-      schema: listValidSessionsResponseSchema,
-    });
-  };
+//   public listValidSessions = (
+//     options?: RequestOptions,
+//   ): Promise<ListValidSessionsResponse> => {
+//     return this.client.get<typeof listValidSessionsResponseSchema>({
+//       ...options,
+//       urlPath: "/users/@me/sessions",
+//       schema: listValidSessionsResponseSchema,
+//     });
+//   };
 
-  public revokeAllSessions = (options?: RequestOptions): Promise<unknown> => {
-    return this.client.delete({
-      ...options,
-      urlPath: "/users/@me/sessions",
-    });
-  };
+//   public revokeAllSessions = (options?: RequestOptions): Promise<unknown> => {
+//     return this.client.delete({
+//       ...options,
+//       urlPath: "/users/@me/sessions",
+//     });
+//   };
 
-  public revokeSession = (
-    id: string,
-    options?: RequestOptions,
-  ): Promise<unknown> => {
-    return this.client.delete({
-      ...options,
-      urlPath: `/users/@me/sessions/${id}`,
-    });
-  };
-}
+//   public revokeSession = (
+//     id: string,
+//     options?: RequestOptions,
+//   ): Promise<unknown> => {
+//     return this.client.delete({
+//       ...options,
+//       urlPath: `/users/@me/sessions/${id}`,
+//     });
+//   };
+// }
 
 export const publicAuthClient = new PublicAuthClient();
-export const authClient = new AuthClient();
+// export const authClient = new AuthClient();

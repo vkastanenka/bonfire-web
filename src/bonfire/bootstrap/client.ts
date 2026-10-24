@@ -1,11 +1,11 @@
 import { Client, type RequestOptions } from "@/http";
-import { bonfireClient } from "../client";
+import { baseBonfireClient } from "../client";
 import { type BootstrapResponse, bootstrapResponseSchema } from "./validation";
 
 export class BootstrapClient {
   protected readonly client: Client;
 
-  constructor(client: Client = bonfireClient) {
+  constructor(client: Client = baseBonfireClient) {
     this.client = client;
   }
 

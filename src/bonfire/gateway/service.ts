@@ -1,7 +1,7 @@
 import { AppError } from "@/errs/app";
 import { logger as baseLogger, Logger } from "@/logger";
 import { API_ERROR_CODES } from "@/http";
-import { bonfireClient } from "../client";
+import { baseBonfireClient } from "../client";
 import { client as baseClient, type Client as BaseClient } from "./client";
 import { Presence } from "./presence";
 import type { PrintTicketResponse } from "./validation";
@@ -257,7 +257,7 @@ export class Service {
   }
 
   private buildGatewayUrl(ticket: string, presence: Presence): string {
-    const url = new URL(bonfireClient.config.baseUrl);
+    const url = new URL(baseBonfireClient.config.baseUrl);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     url.pathname = `${url.pathname.replace(/\/$/, "")}/gateway/ws`;
     url.searchParams.set("ticket", ticket);

@@ -100,22 +100,15 @@ export class LoggingMiddleware implements RequestMiddleware {
 }
 
 export interface AuthService {
+  getAccessToken(): string | null;
   refresh(): Promise<string | null>;
-}
-
-export interface AuthStore {
-  getState: () => {
-    accessToken: string | null;
-  };
 }
 
 export class AuthMiddleware implements RequestMiddleware {
   private readonly authService: AuthService;
-  private readonly tokenStore: AuthStore;
 
-  constructor(authService: AuthService, tokenStore: AuthStore) {
+  constructor(authService: AuthService) {
     this.authService = authService;
-    this.tokenStore = tokenStore;
   }
 
   async beforeRequest<T extends z.ZodTypeAny>({
@@ -124,7 +117,7 @@ export class AuthMiddleware implements RequestMiddleware {
   }: BeforeRequestParams<T>): Promise<void> {
     if (!options.protected) return;
 
-    const token = this.tokenStore.getState().accessToken;
+    const token = this.authService.getAccessToken();
     if (token) {
       context.headers.set("Authorization", `Bearer ${token}`);
     }
