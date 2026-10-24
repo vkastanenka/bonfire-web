@@ -5,7 +5,7 @@ import {
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import { queryClient } from "@/app";
-import type { AppError } from "@/apperr";
+import type { AppError } from "@/errs/app";
 import { authService } from "./service";
 import {
   type ForgotPasswordRequest,

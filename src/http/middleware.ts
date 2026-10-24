@@ -1,13 +1,15 @@
-import { AppError } from "@/apperr";
-import { z } from "@/validation";
 import {
   AipError,
-  API_ERROR_CODES,
+  AppError,
   isAipErrorData,
+  STATUS_CODES,
+  RETRYABLE_STATUS_CODES,
+} from "@/errs";
+import { z } from "@/validation";
+import {
+  API_ERROR_CODES,
   REQUEST_ERROR_CODES,
   REQUEST_ERROR_MESSAGES,
-  RETRYABLE_STATUS_CODES,
-  STATUS_CODES,
 } from "./errors";
 import type { RequestOptions, RequestContext } from "./request";
 import { REQUEST_LOGS } from "./logger";

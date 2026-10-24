@@ -1,8 +1,6 @@
-import { AppError } from "@/apperr";
+import { AipError, AppError, mapFetchToUnknownAipErrorData } from "@/errs";
 import { z } from "@/validation";
 import {
-  AipError,
-  mapFetchToUnknownAipErrorData,
   REQUEST_ERROR_CODES,
   REQUEST_ERROR_MESSAGES,
   RESPONSE_ERROR_CODES,

@@ -1,5 +1,5 @@
 import { z } from "@/validation";
-import { AppError } from "@/apperr";
+import { AppError } from "@/errs/app";
 import { type RequestOptions, request } from "./request";
 import type { RequestMiddleware } from "./middleware";
 import { buildHeaders } from "./utils";

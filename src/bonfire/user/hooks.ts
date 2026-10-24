@@ -1,6 +1,6 @@
 import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import { queryClient } from "@/app";
-import type { AppError } from "@/apperr";
+import type { AppError } from "@/errs/app";
 import { userService } from "./service";
 import {
   type DisableRequest,

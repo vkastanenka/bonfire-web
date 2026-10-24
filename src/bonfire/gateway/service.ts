@@ -1,4 +1,4 @@
-import { AppError } from "@/apperr";
+import { AppError } from "@/errs/app";
 import { logger as baseLogger, Logger } from "@/logger";
 import { API_ERROR_CODES } from "@/http";
 import { bonfireClient } from "../client";
