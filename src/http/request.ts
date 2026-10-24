@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { AppError } from "@/lib";
+import { AppError } from "@/apperr";
+import { z } from "@/validation";
 import {
   AipError,
   mapFetchToUnknownAipErrorData,

@@ -1,4 +1,5 @@
-import { logger as baseLogger, Logger, AppError } from "@/lib";
+import { AppError } from "@/apperr";
+import { logger as baseLogger, Logger } from "@/logger";
 import { API_ERROR_CODES } from "@/http";
 import { bonfireClient } from "../client";
 import { client as baseClient, type Client as BaseClient } from "./client";

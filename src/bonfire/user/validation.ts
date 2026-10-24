@@ -1,4 +1,4 @@
-import { emailSchema, hexColorSchema, urlSchema, z } from "@/lib/validation";
+import { emailSchema, hexColorSchema, urlSchema, z } from "@/validation";
 
 export const VALIDATION_ERRORS = {
   username:

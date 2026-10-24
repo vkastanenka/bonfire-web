@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useStore } from "./store";
-import { logger as baseLogger } from "@/lib";
+import { logger as baseLogger } from "@/logger";
 
 const logger = baseLogger.child({
   package: "Gateway",

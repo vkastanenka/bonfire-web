@@ -4,8 +4,8 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
 } from "@tanstack/react-query";
-import type { AppError } from "@/lib";
-import { queryClient } from "@/main";
+import { queryClient } from "@/app";
+import type { AppError } from "@/apperr";
 import { authService } from "./service";
 import {
   type ForgotPasswordRequest,

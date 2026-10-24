@@ -1,4 +1,4 @@
-import { logger as baseLogger, Logger } from "@/lib";
+import { logger as baseLogger, Logger } from "@/logger";
 
 export const Presence = {
   online: "ONLINE",

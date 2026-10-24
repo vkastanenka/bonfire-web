@@ -1,4 +1,5 @@
-import type { z } from "zod";
+import { AppError } from "@/apperr";
+import { z } from "@/validation";
 import {
   AipError,
   API_ERROR_CODES,
@@ -10,7 +11,6 @@ import {
 } from "./errors";
 import type { RequestOptions, RequestContext } from "./request";
 import { REQUEST_LOGS } from "./logger";
-import { AppError } from "@/lib";
 
 export interface BeforeRequestParams<T extends z.ZodTypeAny = z.ZodTypeAny> {
   options: RequestOptions<T>;

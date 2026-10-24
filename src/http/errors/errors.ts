@@ -1,4 +1,4 @@
-import { AppError } from "@/lib";
+import { AppError } from "@/apperr";
 import {
   AIP_DETAIL_TYPES,
   type AipErrorData,

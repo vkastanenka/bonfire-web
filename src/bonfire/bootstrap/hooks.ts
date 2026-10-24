@@ -1,5 +1,5 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import type { AppError } from "@/lib";
+import type { AppError } from "@/apperr";
 import { bootstrapService } from "./service";
 
 export const bootstrapKeys = {

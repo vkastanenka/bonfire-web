@@ -1,4 +1,4 @@
-import { logger as baseLogger, Logger } from "@/lib";
+import { logger as baseLogger, Logger } from "@/logger";
 
 const CHANNEL_NAME = "bonfire_gateway_broadcast";
 

@@ -5,7 +5,7 @@ import {
   AuthMiddleware,
   type ClientConfig,
 } from "@/http";
-import { logger } from "@/lib/logger";
+import { logger } from "@/logger";
 import { authService, useAuthStore } from "./auth";
 
 const DEFAULT_HEADERS = {

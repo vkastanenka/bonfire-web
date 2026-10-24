@@ -1,4 +1,4 @@
-import { logger as baseLogger, Logger } from "@/lib";
+import { logger as baseLogger, Logger } from "@/logger";
 
 type Handler<T = unknown> = (data: T) => void;
 

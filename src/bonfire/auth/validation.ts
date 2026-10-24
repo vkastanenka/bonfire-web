@@ -1,4 +1,4 @@
-import { z, emailSchema } from "@/lib";
+import { z, emailSchema } from "@/validation";
 import { displayNameSchema, usernameSchema, passwordSchema } from "../user";
 
 export const sessionSchema = z.object({
