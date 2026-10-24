@@ -3,8 +3,8 @@ import type { ForgotPasswordRequest } from "@/bonfire";
 import { Link, Text, Form } from "@/components";
 import { PATHS } from "@/constants";
 import { AuthLayout } from "../AuthLayout";
-import { FORM_FIELDS, LABELS } from "./forgot-password.constants";
-import { useForgotPasswordForm } from "./useForgotPasswordForm";
+import { FORM_FIELDS, LABELS } from "./constants";
+import { useForgotPasswordForm } from "./hooks";
 
 export const ForgotPasswordPage = () => {
   const { email, methods, onSubmit, isPending } = useForgotPasswordForm();
@@ -54,3 +54,4 @@ export const ForgotPasswordForm = ({
     </Form>
   );
 };
+

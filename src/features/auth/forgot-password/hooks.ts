@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  ApiNetworkError,
   forgotPasswordRequestSchema,
-  useForgotPassword,
   type ForgotPasswordRequest,
+  useForgotPassword,
 } from "@/bonfire";
+import { AipError } from "@/errs";
 
 export const useForgotPasswordForm = () => {
   const [email, setEmail] = useState<string | null>(null);
@@ -27,14 +27,16 @@ export const useForgotPasswordForm = () => {
         setEmail(data.email);
       },
       onError: (err) => {
-        if (err instanceof ApiNetworkError && err.isValidationFailure()) {
-          console.log(err.details);
-          err.details.invalid_params?.forEach((param) => {
-            methods.setError(param.name as keyof ForgotPasswordRequest, {
-              type: "manual",
-              message: param.reason,
+        if (err instanceof AipError) {
+          if (err.getFieldViolations().length) {
+            console.log(err);
+            err.getFieldViolations().forEach((violation) => {
+              methods.setError(violation.field as keyof ForgotPasswordRequest, {
+                type: "manual",
+                message: violation.description,
+              });
             });
-          });
+          }
         }
       },
     });
