@@ -1,12 +1,10 @@
-// routes/_auth.tsx
 import {
-  requireAuth,
   bootstrapKeys,
   bootstrapService,
   useBootstrap,
   useGateway,
 } from "@/bonfire";
-import { queryClient } from "@/main";
+import { queryClient, requireAuth } from "@/app";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const authLoader = async () => {

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/validation";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { PATHS } from "@/constants";
 import { ResetPasswordPage } from "@/features";

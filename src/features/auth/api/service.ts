@@ -4,7 +4,7 @@ import {
   registerResponseSchema,
   type RegisterInputs,
 } from "../register/register.validation";
-import { z } from "zod";
+import { z } from "@/validation";
 
 // 1. Define configuration
 const AUTH_CONFIG = {

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/validation";
 import { Presence } from "./presence";
 
 export const presenceSchema = z.enum(

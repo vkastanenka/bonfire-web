@@ -1,6 +1,6 @@
 import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
-import { toast } from "@/toast";
 import { AppError } from "@/apperr";
+import { toast } from "@/toast";
 
 const handleGlobalError = (error: unknown) => {
   if (error instanceof AppError || error instanceof Error) {
