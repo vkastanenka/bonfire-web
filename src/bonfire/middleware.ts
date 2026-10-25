@@ -82,7 +82,6 @@ export const handleAuthError: ResponseErrorFn = async (
     }
 
     context.logger.debug("Token refresh succeeded. Retrying request.");
-
     options.headers.set("Authorization", `Bearer ${newToken}`);
 
     return await retry();
