@@ -1,132 +1,87 @@
 import { AipError, AppError, mapFetchToUnknownAipErrorData } from "@/errs";
 import { z } from "@/validation";
 import {
+  appendQueryParams,
+  buildHeaders,
+  parseJSON,
+  resolveRequestBody,
+} from "./utils";
+import {
   REQUEST_ERROR_CODES,
   REQUEST_ERROR_MESSAGES,
   RESPONSE_ERROR_CODES,
 } from "./errors";
-import { buildUrl, buildHeaders, resolveRequestBody, parseJson } from "./utils";
-import type { CustomFetch, ResolvedClientConfig } from "./client";
-import { REQUEST_LOGS, type Logger } from "./logger";
 
 export type QueryParamValue = string | number | boolean | null | undefined;
 export type QueryParams = Record<string, QueryParamValue | QueryParamValue[]>;
 
+export type CustomFetch = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<Response>;
+
 export interface RequestOptions<T extends z.ZodTypeAny = z.ZodTypeAny> {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  urlPath: string;
+  url: string;
   schema?: T;
+  data?: unknown;
   signal?: AbortSignal;
   headers?: HeadersInit;
+  credentials?: RequestCredentials;
   cache?: RequestCache;
-  data?: unknown;
   queryParams?: QueryParams;
+  timeout?: number;
   protected?: boolean;
   maxAttempts?: number;
-  timeout?: number;
-  retry?: boolean;
   fetch?: CustomFetch;
 }
 
-export interface RequestContext {
-  requestId: string;
-  url: URL;
-  headers: Headers;
-  startTime: number;
-  attemptCount: number;
-  maxAttempts: number;
-  logger: Logger;
-  isAuthRetry?: boolean;
-}
+export const defaultRequestOptions = {
+  headers: {
+    Accept: "application/json",
+  },
+  timeout: 10_000,
+  maxAttempts: 1,
+} as const satisfies Partial<RequestOptions>;
 
-export async function request<T extends z.ZodTypeAny = z.ZodTypeAny>(
-  config: Required<ResolvedClientConfig>,
+export type ResolvedRequestOptions<T extends z.ZodTypeAny = z.ZodTypeAny> =
+  Required<Pick<RequestOptions<T>, "timeout" | "fetch" | "maxAttempts">> &
+    Omit<RequestOptions<T>, "headers"> & {
+      headers: Headers;
+    };
+
+export const request = async <T extends z.ZodTypeAny = z.ZodTypeAny>(
   options: RequestOptions<T>,
-): Promise<z.infer<T>> {
-  const ctx = newRequestContext(config, options);
+): Promise<z.infer<T>> => {
+  const resolvedOptions = resolveRequestOptions(options);
 
-  const executeCall = async (): Promise<unknown> => {
-    ctx.attemptCount++;
-
-    if (ctx.attemptCount > ctx.maxAttempts) {
-      throw new AppError({
-        code: REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED,
-        message:
-          REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED],
-        context: {
-          url: ctx.url.toString(),
-          attemptCount: ctx.attemptCount - 1,
-          maxAttempts: ctx.maxAttempts,
-        },
-      });
-    }
-
-    ctx.headers = buildHeaders(config.headers, options.headers, options.data);
-
-    await runBeforeRequestMiddleware(config, options, ctx);
-    const response = await sendFetchRequest(config, options, ctx);
-
-    if (!response.ok) {
-      return await handleResponseError(
-        config,
-        options,
-        ctx,
-        response,
-        executeCall,
-      );
-    }
-
-    await runOnResponseSuccessMiddleware(config, response, options, ctx);
-    return parseResponseBody(response, ctx.url.toString());
-  };
-
-  const rawData = await executeCall();
-  return validateResponseSchema(rawData, options, ctx);
-}
-
-const runBeforeRequestMiddleware = async <T extends z.ZodTypeAny>(
-  config: Required<ResolvedClientConfig>,
-  options: RequestOptions<T>,
-  context: RequestContext,
-): Promise<void> => {
-  for (const layer of config.middleware) {
-    if (layer.beforeRequest) {
-      await layer.beforeRequest({ options, context });
-    }
-  }
-};
-
-const sendFetchRequest = async <T extends z.ZodTypeAny>(
-  config: ResolvedClientConfig,
-  options: RequestOptions<T>,
-  context: RequestContext,
-): Promise<Response> => {
-  const timeoutMs = options.timeout ?? config.timeout;
-  const timeoutSignal = AbortSignal.timeout(timeoutMs);
-
+  const timeoutSignal = AbortSignal.timeout(resolvedOptions.timeout);
   const signal = options.signal
     ? AbortSignal.any([options.signal, timeoutSignal])
     : timeoutSignal;
 
-  const body = resolveRequestBody(options.data);
-  const fetchImpl = options.fetch ?? config.fetch;
+  const url = new URL(resolvedOptions.url);
+  const fullUrl = appendQueryParams(url, resolvedOptions.queryParams);
+  const body = resolveRequestBody(resolvedOptions.data);
+
+  let response: Response;
 
   try {
-    return await fetchImpl(context.url.toString(), {
-      method: options.method,
+    response = await resolvedOptions.fetch(fullUrl.toString(), {
+      method: resolvedOptions.method,
       signal,
-      cache: options.cache,
-      headers: context.headers,
-      credentials: config.credentials,
+      cache: resolvedOptions.cache,
+      headers: resolvedOptions.headers,
+      credentials: resolvedOptions.credentials,
       body,
     });
   } catch (cause) {
-    if (options.signal?.aborted) {
+    if (resolvedOptions.signal?.aborted) {
       throw new AppError({
         code: REQUEST_ERROR_CODES.REQUEST_ABORTED,
         message: REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.REQUEST_ABORTED],
         cause,
-        context: { url: context.url.toString() },
+        context: { url: fullUrl.toString() },
       });
     }
 
@@ -138,7 +93,7 @@ const sendFetchRequest = async <T extends z.ZodTypeAny>(
         code: REQUEST_ERROR_CODES.REQUEST_TIMEOUT,
         message: REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.REQUEST_TIMEOUT],
         cause,
-        context: { url: context.url.toString(), timeoutMs },
+        context: { url: fullUrl.toString() },
       });
     }
 
@@ -149,134 +104,92 @@ const sendFetchRequest = async <T extends z.ZodTypeAny>(
           ? cause.message
           : REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.FETCH_FAILED],
       cause,
-      context: { url: context.url.toString() },
+      context: { url: fullUrl.toString() },
     });
   }
-};
 
-const newRequestContext = <T extends z.ZodTypeAny = z.ZodTypeAny>(
-  config: Required<ResolvedClientConfig>,
-  options: RequestOptions<T>,
-): RequestContext => ({
-  requestId: crypto.randomUUID(),
-  url: buildUrl(config.baseUrl, options.urlPath, options.queryParams),
-  headers: new Headers(),
-  startTime: performance.now(),
-  attemptCount: 0,
-  maxAttempts: options.maxAttempts ?? config.maxAttempts,
-  logger: config.logger,
-});
-
-const handleResponseError = async <T extends z.ZodTypeAny>(
-  config: Required<ResolvedClientConfig>,
-  options: RequestOptions<T>,
-  context: RequestContext,
-  response: Response,
-  retryCall: () => Promise<unknown>,
-): Promise<unknown> => {
-  for (const layer of config.middleware) {
-    if (layer.onResponseError) {
-      const shortCircuit = await layer.onResponseError({
-        response,
-        options,
-        context,
-        retry: retryCall,
-      });
-
-      if (shortCircuit !== undefined) {
-        return shortCircuit;
-      }
-    }
+  if (!response.ok) {
+    const { data: bodyData, error: parseError } = await parseJSON(response);
+    const aipErrorData = mapFetchToUnknownAipErrorData(
+      response,
+      bodyData,
+      resolvedOptions.url,
+      parseError ? { cause: parseError } : {},
+    );
+    throw new AipError(aipErrorData);
   }
 
-  const { data: body, error: parseError } = await parseJson(response);
+  let responseBody: unknown = null;
 
-  const problem = mapFetchToUnknownAipErrorData(
-    response,
-    body,
-    context.url.toString(),
-    {
-      domain: config.domain,
-      ...(parseError ? { cause: parseError } : {}),
-    },
-  );
-
-  throw new AipError(problem);
-};
-
-const runOnResponseSuccessMiddleware = async <T extends z.ZodTypeAny>(
-  config: Required<ResolvedClientConfig>,
-  response: Response,
-  options: RequestOptions<T>,
-  context: RequestContext,
-): Promise<void> => {
-  for (const layer of config.middleware) {
-    if (layer.onResponseSuccess) {
-      await layer.onResponseSuccess({ response, options, context });
-    }
-  }
-};
-
-const parseResponseBody = async (
-  response: Response,
-  url?: string,
-): Promise<unknown> => {
   if (
-    response.status === 204 ||
-    response.headers.get("content-length") === "0"
+    !(response.status === 204 || response.headers.get("content-length") === "0")
   ) {
-    return null;
+    const { data, error } = await parseJSON(response);
+
+    if (error) {
+      throw new AppError({
+        code: RESPONSE_ERROR_CODES.PARSE_ERROR,
+        message: RESPONSE_ERROR_CODES.PARSE_ERROR,
+        cause: error,
+        context: {
+          status: response.status,
+          url: fullUrl.toString(),
+        },
+      });
+    }
+
+    responseBody = data;
   }
 
-  const { data, error } = await parseJson(response);
-
-  if (error) {
-    throw new AppError({
-      code: RESPONSE_ERROR_CODES.PARSE_ERROR,
-      message: RESPONSE_ERROR_CODES.PARSE_ERROR,
-      cause: error,
-      context: {
-        status: response.status,
-        url,
-      },
-    });
+  if (!resolvedOptions.schema) {
+    return responseBody as z.infer<T>;
   }
 
-  return data;
-};
+  const parsed = resolvedOptions.schema.safeParse(responseBody);
 
-const validateResponseSchema = <T extends z.ZodTypeAny>(
-  rawData: unknown,
-  options: RequestOptions<T>,
-  context: RequestContext,
-): z.infer<T> => {
-  if (!options.schema) {
-    return rawData as z.infer<T>;
-  }
-
-  const parsed = options.schema.safeParse(rawData);
   if (!parsed.success) {
-    context.logger.error(REQUEST_LOGS.RESPONSE_VALIDATION_FAILED, {
-      requestId: context.requestId,
-      method: options.method,
-      urlPath: options.urlPath,
-      issues: parsed.error.issues,
-      formattedError: z.treeifyError(parsed.error),
-      rawData,
-    });
-
     throw new AppError({
       code: RESPONSE_ERROR_CODES.VALIDATION_ERROR,
       message: RESPONSE_ERROR_CODES.VALIDATION_ERROR,
       cause: parsed.error,
       context: {
-        method: options.method,
-        urlPath: options.urlPath,
+        method: resolvedOptions.method,
+        urlPath: fullUrl.toString(),
         issues: parsed.error.issues,
-        rawData,
+        responseBody,
       },
     });
   }
 
   return parsed.data;
+};
+
+export const resolveRequestOptions = <T extends z.ZodTypeAny = z.ZodTypeAny>(
+  options: RequestOptions<T>,
+): ResolvedRequestOptions<T> => {
+  const fetchImpl = options.fetch ?? globalThis.fetch?.bind(globalThis);
+
+  if (!fetchImpl || typeof fetchImpl !== "function") {
+    throw new AppError({
+      code: "MISSING_FETCH",
+      message:
+        "Global fetch is not available and no custom fetch was provided.",
+      context: {
+        hasCustomFetch: Boolean(options.fetch),
+        hasGlobalFetch: typeof globalThis.fetch !== "undefined",
+      },
+    });
+  }
+
+  return {
+    ...options,
+    headers: buildHeaders(
+      options.headers ?? defaultRequestOptions.headers,
+      undefined,
+      options.data,
+    ),
+    timeout: options.timeout ?? defaultRequestOptions.timeout,
+    maxAttempts: options.maxAttempts ?? defaultRequestOptions.maxAttempts,
+    fetch: fetchImpl,
+  };
 };

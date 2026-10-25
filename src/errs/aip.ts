@@ -30,6 +30,10 @@ export class AipError extends AppError {
     return this.getDetail(AIP_DETAIL_TYPES.ERROR_INFO);
   }
 
+  public getErrorInfoReason(): string | undefined {
+    return this.getErrorInfo()?.reason;
+  }
+
   public getRetryInfo(): AipRetryInfoDetail | undefined {
     return this.getDetail(AIP_DETAIL_TYPES.RETRY_INFO);
   }

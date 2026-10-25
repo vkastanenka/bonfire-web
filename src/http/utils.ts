@@ -1,20 +1,6 @@
 import { type QueryParams } from "./request";
 
-export const buildUrl = (
-  baseUrl: string,
-  path: string,
-  queryParams?: QueryParams,
-): URL => {
-  let url: URL;
-
-  if (/^https?:\/\//i.test(path)) {
-    url = new URL(path);
-  } else {
-    const cleanBaseURL = baseUrl.replace(/\/+$/, "");
-    const cleanPath = path.replace(/^\//, "");
-    url = new URL(cleanPath ? `${cleanBaseURL}/${cleanPath}` : cleanBaseURL);
-  }
-
+export const appendQueryParams = (url: URL, queryParams?: QueryParams): URL => {
   if (!queryParams) return url;
 
   Object.entries(queryParams).forEach(([key, val]) => {
@@ -96,7 +82,7 @@ export const resolveRequestBody = (data: unknown): BodyInit | undefined => {
   return JSON.stringify(data);
 };
 
-export const parseJson = async (
+export const parseJSON = async (
   response: Response,
 ): Promise<{ data: unknown; error?: Error }> => {
   if (response.status === 204 || response.status === 205) {
