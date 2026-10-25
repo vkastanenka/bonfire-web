@@ -21,14 +21,30 @@ export class Logger {
   private defaultContext: LogContext;
 
   constructor(minLevel?: LogLevel, defaultContext: LogContext = {}) {
-    const defaultLevel =
-      process.env.NODE_ENV === "production"
-        ? LOG_LEVELS.INFO
-        : LOG_LEVELS.DEBUG;
+    let isProduction = false;
 
-    const envLevel = process.env.LOG_LEVEL?.toLowerCase() as
-      | LogLevel
-      | undefined;
+    try {
+      if (
+        typeof process !== "undefined" &&
+        process.env?.NODE_ENV === "production"
+      ) {
+        isProduction = true;
+      }
+    } catch {
+      // Ignore
+    }
+
+    const defaultLevel = isProduction ? LOG_LEVELS.INFO : LOG_LEVELS.DEBUG;
+
+    let envLevel: LogLevel | undefined;
+
+    try {
+      if (typeof process !== "undefined" && process.env?.LOG_LEVEL) {
+        envLevel = process.env.LOG_LEVEL.toLowerCase() as LogLevel;
+      }
+    } catch {
+      // Ignore
+    }
 
     this.minLevel =
       minLevel ??
@@ -51,36 +67,37 @@ export class Logger {
   private emit(level: LogLevel, message: string, context?: LogContext) {
     if (!this.shouldLog(level)) return;
 
-    const payload = JSON.stringify(
-      {
-        ...this.defaultContext,
-        ...context,
-        level,
-        message,
-        timestamp: new Date().toISOString(),
-      },
-      (_key, value) => {
+    const payload = {
+      ...this.defaultContext,
+      ...context,
+      level,
+      message,
+      timestamp: new Date().toISOString(),
+    };
+
+    const cleanPayload = JSON.parse(
+      JSON.stringify(payload, (_key, value) => {
         if (value instanceof Error) {
           return "toJSON" in value && typeof value.toJSON === "function"
             ? value.toJSON()
             : { name: value.name, message: value.message, stack: value.stack };
         }
         return value;
-      },
+      }),
     );
 
     switch (level) {
       case LOG_LEVELS.DEBUG:
-        console.debug(payload);
+        console.debug("🐛", message, cleanPayload);
         break;
       case LOG_LEVELS.INFO:
-        console.info(payload);
+        console.info("ℹ️", message, cleanPayload);
         break;
       case LOG_LEVELS.WARN:
-        console.warn(payload);
+        console.warn("⚠️", message, cleanPayload);
         break;
       case LOG_LEVELS.ERROR:
-        console.error(payload);
+        console.error("❌", message, cleanPayload);
         break;
     }
   }

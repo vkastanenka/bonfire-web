@@ -20,7 +20,6 @@ export const useLoginForm = () => {
   const onSubmit = (data: LoginRequest) => {
     mutate(data, {
       onSuccess: () => {
-        console.log("Login successful! Access token acquired");
         // navigate({ to: "/channels/@me" });
       },
       onError: (err) => {

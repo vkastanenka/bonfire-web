@@ -26,7 +26,6 @@ export const useRegisterForm = () => {
   const onSubmit = (data: RegisterRequest) => {
     mutate(data, {
       onSuccess: () => {
-        console.log("Registration successful! Access token acquired");
         // navigate({ to: "/channels/@me" });
       },
       onError: (err) => {

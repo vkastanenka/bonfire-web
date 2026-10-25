@@ -27,7 +27,6 @@ export const useResetPasswordForm = (token: string) => {
     const req = { token, password: data.password };
     mutate(req, {
       onSuccess: () => {
-        console.log("Reset Password Success!");
         // navigate({ to: "/channels/@me" });
       },
       onError: (err) => {
