@@ -1,4 +1,4 @@
-import { type RequestOptions } from "@/http";
+import { type ClientRequestOptions } from "@/http";
 import { userClient } from "./client";
 import {
   type DisableRequest,
@@ -11,14 +11,17 @@ import {
 import { useAuthStore } from "../auth";
 
 export class UserService {
-  public async updateEmail(req: UpdateEmailRequest, options?: RequestOptions) {
+  public async updateEmail(
+    req: UpdateEmailRequest,
+    options?: ClientRequestOptions,
+  ) {
     const data = await userClient.updateEmail(req, options);
     useAuthStore.getState().setMe(data);
   }
 
   public async updateUsername(
     req: UpdateUsernameRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ) {
     const data = await userClient.updateUsername(req, options);
     useAuthStore.getState().setMe(data);
@@ -26,7 +29,7 @@ export class UserService {
 
   public async updatePreferredPresence(
     req: UpdatePreferredPresenceRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ) {
     const data = await userClient.updatePreferredPresence(req, options);
     useAuthStore.getState().setMe(data);
@@ -34,7 +37,7 @@ export class UserService {
 
   public async updateProfile(
     req: UpdateProfileRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ) {
     const data = await userClient.updateProfile(req, options);
     useAuthStore.getState().setMe(data);
@@ -42,17 +45,20 @@ export class UserService {
 
   public async updatePassword(
     req: UpdatePasswordRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ) {
     await userClient.updatePassword(req, options);
   }
 
-  public async disable(req: DisableRequest, options?: RequestOptions) {
+  public async disable(req: DisableRequest, options?: ClientRequestOptions) {
     await userClient.disable(req, options);
     useAuthStore.getState().clearSession();
   }
 
-  public async scheduleDelete(req: DisableRequest, options?: RequestOptions) {
+  public async scheduleDelete(
+    req: DisableRequest,
+    options?: ClientRequestOptions,
+  ) {
     await userClient.scheduleDelete(req, options);
     useAuthStore.getState().clearSession();
   }

@@ -1,5 +1,5 @@
-import { Client, type RequestOptions } from "@/http";
-import { baseBonfireClient } from "../client";
+import { Client, type ClientRequestOptions } from "@/http";
+import { bonfireClient } from "../client";
 import {
   meSchema,
   type DisableRequest,
@@ -14,14 +14,14 @@ import {
 export class UserClient {
   protected readonly client: Client;
 
-  constructor(client: Client = baseBonfireClient) {
+  constructor(client: Client = bonfireClient) {
     this.client = client;
   }
 
   private patchMe = <TData>(
     path: string,
     data: TData,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ): Promise<Me> => {
     return this.client.patch<typeof meSchema>({
       ...options,
@@ -33,27 +33,27 @@ export class UserClient {
 
   public updateEmail = (
     data: UpdateEmailRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ): Promise<Me> => this.patchMe("/email", data, options);
 
   public updateUsername = (
     data: UpdateUsernameRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ): Promise<Me> => this.patchMe("/username", data, options);
 
   public updatePreferredPresence = (
     data: UpdatePreferredPresenceRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ): Promise<Me> => this.patchMe("/presence", data, options);
 
   public updateProfile = (
     data: UpdateProfileRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ): Promise<Me> => this.patchMe("/profile", data, options);
 
   public updatePassword = (
     data: UpdatePasswordRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ): Promise<unknown> => {
     return this.client.post({
       ...options,
@@ -64,7 +64,7 @@ export class UserClient {
 
   public disable = (
     data: DisableRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ): Promise<unknown> => {
     return this.client.post({
       ...options,
@@ -75,7 +75,7 @@ export class UserClient {
 
   public scheduleDelete = (
     data: DisableRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ): Promise<unknown> => {
     return this.client.delete({
       ...options,

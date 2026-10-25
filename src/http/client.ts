@@ -35,13 +35,11 @@ export interface ClientConfig {
 }
 
 export type ClientRequestOptions<T extends z.ZodTypeAny = z.ZodTypeAny> = Omit<
-  Required<RequestOptions>,
+  RequestOptions<T>,
   "url"
 > & {
   urlPath: string;
   schema?: T;
-  maxAttempts?: number;
-  protected?: boolean;
 };
 
 export interface RequestContext {

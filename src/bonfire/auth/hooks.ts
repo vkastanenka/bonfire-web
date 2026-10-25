@@ -55,7 +55,7 @@ export const useLogout = (
 ) => {
   return useMutation({
     mutationKey: authKeys.logout(),
-    // mutationFn: () => authService.logout(),
+    mutationFn: () => authService.logout(),
     ...options,
     onSuccess: async (data, variables, context, mutation) => {
       queryClient.clear();
@@ -79,7 +79,7 @@ export const useResendVerify = (
 ) => {
   return useMutation({
     mutationKey: authKeys.resendVerify(),
-    // mutationFn: () => authService.resendVerify(),
+    mutationFn: () => authService.resendVerify(),
     ...options,
   });
 };
@@ -113,7 +113,7 @@ export const useListValidSessions = (
 ) => {
   return useQuery({
     queryKey: authKeys.listValidSessions(),
-    // queryFn: () => authService.listValidSessions(),
+    queryFn: () => authService.listValidSessions(),
     staleTime: 1000 * 30,
     ...options,
   });
@@ -124,34 +124,34 @@ export const useRevokeAllSessions = (
 ) => {
   return useMutation({
     mutationKey: authKeys.revokeAllSessions(),
-    // mutationFn: () => authService.revokeAllSessions(),
+    mutationFn: () => authService.revokeAllSessions(),
     ...options,
     onSuccess: async (data, variables, context, mutation) => {
-      await queryClient.clear();
+      queryClient.clear();
       await options?.onSuccess?.(data, variables, context, mutation);
     },
   });
 };
 
-export const useRevokeSession = () =>
-  // options?: Partial<
-  //   UseMutationOptions<void, AppError, { id: string; isCurrent: boolean }>
-  // >,
-  {
-    return useMutation({
-      mutationKey: authKeys.revokeSession(),
-      // mutationFn: (data: { id: string; isCurrent: boolean }) =>
-      //   authService.revokeSession(data.id, data.isCurrent),
-      // ...options,
-      // onSuccess: async (data, variables, context, mutation) => {
-      //   if (variables.isCurrent) {
-      //     queryClient.clear();
-      //   } else {
-      //     await queryClient.invalidateQueries({
-      //       queryKey: authKeys.listValidSessions(),
-      //     });
-      //   }
-      //   await options?.onSuccess?.(data, variables, context, mutation);
-      // },
-    });
-  };
+export const useRevokeSession = (
+  options?: Partial<
+    UseMutationOptions<void, AppError, { id: string; isCurrent: boolean }>
+  >,
+) => {
+  return useMutation({
+    mutationKey: authKeys.revokeSession(),
+    mutationFn: (data: { id: string; isCurrent: boolean }) =>
+      authService.revokeSession(data.id, data.isCurrent),
+    ...options,
+    onSuccess: async (data, variables, context, mutation) => {
+      if (variables.isCurrent) {
+        queryClient.clear();
+      } else {
+        await queryClient.invalidateQueries({
+          queryKey: authKeys.listValidSessions(),
+        });
+      }
+      await options?.onSuccess?.(data, variables, context, mutation);
+    },
+  });
+};

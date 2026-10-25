@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import { authService, useAuthStore } from "../auth";
-import { service, Status, type Message } from "./service";
+import { gatewayService, GatewayStatus, type GatewayMessage } from "./service";
 import { Presence, presenceTracker } from "./presence";
 import { BroadcastType, broadcaster } from "./broadcaster";
 import { dispatcher } from "./dispatcher";
 
 interface State {
-  status: Status;
+  status: GatewayStatus;
   presence: Presence;
   init: () => void;
   close: () => void;
@@ -15,16 +15,16 @@ interface State {
 
 export const useStore = create<State>((set, get) => ({
   presence: Presence.online,
-  status: Status.disconnected,
+  status: GatewayStatus.disconnected,
 
   init: () => {
     get().close();
 
-    service.subscribeMessage((message: Message) => {
+    gatewayService.subscribeMessage((message: GatewayMessage) => {
       broadcaster.post(BroadcastType.message, message);
     });
 
-    service.subscribeStatus((status: Status) => {
+    gatewayService.subscribeStatus((status: GatewayStatus) => {
       set({ status });
       broadcaster.post(BroadcastType.status, status);
     });
@@ -34,7 +34,7 @@ export const useStore = create<State>((set, get) => ({
 
       if (get().presence !== effectivePresence) {
         set({ presence: effectivePresence });
-        service.send("UPDATE_PRESENCE", { presence: effectivePresence });
+        gatewayService.send("UPDATE_PRESENCE", { presence: effectivePresence });
         broadcaster.post(BroadcastType.presence, effectivePresence);
       }
     });
@@ -44,9 +44,9 @@ export const useStore = create<State>((set, get) => ({
     const initialPresence =
       authService.getEffectivePresence() ?? Presence.online;
 
-    service.connect(initialPresence);
+    gatewayService.connect(initialPresence);
 
-    const initialStatus = service.getStatus();
+    const initialStatus = gatewayService.getStatus();
 
     set({
       status: initialStatus,
@@ -59,23 +59,23 @@ export const useStore = create<State>((set, get) => ({
 
   close: () => {
     presenceTracker.stop();
-    service.disconnect();
+    gatewayService.disconnect();
 
     set({
-      status: service.getStatus(),
+      status: gatewayService.getStatus(),
       presence: Presence.online,
     });
   },
 
   send: (type, data) => {
-    service.send(type, data);
+    gatewayService.send(type, data);
   },
 }));
 
 broadcaster.subscribe((type, payload) => {
   switch (type) {
     case BroadcastType.message: {
-      const message = payload as Message;
+      const message = payload as GatewayMessage;
       dispatcher.dispatch(message.t, message.d);
       break;
     }
@@ -85,7 +85,7 @@ broadcaster.subscribe((type, payload) => {
       break;
 
     case BroadcastType.status:
-      useStore.setState({ status: payload as Status });
+      useStore.setState({ status: payload as GatewayStatus });
       break;
   }
 });

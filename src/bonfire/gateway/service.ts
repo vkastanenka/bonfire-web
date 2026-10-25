@@ -1,8 +1,8 @@
 import { AppError } from "@/errs/app";
 import { logger as baseLogger, Logger } from "@/logger";
 import { API_ERROR_CODES } from "@/http";
-import { baseBonfireClient } from "../client";
-import { client as baseClient, type Client as BaseClient } from "./client";
+import { bonfireClient } from "../client";
+import { gatewayClient, type GatewayClient } from "./client";
 import { Presence } from "./presence";
 import type { PrintTicketResponse } from "./validation";
 import {
@@ -10,29 +10,29 @@ import {
   type Dispatcher as Dispatcher,
 } from "./dispatcher";
 
-export const Status = {
+export const GatewayStatus = {
   connecting: "CONNECTING",
   connected: "CONNECTED",
   disconnected: "DISCONNECTED",
   reconnecting: "RECONNECTING",
 } as const;
 
-export type Status = (typeof Status)[keyof typeof Status];
+export type GatewayStatus = (typeof GatewayStatus)[keyof typeof GatewayStatus];
 
-export interface Message<T = unknown> {
+export interface GatewayMessage<T = unknown> {
   t: string;
   d: T;
 }
 
-type StatusListener = (status: Status) => void;
-type MessageListener = (message: Message) => void;
+type StatusListener = (status: GatewayStatus) => void;
+type MessageListener = (message: GatewayMessage) => void;
 
-export class Service {
+export class GatewayService {
   private ws: WebSocket | null = null;
-  private readonly client: BaseClient;
+  private readonly client: GatewayClient;
   private readonly dispatcher: Dispatcher;
   private readonly logger: Logger;
-  private status: Status = Status.disconnected;
+  private status: GatewayStatus = GatewayStatus.disconnected;
 
   private connectionVersion = 0;
   private printTicketPromise: Promise<PrintTicketResponse> | null = null;
@@ -51,7 +51,7 @@ export class Service {
   private readonly watchdogTimeoutMs = 35000;
 
   constructor(
-    client: BaseClient = baseClient as BaseClient,
+    client: GatewayClient = gatewayClient as GatewayClient,
     dispatcher: Dispatcher = baseDispatcher,
     logger: Logger = baseLogger,
   ) {
@@ -63,11 +63,11 @@ export class Service {
     });
   }
 
-  public getStatus(): Status {
+  public getStatus(): GatewayStatus {
     return this.status;
   }
 
-  private updateStatus(newStatus: Status): void {
+  private updateStatus(newStatus: GatewayStatus): void {
     const prevStatus = this.status;
     if (prevStatus === newStatus) return;
 
@@ -154,7 +154,10 @@ export class Service {
   }
 
   public async connect(presence: Presence): Promise<void> {
-    if (this.status === Status.connected || this.status === Status.connecting) {
+    if (
+      this.status === GatewayStatus.connected ||
+      this.status === GatewayStatus.connecting
+    ) {
       this.logger.debug(
         "Gateway connected or connecting, start connect aborted.",
       );
@@ -164,7 +167,9 @@ export class Service {
     this.forcedClose = false;
 
     this.updateStatus(
-      this.reconnectAttempts > 0 ? Status.reconnecting : Status.connecting,
+      this.reconnectAttempts > 0
+        ? GatewayStatus.reconnecting
+        : GatewayStatus.connecting,
     );
 
     this.connectionVersion++;
@@ -190,7 +195,7 @@ export class Service {
         return;
       }
 
-      if (this.status === Status.disconnected) {
+      if (this.status === GatewayStatus.disconnected) {
         this.logger.debug(
           "Connection aborted post-ticket: gateway status is disconnected.",
         );
@@ -230,7 +235,7 @@ export class Service {
     this.clearTimeouts();
     this.statusListeners.clear();
     this.messageListeners.clear();
-    this.updateStatus(Status.disconnected);
+    this.updateStatus(GatewayStatus.disconnected);
 
     if (this.ws) {
       if (
@@ -247,7 +252,7 @@ export class Service {
   }
 
   public send(type: string, data: unknown): void {
-    if (!this.ws || this.status !== Status.connected) {
+    if (!this.ws || this.status !== GatewayStatus.connected) {
       this.logger.warn("Outbound WebSocket message dropped.", {
         status: this.status,
       });
@@ -257,7 +262,7 @@ export class Service {
   }
 
   private buildGatewayUrl(ticket: string, presence: Presence): string {
-    const url = new URL(baseBonfireClient.config.baseUrl);
+    const url = new URL(bonfireClient.config.baseUrl);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     url.pathname = `${url.pathname.replace(/\/$/, "")}/gateway/ws`;
     url.searchParams.set("ticket", ticket);
@@ -270,7 +275,7 @@ export class Service {
 
     this.ws.onopen = () => {
       this.reconnectAttempts = 0;
-      this.updateStatus(Status.connected);
+      this.updateStatus(GatewayStatus.connected);
       this.startWatchdog();
       this.logger.info("WebSocket connection established successfully.");
     };
@@ -278,7 +283,7 @@ export class Service {
     this.ws.onmessage = (event) => {
       this.startWatchdog();
       try {
-        const message: Message = JSON.parse(event.data);
+        const message: GatewayMessage = JSON.parse(event.data);
 
         if (message.t) {
           this.dispatcher.dispatch(message.t, message.d);
@@ -326,13 +331,13 @@ export class Service {
       this.logger.warn(
         "Max reconnection attempts reached. Stopping auto-retry.",
       );
-      this.updateStatus(Status.disconnected);
+      this.updateStatus(GatewayStatus.disconnected);
       this.cleanupSocket();
       this.reconnectAttempts = 0;
       return;
     }
 
-    this.updateStatus(Status.reconnecting);
+    this.updateStatus(GatewayStatus.reconnecting);
     this.cleanupSocket();
 
     const baseDelay = isRateLimit
@@ -400,4 +405,4 @@ export class Service {
   }
 }
 
-export const service = new Service();
+export const gatewayService = new GatewayService();

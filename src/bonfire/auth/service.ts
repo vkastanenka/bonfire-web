@@ -1,13 +1,9 @@
-import { type RequestOptions } from "@/http";
-import {
-  // authClient,
-  // AuthClient,
-  publicAuthClient,
-} from "./client";
+import { type ClientRequestOptions } from "@/http";
+import { authClient } from "./client";
 import { useAuthStore } from "./store";
 import type {
   ForgotPasswordRequest,
-  // ListValidSessionsResponse,
+  ListValidSessionsResponse,
   LoginRequest,
   RegisterRequest,
   ResetPasswordRequest,
@@ -39,20 +35,20 @@ export class AuthService {
     return preferred ?? null;
   }
 
-  public async register(req: RegisterRequest, options?: RequestOptions) {
-    const data = await publicAuthClient.register(req, options);
+  public async register(req: RegisterRequest, options?: ClientRequestOptions) {
+    const data = await authClient.register(req, options);
     useAuthStore.getState().setAccessToken(data.accessToken);
   }
 
-  public async login(req: LoginRequest, options?: RequestOptions) {
-    const data = await publicAuthClient.login(req, options);
+  public async login(req: LoginRequest, options?: ClientRequestOptions) {
+    const data = await authClient.login(req, options);
     useAuthStore.getState().setAccessToken(data.accessToken);
   }
 
-  // public async logout(options?: RequestOptions) {
-  //   await this.client.logout(options);
-  //   useAuthStore.getState().clearSession();
-  // }
+  public async logout(options?: ClientRequestOptions) {
+    await authClient.logout(options);
+    useAuthStore.getState().clearSession();
+  }
 
   public async refresh(): Promise<string | null> {
     if (this.activeRefreshPromise) {
@@ -61,7 +57,7 @@ export class AuthService {
 
     this.activeRefreshPromise = (async () => {
       try {
-        const data = await publicAuthClient.refresh();
+        const data = await authClient.refresh();
         useAuthStore.getState().setAccessToken(data.accessToken);
         return data.accessToken;
       } catch {
@@ -86,51 +82,51 @@ export class AuthService {
     return useAuthStore.getState().accessToken;
   }
 
-  public async verify(req: VerifyEmailRequest, options?: RequestOptions) {
-    const data = await publicAuthClient.verify(req, options);
+  public async verify(req: VerifyEmailRequest, options?: ClientRequestOptions) {
+    const data = await authClient.verify(req, options);
     useAuthStore.getState().setMe(data);
   }
 
-  // public async resendVerify(options?: RequestOptions) {
-  //   await this.client.resendVerify(options);
-  // }
+  public async resendVerify(options?: ClientRequestOptions) {
+    await authClient.resendVerify(options);
+  }
 
   public async forgotPassword(
     req: ForgotPasswordRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ) {
-    await publicAuthClient.forgotPassword(req, options);
+    await authClient.forgotPassword(req, options);
   }
 
   public async resetPassword(
     req: ResetPasswordRequest,
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ) {
-    const data = await publicAuthClient.resetPassword(req, options);
+    const data = await authClient.resetPassword(req, options);
     useAuthStore.getState().setAccessToken(data.accessToken);
   }
 
-  // public async listValidSessions(
-  //   options?: RequestOptions,
-  // ): Promise<ListValidSessionsResponse> {
-  //   return this.client.listValidSessions(options);
-  // }
+  public async listValidSessions(
+    options?: ClientRequestOptions,
+  ): Promise<ListValidSessionsResponse> {
+    return authClient.listValidSessions(options);
+  }
 
-  // public async revokeAllSessions(options?: RequestOptions) {
-  //   await this.client.revokeAllSessions(options);
-  //   useAuthStore.getState().clearSession();
-  // }
+  public async revokeAllSessions(options?: ClientRequestOptions) {
+    await authClient.revokeAllSessions(options);
+    useAuthStore.getState().clearSession();
+  }
 
-  // public async revokeSession(
-  //   id: string,
-  //   isCurrent: boolean,
-  //   options?: RequestOptions,
-  // ) {
-  //   await this.client.revokeSession(id, options);
-  //   if (isCurrent) {
-  //     useAuthStore.getState().clearSession();
-  //   }
-  // }
+  public async revokeSession(
+    id: string,
+    isCurrent: boolean,
+    options?: ClientRequestOptions,
+  ) {
+    await authClient.revokeSession(id, options);
+    if (isCurrent) {
+      useAuthStore.getState().clearSession();
+    }
+  }
 }
 
 export const authService = new AuthService();

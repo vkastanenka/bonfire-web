@@ -1,19 +1,19 @@
-import { Client as BaseClient, type RequestOptions } from "@/http";
-import { baseBonfireClient } from "../client";
+import { Client, type ClientRequestOptions } from "@/http";
+import { bonfireClient } from "../client";
 import {
   printTicketResponseSchema,
   type PrintTicketResponse,
 } from "./validation";
 
-export class Client {
-  protected readonly client: BaseClient;
+export class GatewayClient {
+  protected readonly client: Client;
 
-  constructor(client: BaseClient = baseBonfireClient) {
+  constructor(client: Client = bonfireClient) {
     this.client = client;
   }
 
   public printTicket = (
-    options?: RequestOptions,
+    options?: ClientRequestOptions,
   ): Promise<PrintTicketResponse> => {
     return this.client.post<typeof printTicketResponseSchema>({
       ...options,
@@ -23,4 +23,4 @@ export class Client {
   };
 }
 
-export const client = new Client();
+export const gatewayClient = new GatewayClient();
