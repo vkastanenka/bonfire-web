@@ -6,7 +6,7 @@ import {
   registerRequestSchema,
   type RegisterRequest,
 } from "@/bonfire";
-import { AipError } from "@/errs";
+import { handleAipFieldViolations } from "@/errs";
 
 export const useRegisterForm = () => {
   // const navigate = useNavigate();
@@ -14,10 +14,10 @@ export const useRegisterForm = () => {
   const methods = useForm<RegisterRequest>({
     resolver: zodResolver(registerRequestSchema),
     defaultValues: {
-      email: "",
-      displayName: "",
-      username: "",
-      password: "",
+      email: "vkastanenka@gmail.com",
+      displayName: "vkast123",
+      username: "vkast123",
+      password: "password12345678",
     },
   });
 
@@ -29,17 +29,7 @@ export const useRegisterForm = () => {
         // navigate({ to: "/channels/@me" });
       },
       onError: (err) => {
-        if (err instanceof AipError) {
-          if (err.getFieldViolations().length) {
-            console.log(err);
-            // err.getFieldViolations().forEach((violation) => {
-            //   methods.setError(violation.field as keyof RegisterRequest, {
-            //     type: "manual",
-            //     message: violation.description,
-            //   });
-            // });
-          }
-        }
+        handleAipFieldViolations(err, methods);
       },
     });
   };

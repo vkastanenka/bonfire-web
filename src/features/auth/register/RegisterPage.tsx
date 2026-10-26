@@ -16,18 +16,12 @@ export const RegisterPage = () => {
 export const RegisterForm = () => {
   const { methods, onSubmit, isPending } = useRegisterForm();
   return (
-    <Form methods={methods} onSubmit={onSubmit}>
-      <Form.TextField {...FORM_FIELDS.email} disabled={isPending} />
-      <Form.TextField {...FORM_FIELDS.display_name} disabled={isPending} />
-      <Form.TextField {...FORM_FIELDS.username} disabled={isPending} />
-      <Form.TextField
-        {...FORM_FIELDS.password}
-        type="password"
-        disabled={isPending}
-      />
-      <Form.SubmitButton disabled={isPending}>
-        {LABELS.submit}
-      </Form.SubmitButton>
+    <Form methods={methods} onSubmit={onSubmit} disabled={isPending}>
+      <Form.TextField {...FORM_FIELDS.email} />
+      <Form.TextField {...FORM_FIELDS.displayName} />
+      <Form.TextField {...FORM_FIELDS.username} />
+      <Form.TextField {...FORM_FIELDS.password} />
+      <Form.SubmitButton>{LABELS.submit}</Form.SubmitButton>
     </Form>
   );
 };

@@ -6,6 +6,7 @@ import {
   useFormContext,
 } from "react-hook-form";
 import { FormField } from "./FormField";
+import { useFormStateContext } from "./Form";
 
 interface FormTextFieldProps<TFieldValues extends FieldValues> extends Omit<
   TextFieldProps,
@@ -22,9 +23,13 @@ export const FormTextField = <TFieldValues extends FieldValues>({
   label,
   helperText,
   required,
+  disabled,
   ...props
 }: FormTextFieldProps<TFieldValues>) => {
   const { control } = useFormContext();
+  const { disabled: formDisabled } = useFormStateContext();
+
+  const isDisabled = disabled ?? formDisabled;
 
   return (
     <Controller
@@ -46,6 +51,7 @@ export const FormTextField = <TFieldValues extends FieldValues>({
             error={!!error}
             helperText={error ? error.message : helperText}
             required={required}
+            disabled={isDisabled}
           />
         </FormField>
       )}

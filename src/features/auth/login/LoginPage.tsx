@@ -16,13 +16,11 @@ export const LoginPage = () => {
 export const LoginForm = () => {
   const { methods, onSubmit, isPending } = useLoginForm();
   return (
-    <Form methods={methods} onSubmit={onSubmit}>
-      <Form.TextField {...FORM_FIELDS.email} disabled={isPending} />
-      <Form.TextField {...FORM_FIELDS.password} disabled={isPending} />
+    <Form methods={methods} onSubmit={onSubmit} disabled={isPending}>
+      <Form.TextField {...FORM_FIELDS.email} />
+      <Form.TextField {...FORM_FIELDS.password} />
       <Link.Text to={PATHS.forgotPassword}>{LABELS.forgotPassword}</Link.Text>
-      <Form.SubmitButton disabled={isPending}>
-        {LABELS.submit}
-      </Form.SubmitButton>
+      <Form.SubmitButton>{LABELS.submit}</Form.SubmitButton>
     </Form>
   );
 };

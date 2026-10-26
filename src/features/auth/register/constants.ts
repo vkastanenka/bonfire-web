@@ -20,22 +20,27 @@ export const FORM_FIELDS = {
     id: "email-input",
     label: LABELS.email,
     required: true,
+    autoComplete: "email",
   },
-  display_name: {
-    name: "display_name",
-    id: "display_name-input",
+  displayName: {
+    name: "displayName",
+    id: "displayName-input",
     label: LABELS.displayName,
+    autoComplete: "displayName",
   },
   username: {
     name: "username",
     id: "username-input",
     label: LABELS.username,
     required: true,
+    autoComplete: "username",
   },
   password: {
     name: "password",
     id: "password-input",
+    type: "password",
     label: LABELS.password,
     required: true,
+    autoComplete: "current-password",
   },
 } as const;
