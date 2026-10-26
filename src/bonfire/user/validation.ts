@@ -13,7 +13,7 @@ export const usernameSchema = z
   .max(32)
   .regex(usernameRegex, VALIDATION_ERRORS.username);
 
-export const passwordSchema = z.string().min(12).max(255);
+export const passwordSchema = z.string().min(12).max(64);
 export const displayNameSchema = z.string().min(1).max(32);
 export const avatarUrlSchema = urlSchema.optional();
 export const bioSchema = z.string().max(190).optional();

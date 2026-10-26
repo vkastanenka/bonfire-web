@@ -165,6 +165,7 @@ export class Client {
 
         context.logger.debug(REQUEST_LOGS.SUCCEEDED, {
           durationMs: Math.round(performance.now() - context.startTime),
+          result, // TODO: Remove in prod
         });
 
         if (this.config.onResponseSuccess) {
@@ -190,6 +191,7 @@ export class Client {
             status,
             code: error.code,
             durationMs: Math.round(performance.now() - context.startTime),
+            error: error instanceof AipError ? error.toAip() : undefined, // TODO: Remove in prod
           });
 
           if (this.config.onResponseError) {
@@ -340,6 +342,7 @@ const createContext = (
       requestId,
       url: resolvedOptions.url,
       method: resolvedOptions.method,
+      data: resolvedOptions?.data,
     }),
   };
 };

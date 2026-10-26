@@ -18,11 +18,7 @@ export const LoginForm = () => {
   return (
     <Form methods={methods} onSubmit={onSubmit}>
       <Form.TextField {...FORM_FIELDS.email} disabled={isPending} />
-      <Form.TextField
-        {...FORM_FIELDS.password}
-        type="password"
-        disabled={isPending}
-      />
+      <Form.TextField {...FORM_FIELDS.password} disabled={isPending} />
       <Link.Text to={PATHS.forgotPassword}>{LABELS.forgotPassword}</Link.Text>
       <Form.SubmitButton disabled={isPending}>
         {LABELS.submit}

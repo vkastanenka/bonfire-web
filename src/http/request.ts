@@ -110,12 +110,14 @@ export const request = async <T extends z.ZodTypeAny = z.ZodTypeAny>(
 
   if (!response.ok) {
     const { data: bodyData, error: parseError } = await parseJSON(response);
+
     const aipErrorData = mapFetchToUnknownAipErrorData(
       response,
       bodyData,
       resolvedOptions.url,
       parseError ? { cause: parseError } : {},
     );
+
     throw new AipError(aipErrorData);
   }
 

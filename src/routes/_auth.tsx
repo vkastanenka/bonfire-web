@@ -2,7 +2,7 @@ import {
   bootstrapKeys,
   bootstrapService,
   useBootstrap,
-  useGateway,
+  // useGateway,
 } from "@/bonfire";
 import { queryClient, requireAuth } from "@/app";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
@@ -16,7 +16,7 @@ export const authLoader = async () => {
 
 function AuthLayout() {
   useBootstrap();
-  useGateway();
+  // useGateway();
   return <Outlet />;
 }
 

@@ -2,6 +2,7 @@ type ToastSeverity = "success" | "error" | "warning" | "info";
 
 interface ToastEvent {
   message: string;
+  description?: string | string[];
   severity: ToastSeverity;
 }
 
@@ -17,23 +18,27 @@ class ToastManager {
     };
   }
 
-  show(message: string, severity: ToastSeverity = "info") {
+  show(
+    message: string,
+    severity: ToastSeverity = "info",
+    description?: string | string[],
+  ) {
     if (this.listener) {
-      this.listener({ message, severity });
+      this.listener({ message, description, severity });
     }
   }
 
-  success(message: string) {
-    this.show(message, "success");
+  success(message: string, description?: string | string[]) {
+    this.show(message, "success", description);
   }
-  error(message: string) {
-    this.show(message, "error");
+  error(message: string, description?: string | string[]) {
+    this.show(message, "error", description);
   }
-  warning(message: string) {
-    this.show(message, "warning");
+  warning(message: string, description?: string | string[]) {
+    this.show(message, "warning", description);
   }
-  info(message: string) {
-    this.show(message, "info");
+  info(message: string, description?: string | string[]) {
+    this.show(message, "info", description);
   }
 }
 

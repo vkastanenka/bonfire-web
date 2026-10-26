@@ -66,7 +66,7 @@ z.config({
 export const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
 export const phoneRegex = /^\+[1-9]\d{1,14}$/;
 
-export const emailSchema = z.email().min(3).max(255);
+export const emailSchema = z.email().min(6).max(255);
 export const hexColorSchema = z.string().regex(hexColorRegex, ERRORS.hexColor);
 export const phoneSchema = z.string().regex(phoneRegex, ERRORS.phone);
 export const urlSchema = z.url().max(2048);

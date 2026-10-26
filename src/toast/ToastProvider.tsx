@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Snackbar, Alert } from "@mui/material";
+import { Snackbar, Alert, AlertTitle, Box, Typography } from "@mui/material";
 import { toast } from "./toast";
 
 interface ToastState {
   message: string;
+  description?: string | string[];
   severity: "success" | "error" | "warning" | "info";
 }
 
@@ -34,7 +35,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
       {children}
       <Snackbar
         open={open}
-        autoHideDuration={5000}
+        autoHideDuration={6000}
         onClose={handleClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
@@ -44,7 +45,27 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
           variant="filled"
           sx={{ width: "100%", minWidth: "300px" }}
         >
-          {toastState?.message}
+          <AlertTitle sx={{ mb: toastState?.description ? 0.5 : 0 }}>
+            {toastState?.message}
+          </AlertTitle>
+
+          {toastState?.description && (
+            <Box component="div" sx={{ fontSize: "0.875rem", opacity: 0.9 }}>
+              {Array.isArray(toastState.description) ? (
+                <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                  {toastState.description.map((desc, index) => (
+                    <Box component="li" key={index}>
+                      {desc}
+                    </Box>
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2">
+                  {toastState.description}
+                </Typography>
+              )}
+            </Box>
+          )}
         </Alert>
       </Snackbar>
     </>

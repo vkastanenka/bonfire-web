@@ -18,11 +18,14 @@ export const FORM_FIELDS = {
     id: "email-input",
     label: LABELS.email,
     required: true,
+    autoComplete: "email",
   },
   password: {
     name: "password",
     id: "password-input",
+    type: "password",
     label: LABELS.password,
     required: true,
+    autoComplete: "current-password",
   },
 } as const;

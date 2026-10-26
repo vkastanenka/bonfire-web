@@ -64,11 +64,88 @@ export class AipError extends AppError {
     );
   }
 
+  public hasFieldViolations(): boolean {
+    const fieldViolations = this.getFieldViolations();
+    return !!fieldViolations && fieldViolations.length > 0;
+  }
+
+  public getRetryDelayMs(): number | undefined {
+    const retryInfo = this.getRetryInfo();
+    if (!retryInfo?.retryDelay) return undefined;
+
+    const str = retryInfo.retryDelay;
+    let totalMs = 0;
+
+    const regex = /([0-9.]+)(h|m(?!s)|ms|s|us|µs|ns)/g;
+    let match;
+    let found = false;
+
+    while ((match = regex.exec(str)) !== null) {
+      found = true;
+      const value = parseFloat(match[1]);
+      const unit = match[2];
+
+      switch (unit) {
+        case "h":
+          totalMs += value * 60 * 60 * 1000;
+          break;
+        case "m":
+          totalMs += value * 60 * 1000;
+          break;
+        case "s":
+          totalMs += value * 1000;
+          break;
+        case "ms":
+          totalMs += value;
+          break;
+        case "us":
+        case "µs":
+          totalMs += value / 1000;
+          break;
+        case "ns":
+          totalMs += value / 1000000;
+          break;
+      }
+    }
+
+    return found ? totalMs : undefined;
+  }
+
+  public getFormattedRetryDelay(): string | undefined {
+    const ms = this.getRetryDelayMs();
+    if (ms === undefined) return undefined;
+
+    const totalSeconds = Math.ceil(ms / 1000);
+    if (totalSeconds <= 0) return "1 second";
+
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    if (minutes > 0) {
+      const minStr = `${minutes} minute${minutes === 1 ? "" : "s"}`;
+      if (seconds > 0) {
+        const secStr = `${seconds} second${seconds === 1 ? "" : "s"}`;
+        return `${minStr} ${secStr}`;
+      }
+      return minStr;
+    }
+
+    return `${totalSeconds} second${totalSeconds === 1 ? "" : "s"}`;
+  }
+
+  public toAip(): AipErrorData {
+    return {
+      code: this.httpCode,
+      message: this.message,
+      status: this.code,
+      details: this.details,
+    };
+  }
+
   public override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       httpCode: this.httpCode,
-      status: this.code,
       details: this.details,
     };
   }
@@ -231,6 +308,13 @@ export const mapFetchToUnknownAipErrorData = (
 ): AipErrorData => {
   if (isAipErrorData(data)) {
     return data;
+  }
+
+  if (typeof data === "object" && data !== null && "error" in data) {
+    const wrappedError = (data as Record<string, unknown>).error;
+    if (isAipErrorData(wrappedError)) {
+      return wrappedError;
+    }
   }
 
   return createUnknownAipErrorData(response.status, url, options);

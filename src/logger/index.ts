@@ -16,34 +16,28 @@ const LOG_LEVEL_WEIGHTS: Record<LogLevel, number> = {
 
 export type LogContext = Record<string, unknown>;
 
+const EMOJI_MAP: Record<LogLevel, string> = {
+  [LOG_LEVELS.DEBUG]: "🐛",
+  [LOG_LEVELS.INFO]: "ℹ️",
+  [LOG_LEVELS.WARN]: "⚠️",
+  [LOG_LEVELS.ERROR]: "❌",
+};
+
 export class Logger {
   private minLevel: LogLevel;
   private defaultContext: LogContext;
 
   constructor(minLevel?: LogLevel, defaultContext: LogContext = {}) {
     let isProduction = false;
-
-    try {
-      if (
-        typeof process !== "undefined" &&
-        process.env?.NODE_ENV === "production"
-      ) {
-        isProduction = true;
-      }
-    } catch {
-      // Ignore
+    if (process?.env?.NODE_ENV === "production") {
+      isProduction = true;
     }
 
     const defaultLevel = isProduction ? LOG_LEVELS.INFO : LOG_LEVELS.DEBUG;
-
     let envLevel: LogLevel | undefined;
 
-    try {
-      if (typeof process !== "undefined" && process.env?.LOG_LEVEL) {
-        envLevel = process.env.LOG_LEVEL.toLowerCase() as LogLevel;
-      }
-    } catch {
-      // Ignore
+    if (process?.env?.LOG_LEVEL) {
+      envLevel = process.env.LOG_LEVEL.toLowerCase() as LogLevel;
     }
 
     this.minLevel =
@@ -67,16 +61,22 @@ export class Logger {
   private emit(level: LogLevel, message: string, context?: LogContext) {
     if (!this.shouldLog(level)) return;
 
-    const payload = {
+    const mergedContext = {
       ...this.defaultContext,
       ...context,
+    };
+
+    const rawPayload = {
+      timestamp: new Date().toISOString(),
       level,
       message,
-      timestamp: new Date().toISOString(),
+      ...(Object.keys(mergedContext).length > 0
+        ? { context: mergedContext }
+        : {}),
     };
 
     const cleanPayload = JSON.parse(
-      JSON.stringify(payload, (_key, value) => {
+      JSON.stringify(rawPayload, (_key, value) => {
         if (value instanceof Error) {
           return "toJSON" in value && typeof value.toJSON === "function"
             ? value.toJSON()
@@ -86,18 +86,23 @@ export class Logger {
       }),
     );
 
+    const consoleArgs = [EMOJI_MAP[level], message];
+    if (cleanPayload.context) {
+      consoleArgs.push(cleanPayload.context);
+    }
+
     switch (level) {
       case LOG_LEVELS.DEBUG:
-        console.debug("🐛", message, cleanPayload);
+        console.debug(...consoleArgs);
         break;
       case LOG_LEVELS.INFO:
-        console.info("ℹ️", message, cleanPayload);
+        console.info(...consoleArgs);
         break;
       case LOG_LEVELS.WARN:
-        console.warn("⚠️", message, cleanPayload);
+        console.warn(...consoleArgs);
         break;
       case LOG_LEVELS.ERROR:
-        console.error("❌", message, cleanPayload);
+        console.error(...consoleArgs);
         break;
     }
   }

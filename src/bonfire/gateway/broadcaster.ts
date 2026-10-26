@@ -34,7 +34,7 @@ export class Broadcaster {
 
     if (typeof window !== "undefined" && "BroadcastChannel" in window) {
       this.channel = new BroadcastChannel(CHANNEL_NAME);
-      this.logger.info("Set broadcast channel.");
+      // this.logger.info("Set broadcast channel.");
     } else {
       this.logger.debug("BroadcastChannel not supported.");
     }
@@ -72,10 +72,10 @@ export class Broadcaster {
     this.listeners.add(listener);
     this.channel.addEventListener("message", listener);
 
-    this.logger.info("Subscribed to broadcast channel messages.", {
-      source,
-      listenerCount: this.listeners.size,
-    });
+    // this.logger.info("Subscribed to broadcast channel messages.", {
+    //   source,
+    //   listenerCount: this.listeners.size,
+    // });
 
     return () => {
       this.channel?.removeEventListener("message", listener);
