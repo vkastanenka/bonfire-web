@@ -1,4 +1,4 @@
-import { z, emailSchema } from "@/validation";
+import { z, emailSchema, jwtString } from "@/validation";
 import { displayNameSchema, usernameSchema, passwordSchema } from "../user";
 
 export const sessionSchema = z.object({
@@ -16,7 +16,7 @@ export const sessionSchema = z.object({
 export type Session = z.infer<typeof sessionSchema>;
 
 export const accessTokenResponseSchema = z.object({
-  accessToken: z.string(),
+  accessToken: jwtString,
 });
 
 export type AccessTokenResponse = z.infer<typeof accessTokenResponseSchema>;

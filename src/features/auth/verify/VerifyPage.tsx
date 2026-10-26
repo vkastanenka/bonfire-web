@@ -5,14 +5,22 @@ import { AuthLayout } from "../AuthLayout";
 import { LABELS } from "./verify.constants";
 import { getRouteApi } from "@tanstack/react-router";
 import { useVerifyEmail } from "@/bonfire";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const routeApi = getRouteApi("/_public/verify");
 
 export const VerifyPage = () => {
   const { token } = routeApi.useSearch();
 
-  const { mutate, isPending, isSuccess } = useVerifyEmail();
+  const [isPending, setIsPending] = useState<boolean>(true);
+  const [isSuccess, setIsSuccess] = useState<boolean>(false);
+  const [isError, setIsError] = useState<boolean>(false);
+
+  const { mutate } = useVerifyEmail({
+    onMutate: () => setIsPending((prevState) => !prevState),
+    onSuccess: () => setIsSuccess((prevState) => !prevState),
+    onError: () => setIsError((prevState) => !prevState),
+  });
 
   const hasTriggered = useRef(false);
 
@@ -25,8 +33,10 @@ export const VerifyPage = () => {
 
   return (
     <AuthLayout title={LABELS.title}>
-      {isPending && !isSuccess && <Text>Verifying your email address...</Text>}
+      {isPending && <Text>{LABELS.pending}</Text>}
       {isSuccess && <Alert severity="success">{LABELS.success}</Alert>}
+      {isError && <Alert severity="error">{LABELS.error}</Alert>}
+      {!token && <Alert severity="warning">{LABELS.missing}</Alert>}
       <Link.Text to={PATHS.login}>{LABELS.login}</Link.Text>
     </AuthLayout>
   );

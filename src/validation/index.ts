@@ -70,5 +70,6 @@ export const emailSchema = z.email().min(6).max(255);
 export const hexColorSchema = z.string().regex(hexColorRegex, ERRORS.hexColor);
 export const phoneSchema = z.string().regex(phoneRegex, ERRORS.phone);
 export const urlSchema = z.url().max(2048);
+export const jwtString = z.string().max(2048);
 
 export { z };

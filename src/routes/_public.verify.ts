@@ -1,14 +1,21 @@
-import { z } from "@/validation";
+import { jwtString, z } from "@/validation";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { VerifyPage } from "@/features";
 import { PATHS } from "@/constants";
 
 const verifySearchSchema = z.object({
-  token: z.string().optional(),
+  token: jwtString,
 });
 
 export const Route = createFileRoute("/_public/verify")({
-  validateSearch: (search) => verifySearchSchema.parse(search),
+  validateSearch: (search) => {
+    const result = verifySearchSchema.safeParse(search);
+    if (!result.success) {
+      return { token: "" };
+    }
+    return result.data;
+  },
+
   beforeLoad: ({ search }) => {
     if (!search.token) {
       throw redirect({
@@ -17,5 +24,6 @@ export const Route = createFileRoute("/_public/verify")({
       });
     }
   },
+  
   component: VerifyPage,
 });
