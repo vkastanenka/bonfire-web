@@ -12,7 +12,7 @@ const routeApi = getRouteApi("/verify");
 export const VerifyPage = () => {
   const { token } = routeApi.useSearch();
 
-  const [isPending, setIsPending] = useState<boolean>(true);
+  const [isPending, setIsPending] = useState<boolean>(!!token);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
 
@@ -37,7 +37,9 @@ export const VerifyPage = () => {
       {isSuccess && <Alert severity="success">{LABELS.success}</Alert>}
       {isError && <Alert severity="error">{LABELS.error}</Alert>}
       {!token && <Alert severity="warning">{LABELS.missing}</Alert>}
-      <Link.Text to={PATHS.login}>{LABELS.login}</Link.Text>
+      <Link.Text to={PATHS.login} disabled={isPending}>
+        {LABELS.login}
+      </Link.Text>
     </AuthLayout>
   );
 };

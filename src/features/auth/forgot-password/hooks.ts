@@ -6,7 +6,7 @@ import {
   type ForgotPasswordRequest,
   useForgotPassword,
 } from "@/bonfire";
-import { AipError } from "@/errs";
+import { handleAipFieldViolations } from "@/errs";
 
 export const useForgotPasswordForm = () => {
   const [email, setEmail] = useState<string | null>(null);
@@ -14,7 +14,7 @@ export const useForgotPasswordForm = () => {
   const methods = useForm<ForgotPasswordRequest>({
     resolver: zodResolver(forgotPasswordRequestSchema),
     defaultValues: {
-      email: "",
+      email: "vkastanenka@gmail.com",
     },
   });
 
@@ -23,21 +23,10 @@ export const useForgotPasswordForm = () => {
   const onSubmit = (data: ForgotPasswordRequest) => {
     mutate(data, {
       onSuccess: () => {
-        console.log("Forgot Password Success!");
         setEmail(data.email);
       },
       onError: (err) => {
-        if (err instanceof AipError) {
-          if (err.getFieldViolations().length) {
-            console.log(err);
-            err.getFieldViolations().forEach((violation) => {
-              methods.setError(violation.field as keyof ForgotPasswordRequest, {
-                type: "manual",
-                message: violation.description,
-              });
-            });
-          }
-        }
+        handleAipFieldViolations(err, methods);
       },
     });
   };

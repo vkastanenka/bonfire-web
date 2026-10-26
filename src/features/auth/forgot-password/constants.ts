@@ -16,5 +16,6 @@ export const FORM_FIELDS = {
     id: "email-input",
     label: LABELS.email,
     required: true,
+    autoComplete: "email",
   },
 } as const;

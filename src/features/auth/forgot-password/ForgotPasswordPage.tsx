@@ -1,5 +1,3 @@
-import type { UseFormReturn } from "react-hook-form";
-import type { ForgotPasswordRequest } from "@/bonfire";
 import { Link, Text, Form } from "@/components";
 import { PATHS } from "@/constants";
 import { AuthLayout } from "../AuthLayout";
@@ -24,34 +22,13 @@ export const ForgotPasswordPage = () => {
 
   return (
     <AuthLayout title={LABELS.title} subtitle={LABELS.subtitle}>
-      <ForgotPasswordForm
-        methods={methods}
-        onSubmit={onSubmit}
-        isPending={isPending}
-      />
-      <Link.Text to={PATHS.login}>{LABELS.login}</Link.Text>
+      <Form methods={methods} onSubmit={onSubmit} disabled={isPending}>
+        <Form.TextField {...FORM_FIELDS.email} />
+        <Form.SubmitButton>{LABELS.submit}</Form.SubmitButton>
+      </Form>
+      <Link.Text to={PATHS.login} disabled={isPending}>
+        {LABELS.login}
+      </Link.Text>
     </AuthLayout>
   );
 };
-
-interface ForgotPasswordFormProps {
-  methods: UseFormReturn<ForgotPasswordRequest>;
-  onSubmit: (data: ForgotPasswordRequest) => void;
-  isPending: boolean;
-}
-
-export const ForgotPasswordForm = ({
-  methods,
-  onSubmit,
-  isPending,
-}: ForgotPasswordFormProps) => {
-  return (
-    <Form methods={methods} onSubmit={onSubmit}>
-      <Form.TextField {...FORM_FIELDS.email} disabled={isPending} />
-      <Form.SubmitButton disabled={isPending}>
-        {LABELS.submit}
-      </Form.SubmitButton>
-    </Form>
-  );
-};
-

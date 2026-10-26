@@ -9,43 +9,23 @@ const routeApi = getRouteApi("/_public/reset-password");
 
 export const ResetPasswordPage = () => {
   const { token } = routeApi.useSearch();
-  const { methods, onSubmit, isPending } = useResetPasswordForm(token || "");
+  const { methods, onSubmit, isPending } = useResetPasswordForm(token ?? "");
   return (
     <AuthLayout title={LABELS.title} subtitle={LABELS.subtitle}>
-      <ResetPasswordForm
-        methods={methods}
-        onSubmit={onSubmit}
-        isPending={isPending}
-      />
+      <Form methods={methods} onSubmit={onSubmit} disabled={isPending}>
+        <input
+          disabled
+          type="text"
+          name="username"
+          autoComplete="username"
+          style={{ display: "none" }}
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+        <Form.TextField {...FORM_FIELDS.password} />
+        <Form.SubmitButton>{LABELS.submit}</Form.SubmitButton>
+      </Form>
       <Link.Text to={PATHS.login}>{LABELS.login}</Link.Text>
     </AuthLayout>
-  );
-};
-
-import type { UseFormReturn } from "react-hook-form";
-import type { TResetPasswordForm } from "./hooks";
-
-interface ResetPasswordFormProps {
-  methods: UseFormReturn<TResetPasswordForm>;
-  onSubmit: (data: TResetPasswordForm) => void;
-  isPending: boolean;
-}
-
-export const ResetPasswordForm = ({
-  methods,
-  onSubmit,
-  isPending,
-}: ResetPasswordFormProps) => {
-  return (
-    <Form methods={methods} onSubmit={onSubmit}>
-      <Form.TextField
-        {...FORM_FIELDS.password}
-        type="password"
-        disabled={isPending}
-      />
-      <Form.SubmitButton disabled={isPending}>
-        {LABELS.submit}
-      </Form.SubmitButton>
-    </Form>
   );
 };
