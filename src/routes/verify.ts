@@ -7,7 +7,7 @@ const verifySearchSchema = z.object({
   token: jwtString,
 });
 
-export const Route = createFileRoute("/_public/verify")({
+export const Route = createFileRoute("/verify")({
   validateSearch: (search) => {
     const result = verifySearchSchema.safeParse(search);
     if (!result.success) {

@@ -9,10 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as PublicRouteImport } from './routes/_public'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PublicVerifyRouteImport } from './routes/_public.verify'
 import { Route as PublicResetPasswordRouteImport } from './routes/_public.reset-password'
 import { Route as PublicRegisterRouteImport } from './routes/_public.register'
 import { Route as PublicLoginRouteImport } from './routes/_public.login'
@@ -20,6 +20,11 @@ import { Route as PublicForgotPasswordRouteImport } from './routes/_public.forgo
 import { Route as AuthAppRouteImport } from './routes/_auth.app'
 import { Route as AuthChannelsAtmeRouteImport } from './routes/_auth.channels.@me'
 
+const VerifyRoute = VerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PublicRoute = PublicRouteImport.update({
   id: '/_public',
   getParentRoute: () => rootRouteImport,
@@ -32,11 +37,6 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const PublicVerifyRoute = PublicVerifyRouteImport.update({
-  id: '/verify',
-  path: '/verify',
-  getParentRoute: () => PublicRoute,
 } as any)
 const PublicResetPasswordRoute = PublicResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -71,22 +71,22 @@ const AuthChannelsAtmeRoute = AuthChannelsAtmeRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/verify': typeof VerifyRoute
   '/app': typeof AuthAppRoute
   '/forgot-password': typeof PublicForgotPasswordRoute
   '/login': typeof PublicLoginRoute
   '/register': typeof PublicRegisterRoute
   '/reset-password': typeof PublicResetPasswordRoute
-  '/verify': typeof PublicVerifyRoute
   '/channels/@me': typeof AuthChannelsAtmeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/verify': typeof VerifyRoute
   '/app': typeof AuthAppRoute
   '/forgot-password': typeof PublicForgotPasswordRoute
   '/login': typeof PublicLoginRoute
   '/register': typeof PublicRegisterRoute
   '/reset-password': typeof PublicResetPasswordRoute
-  '/verify': typeof PublicVerifyRoute
   '/channels/@me': typeof AuthChannelsAtmeRoute
 }
 export interface FileRoutesById {
@@ -94,46 +94,46 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
+  '/verify': typeof VerifyRoute
   '/_auth/app': typeof AuthAppRoute
   '/_public/forgot-password': typeof PublicForgotPasswordRoute
   '/_public/login': typeof PublicLoginRoute
   '/_public/register': typeof PublicRegisterRoute
   '/_public/reset-password': typeof PublicResetPasswordRoute
-  '/_public/verify': typeof PublicVerifyRoute
   '/_auth/channels/@me': typeof AuthChannelsAtmeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/verify'
     | '/app'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/verify'
     | '/channels/@me'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/verify'
     | '/app'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/verify'
     | '/channels/@me'
   id:
     | '__root__'
     | '/'
     | '/_auth'
     | '/_public'
+    | '/verify'
     | '/_auth/app'
     | '/_public/forgot-password'
     | '/_public/login'
     | '/_public/register'
     | '/_public/reset-password'
-    | '/_public/verify'
     | '/_auth/channels/@me'
   fileRoutesById: FileRoutesById
 }
@@ -141,10 +141,18 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
   PublicRoute: typeof PublicRouteWithChildren
+  VerifyRoute: typeof VerifyRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify': {
+      id: '/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof VerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_public': {
       id: '/_public'
       path: ''
@@ -165,13 +173,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_public/verify': {
-      id: '/_public/verify'
-      path: '/verify'
-      fullPath: '/verify'
-      preLoaderRoute: typeof PublicVerifyRouteImport
-      parentRoute: typeof PublicRoute
     }
     '/_public/reset-password': {
       id: '/_public/reset-password'
@@ -235,7 +236,6 @@ interface PublicRouteChildren {
   PublicLoginRoute: typeof PublicLoginRoute
   PublicRegisterRoute: typeof PublicRegisterRoute
   PublicResetPasswordRoute: typeof PublicResetPasswordRoute
-  PublicVerifyRoute: typeof PublicVerifyRoute
 }
 
 const PublicRouteChildren: PublicRouteChildren = {
@@ -243,7 +243,6 @@ const PublicRouteChildren: PublicRouteChildren = {
   PublicLoginRoute: PublicLoginRoute,
   PublicRegisterRoute: PublicRegisterRoute,
   PublicResetPasswordRoute: PublicResetPasswordRoute,
-  PublicVerifyRoute: PublicVerifyRoute,
 }
 
 const PublicRouteWithChildren =
@@ -253,6 +252,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
   PublicRoute: PublicRouteWithChildren,
+  VerifyRoute: VerifyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

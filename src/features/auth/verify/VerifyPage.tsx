@@ -7,7 +7,7 @@ import { getRouteApi } from "@tanstack/react-router";
 import { useVerifyEmail } from "@/bonfire";
 import { useEffect, useRef, useState } from "react";
 
-const routeApi = getRouteApi("/_public/verify");
+const routeApi = getRouteApi("/verify");
 
 export const VerifyPage = () => {
   const { token } = routeApi.useSearch();
