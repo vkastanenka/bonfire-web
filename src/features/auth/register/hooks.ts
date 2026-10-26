@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-// import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import {
   useRegister,
   registerRequestSchema,
@@ -9,7 +9,7 @@ import {
 import { handleAipFieldViolations } from "@/errs";
 
 export const useRegisterForm = () => {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const methods = useForm<RegisterRequest>({
     resolver: zodResolver(registerRequestSchema),
@@ -26,7 +26,7 @@ export const useRegisterForm = () => {
   const onSubmit = (data: RegisterRequest) => {
     mutate(data, {
       onSuccess: () => {
-        // navigate({ to: "/channels/@me" });
+        navigate({ to: "/channels/@me" });
       },
       onError: (err) => {
         handleAipFieldViolations(err, methods);
