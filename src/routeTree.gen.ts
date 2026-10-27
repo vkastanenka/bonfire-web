@@ -17,7 +17,6 @@ import { Route as PublicResetPasswordRouteImport } from './routes/_public.reset-
 import { Route as PublicRegisterRouteImport } from './routes/_public.register'
 import { Route as PublicLoginRouteImport } from './routes/_public.login'
 import { Route as PublicForgotPasswordRouteImport } from './routes/_public.forgot-password'
-import { Route as AuthAppRouteImport } from './routes/_auth.app'
 import { Route as AuthChannelsAtmeRouteImport } from './routes/_auth.channels.@me'
 
 const VerifyRoute = VerifyRouteImport.update({
@@ -58,11 +57,6 @@ const PublicForgotPasswordRoute = PublicForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => PublicRoute,
 } as any)
-const AuthAppRoute = AuthAppRouteImport.update({
-  id: '/app',
-  path: '/app',
-  getParentRoute: () => AuthRoute,
-} as any)
 const AuthChannelsAtmeRoute = AuthChannelsAtmeRouteImport.update({
   id: '/channels/@me',
   path: '/channels/@me',
@@ -72,7 +66,6 @@ const AuthChannelsAtmeRoute = AuthChannelsAtmeRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/verify': typeof VerifyRoute
-  '/app': typeof AuthAppRoute
   '/forgot-password': typeof PublicForgotPasswordRoute
   '/login': typeof PublicLoginRoute
   '/register': typeof PublicRegisterRoute
@@ -82,7 +75,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/verify': typeof VerifyRoute
-  '/app': typeof AuthAppRoute
   '/forgot-password': typeof PublicForgotPasswordRoute
   '/login': typeof PublicLoginRoute
   '/register': typeof PublicRegisterRoute
@@ -95,7 +87,6 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
   '/verify': typeof VerifyRoute
-  '/_auth/app': typeof AuthAppRoute
   '/_public/forgot-password': typeof PublicForgotPasswordRoute
   '/_public/login': typeof PublicLoginRoute
   '/_public/register': typeof PublicRegisterRoute
@@ -107,7 +98,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/verify'
-    | '/app'
     | '/forgot-password'
     | '/login'
     | '/register'
@@ -117,7 +107,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/verify'
-    | '/app'
     | '/forgot-password'
     | '/login'
     | '/register'
@@ -129,7 +118,6 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/_public'
     | '/verify'
-    | '/_auth/app'
     | '/_public/forgot-password'
     | '/_public/login'
     | '/_public/register'
@@ -202,13 +190,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicForgotPasswordRouteImport
       parentRoute: typeof PublicRoute
     }
-    '/_auth/app': {
-      id: '/_auth/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AuthAppRouteImport
-      parentRoute: typeof AuthRoute
-    }
     '/_auth/channels/@me': {
       id: '/_auth/channels/@me'
       path: '/channels/@me'
@@ -220,12 +201,10 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthRouteChildren {
-  AuthAppRoute: typeof AuthAppRoute
   AuthChannelsAtmeRoute: typeof AuthChannelsAtmeRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
-  AuthAppRoute: AuthAppRoute,
   AuthChannelsAtmeRoute: AuthChannelsAtmeRoute,
 }
 

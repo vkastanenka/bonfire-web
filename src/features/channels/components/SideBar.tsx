@@ -9,7 +9,7 @@ import {
 import EmojiPeopleIcon from "@mui/icons-material/EmojiPeople";
 import AddIcon from "@mui/icons-material/Add";
 
-const AppSearchButton = () => {
+const SearchButton = () => {
   return (
     <>
       <Button variant="contained" size="small">
@@ -19,7 +19,7 @@ const AppSearchButton = () => {
   );
 };
 
-const AppDirectMessagesHeader = () => {
+const DirectMessagesHeader = () => {
   return (
     <Stack
       direction="row"
@@ -37,11 +37,7 @@ const AppDirectMessagesHeader = () => {
   );
 };
 
-const AppDirectMessagesButton = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+const DirectMessagesButton = ({ children }: { children: React.ReactNode }) => {
   return (
     <Button sx={{ justifyContent: "start" }}>
       <Stack direction={"row"} sx={{ alignItems: "center", gap: 1 }}>
@@ -54,26 +50,26 @@ const AppDirectMessagesButton = ({
   );
 };
 
-const AppDirectMessages = () => {
+const DirectMessages = () => {
   return (
     <Stack sx={{ gap: (t) => t.spacingTokens.tight }}>
-      <AppDirectMessagesHeader />
-      <AppDirectMessagesButton>{"Potato Princess"}</AppDirectMessagesButton>
-      <AppDirectMessagesButton>{"Hexaclover"}</AppDirectMessagesButton>
-      <AppDirectMessagesButton>{"Snowybot"}</AppDirectMessagesButton>
-      <AppDirectMessagesButton>{"EradonsRival"}</AppDirectMessagesButton>
-      <AppDirectMessagesButton>{"Afrii"}</AppDirectMessagesButton>
-      <AppDirectMessagesButton>{"Sparkplug"}</AppDirectMessagesButton>
-      <AppDirectMessagesButton>{"Blue Panda"}</AppDirectMessagesButton>
+      <DirectMessagesHeader />
+      <DirectMessagesButton>{"Potato Princess"}</DirectMessagesButton>
+      <DirectMessagesButton>{"Hexaclover"}</DirectMessagesButton>
+      <DirectMessagesButton>{"Snowybot"}</DirectMessagesButton>
+      <DirectMessagesButton>{"EradonsRival"}</DirectMessagesButton>
+      <DirectMessagesButton>{"Afrii"}</DirectMessagesButton>
+      <DirectMessagesButton>{"Sparkplug"}</DirectMessagesButton>
+      <DirectMessagesButton>{"Blue Panda"}</DirectMessagesButton>
     </Stack>
   );
 };
 
-interface AppSideBarItemProps {
+interface SidebarItemProps {
   children: React.ReactNode;
 }
 
-const AppSideBarItem = ({ children }: AppSideBarItemProps) => {
+const SidebarItem = ({ children }: SidebarItemProps) => {
   return (
     <Stack
       sx={{
@@ -85,7 +81,7 @@ const AppSideBarItem = ({ children }: AppSideBarItemProps) => {
   );
 };
 
-export const AppSideBar = () => {
+export const SideBar = () => {
   return (
     <Stack
       sx={{
@@ -102,20 +98,20 @@ export const AppSideBar = () => {
         },
       }}
     >
-      <AppSideBarItem>
-        <AppSearchButton />
-      </AppSideBarItem>
-      <AppSideBarItem>
+      <SidebarItem>
+        <SearchButton />
+      </SidebarItem>
+      <SidebarItem>
         <Button
           startIcon={<EmojiPeopleIcon />}
           sx={{ justifyContent: "start" }}
         >
           {"Friends"}
         </Button>
-      </AppSideBarItem>
-      <AppSideBarItem>
-        <AppDirectMessages />
-      </AppSideBarItem>
+      </SidebarItem>
+      <SidebarItem>
+        <DirectMessages />
+      </SidebarItem>
     </Stack>
   );
 };

@@ -1,6 +1,6 @@
 import { Stack } from "@mui/material";
 
-export const AppDashboard = () => {
+export const Dashboard = () => {
   return (
     <Stack
       sx={{
@@ -11,7 +11,7 @@ export const AppDashboard = () => {
         width: "100%",
       }}
     >
-      {/* AppDashboard */}
+      {/* Dashboard */}
     </Stack>
   );
 };

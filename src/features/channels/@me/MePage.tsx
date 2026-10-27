@@ -1,42 +1,38 @@
-import { useAuthStore, useLogout } from "@/bonfire";
-import Stack from "@mui/material/Stack";
-import { Button } from "@mui/material";
-import { AuthLayout } from "@/features/auth/AuthLayout";
-import { Text } from "@/components";
-import { router } from "@/app";
-import { PATHS } from "@/constants";
+import { Box, Stack } from "@mui/material";
+// import { router } from "@/app";
+// import { useAuthStore, useLogout } from "@/bonfire";
+// import { Text } from "@/components";
+// import { PATHS } from "@/constants";
+import { Dashboard, Nav, SideBar, UserNav } from "../components";
 
 export const MePage = () => {
-  const me = useAuthStore((state) => state.me);
+  // const me = useAuthStore((state) => state.me);
 
-  const { mutate, isPending } = useLogout({
-    onSuccess: () => {
-      router.navigate({ to: PATHS.login, replace: true });
-    },
-  });
+  // const { mutate, isPending } = useLogout({
+  //   onSuccess: () => {
+  //     router.navigate({ to: PATHS.login, replace: true });
+  //   },
+  // });
 
   return (
-    <AuthLayout
-      title="Welcome to the app!"
-      subtitle="User management is under development!"
-    >
-      {me && (
-        <Stack>
-          <Text>Email: {me.email}</Text>
-          <Text>Username: {me.username}</Text>
-          <Text>Display name: {me.displayName}</Text>
+    <Stack>
+      <Nav />
+      <Stack direction="row">
+        <Stack
+          direction="row"
+          sx={{
+            minHeight: "calc(100vh - 32px)",
+            boxShadow: 1,
+            position: "relative",
+          }}
+        >
+          <SideBar />
+          <Box sx={{ position: "absolute", bottom: 100, left: 8, right: 8 }}>
+            <UserNav />
+          </Box>
         </Stack>
-      )}
-      <Button
-        type="submit"
-        variant="contained"
-        disabled={isPending}
-        loading={isPending}
-        aria-busy={isPending}
-        onClick={() => mutate()}
-      >
-        Logout
-      </Button>
-    </AuthLayout>
+        <Dashboard />
+      </Stack>
+    </Stack>
   );
 };
