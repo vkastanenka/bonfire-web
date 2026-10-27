@@ -36,6 +36,10 @@ export const useRegister = (
   return useMutation({
     mutationKey: authKeys.register(),
     mutationFn: (data: RegisterRequest) => authService.register(data),
+    onSuccess: async (data, variables, context, mutation) => {
+      await queryClient.invalidateQueries();
+      options?.onSuccess?.(data, variables, context, mutation);
+    },
     ...options,
   });
 };
@@ -46,6 +50,10 @@ export const useLogin = (
   return useMutation({
     mutationKey: authKeys.login(),
     mutationFn: (data: LoginRequest) => authService.login(data),
+    onSuccess: async (data, variables, context, mutation) => {
+      await queryClient.invalidateQueries();
+      options?.onSuccess?.(data, variables, context, mutation);
+    },
     ...options,
   });
 };
@@ -101,6 +109,10 @@ export const useResetPassword = (
   return useMutation({
     mutationKey: authKeys.resetPassword(),
     mutationFn: (data: ResetPasswordRequest) => authService.resetPassword(data),
+    onSuccess: async (data, variables, context, mutation) => {
+      await queryClient.invalidateQueries();
+      options?.onSuccess?.(data, variables, context, mutation);
+    },
     ...options,
   });
 };

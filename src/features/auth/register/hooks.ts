@@ -14,10 +14,10 @@ export const useRegisterForm = () => {
   const methods = useForm<RegisterRequest>({
     resolver: zodResolver(registerRequestSchema),
     defaultValues: {
-      email: "vkastanenka@gmail.com",
-      displayName: "vkast123",
-      username: "vkast123",
-      password: "password12345678",
+      email: "",
+      displayName: "",
+      username: "",
+      password: "",
     },
   });
 

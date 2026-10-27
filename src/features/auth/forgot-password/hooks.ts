@@ -14,7 +14,7 @@ export const useForgotPasswordForm = () => {
   const methods = useForm<ForgotPasswordRequest>({
     resolver: zodResolver(forgotPasswordRequestSchema),
     defaultValues: {
-      email: "vkastanenka@gmail.com",
+      email: "",
     },
   });
 

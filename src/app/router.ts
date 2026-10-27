@@ -36,15 +36,15 @@ export function requireAuth(options: { redirectTo?: string } = {}) {
 }
 
 export function requireGuest(options: { redirectTo?: string } = {}) {
-  // const { redirectTo = "/channels/@me" } = options;
+  const { redirectTo = "/channels/@me" } = options;
 
-  // return () => {
-  //   const token = authService.getAccessToken();
+  return async () => {
+    const token = await authService.restore();
 
-  //   if (token) {
-  //     throw redirect({
-  //       to: redirectTo,
-  //     });
-  //   }
-  // };
+    if (token) {
+      throw redirect({
+        to: redirectTo,
+      });
+    }
+  };
 }

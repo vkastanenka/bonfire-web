@@ -10,8 +10,8 @@ export const useLoginForm = () => {
   const methods = useForm<LoginRequest>({
     resolver: zodResolver(loginRequestSchema),
     defaultValues: {
-      email: "vkastanenka@gmail.com",
-      password: "password12345678",
+      email: "",
+      password: "",
     },
   });
 

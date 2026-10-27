@@ -6,6 +6,7 @@ export class BootstrapService {
   public async bootstrap(options?: ClientRequestOptions) {
     const data = await bootstrapClient.bootstrap(options);
     useAuthStore.getState().setMe(data.me);
+    return data;
   }
 }
 
