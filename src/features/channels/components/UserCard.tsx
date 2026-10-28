@@ -37,7 +37,8 @@ export const UserCard = ({
           py: "3px",
           px: "4px",
           gap: 1,
-          width: "100%",
+          flex: 1,
+          minWidth: 0,
         }}
       >
         <UserAvatar
@@ -46,8 +47,24 @@ export const UserCard = ({
           presence={presence}
           size="sm"
         />
-        <Stack spacing={0.25} sx={{ alignItems: "flex-start" }}>
-          <Typography sx={{ fontWeight: 500, lineHeight: 1 }}>
+        <Stack
+          sx={{
+            alignItems: "flex-start",
+            justifyContent: "center",
+            minWidth: 0,
+            flex: 1,
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 500,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              width: "100%",
+              lineHeight: 1.08,
+              textAlign: "start",
+            }}
+          >
             {displayName}
           </Typography>
           <Typography sx={{ fontSize: 14, lineHeight: 1 }}>
@@ -56,7 +73,7 @@ export const UserCard = ({
         </Stack>
       </Button>
       <Tooltip placement="top" title="User Settings">
-        <IconButton>
+        <IconButton sx={{ flexShrink: 0 }}>
           <SettingsIcon fontSize="small" />
         </IconButton>
       </Tooltip>
