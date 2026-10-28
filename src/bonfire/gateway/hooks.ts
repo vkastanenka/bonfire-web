@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useStore } from "./store";
+import { useGatewayStore } from "./store";
 import { logger as baseLogger } from "@/logger";
 
 const logger = baseLogger.child({
@@ -10,8 +10,8 @@ const logger = baseLogger.child({
 const LEADER_LOCK_NAME = "bonfire_gateway_leader_lock";
 
 export function useGateway() {
-  const init = useStore((state) => state.init);
-  const close = useStore((state) => state.close);
+  const init = useGatewayStore((state) => state.init);
+  const close = useGatewayStore((state) => state.close);
 
   useEffect(() => {
     let isMounted = true;

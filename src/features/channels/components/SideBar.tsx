@@ -89,7 +89,7 @@ export const SideBar = () => {
         borderLeftStyle: "solid",
         borderTopStyle: "solid",
         borderColor: "divider",
-        bgcolor: "grey.50",
+        bgcolor: "background.paper",
         width: 320,
         "& > :not(:last-of-type)": {
           borderWidth: "1px",

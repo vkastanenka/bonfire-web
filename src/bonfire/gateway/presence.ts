@@ -4,12 +4,19 @@ export const Presence = {
   online: "ONLINE",
   offline: "OFFLINE",
   idle: "IDLE",
-  busy: "BUSY",
   dnd: "DND",
   invisible: "INVISIBLE",
 } as const;
 
 export type Presence = (typeof Presence)[keyof typeof Presence];
+
+export const PresenceLabels: Record<Presence, string> = {
+  [Presence.online]: "Online",
+  [Presence.offline]: "Offline",
+  [Presence.idle]: "Idle",
+  [Presence.dnd]: "Do Not Disturb",
+  [Presence.invisible]: "Invisible",
+};
 
 const PresenceEvents = [
   "mousemove",

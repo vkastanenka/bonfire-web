@@ -1,12 +1,19 @@
 import { Box, Stack } from "@mui/material";
 // import { router } from "@/app";
-// import { useAuthStore, useLogout } from "@/bonfire";
+import {
+  useAuthStore,
+  useGatewayStore,
+  // useLogout
+} from "@/bonfire";
 // import { Text } from "@/components";
 // import { PATHS } from "@/constants";
-import { Dashboard, Nav, SideBar, UserNav } from "../components";
+import { Dashboard, Nav, SideBar, UserCard } from "../components";
 
 export const MePage = () => {
-  // const me = useAuthStore((state) => state.me);
+  const me = useAuthStore((state) => state.me);
+  const presence = useGatewayStore((state) => state.presence);
+
+  if (!me) return null;
 
   // const { mutate, isPending } = useLogout({
   //   onSuccess: () => {
@@ -28,7 +35,12 @@ export const MePage = () => {
         >
           <SideBar />
           <Box sx={{ position: "absolute", bottom: 8, left: 8, right: 8 }}>
-            <UserNav />
+            <UserCard
+              displayName={me.displayName}
+              username={me.username}
+              avatarSrc={me.avatarUrl}
+              presence={presence}
+            />
           </Box>
         </Stack>
         <Dashboard />

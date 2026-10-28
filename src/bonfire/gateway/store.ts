@@ -13,7 +13,7 @@ interface State {
   send: (type: string, data: unknown) => void;
 }
 
-export const useStore = create<State>((set, get) => ({
+export const useGatewayStore = create<State>((set, get) => ({
   presence: Presence.online,
   status: GatewayStatus.disconnected,
 
@@ -81,11 +81,11 @@ broadcaster.subscribe((type, payload) => {
     }
 
     case BroadcastType.presence:
-      useStore.setState({ presence: payload as Presence });
+      useGatewayStore.setState({ presence: payload as Presence });
       break;
 
     case BroadcastType.status:
-      useStore.setState({ status: payload as GatewayStatus });
+      useGatewayStore.setState({ status: payload as GatewayStatus });
       break;
   }
 });
@@ -94,7 +94,7 @@ let previousToken = useAuthStore.getState().accessToken;
 
 useAuthStore.subscribe((state) => {
   if (previousToken && !state.accessToken) {
-    useStore.getState().close();
+    useGatewayStore.getState().close();
   }
   previousToken = state.accessToken;
 });
