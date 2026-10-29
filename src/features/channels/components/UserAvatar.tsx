@@ -1,12 +1,6 @@
-import type { ComponentType } from "react";
-import type { SvgIconProps } from "@mui/material";
 import { Avatar, Box } from "@mui/material";
-import CircleIcon from "@mui/icons-material/Circle";
-import DoDisturbOnIcon from "@mui/icons-material/DoDisturbOn";
-import DarkModeIcon from "@mui/icons-material/DarkMode";
-import TripOriginIcon from "@mui/icons-material/TripOrigin";
-import { green, yellow, red, grey } from "@mui/material/colors";
 import { PresenceLabels, Presence } from "@/bonfire";
+import { presenceIcons } from "./Presence";
 
 export const userAvatarSizes = {
   sm: 32,
@@ -21,32 +15,16 @@ const userAvatarPresenceSizes = {
 } as const;
 
 const userAvatarBorderSizes = {
-  sm: "1px",
-  md: "1px",
-  lg: "2px",
+  sm: "2px",
+  md: "2px",
+  lg: "3px",
 } as const;
 
 const userAvatarPresenceOffsets = {
-  sm: 0,
-  md: 0,
+  sm: -1,
+  md: -1,
   lg: 1,
 } as const;
-
-type IconComponent = ComponentType<SvgIconProps>;
-
-const userAvatarPresenceIcons: Partial<Record<Presence, IconComponent>> = {
-  [Presence.online]: CircleIcon,
-  [Presence.idle]: DarkModeIcon,
-  [Presence.dnd]: DoDisturbOnIcon,
-  [Presence.invisible]: TripOriginIcon,
-};
-
-const userAvatarPresenceColors: Partial<Record<Presence, string>> = {
-  [Presence.online]: green[500],
-  [Presence.idle]: yellow[700],
-  [Presence.dnd]: red[500],
-  [Presence.invisible]: grey[500],
-};
 
 export type UserAvatarSize = keyof typeof userAvatarSizes;
 export type UserAvatarSizeValue = (typeof userAvatarSizes)[UserAvatarSize];
@@ -63,7 +41,7 @@ export interface UserAvatarProps {
 export const UserAvatar = ({
   username,
   bgColor = "primary.main",
-  surfaceColor = "grey.200",
+  surfaceColor = "background.default",
   presence,
   size = "sm",
   src,
@@ -72,12 +50,10 @@ export const UserAvatar = ({
   const presenceDimension = userAvatarPresenceSizes[size];
   const offset = userAvatarPresenceOffsets[size];
   const borderSize = userAvatarBorderSizes[size];
-
-  const Icon = presence ? userAvatarPresenceIcons[presence] : undefined;
-  const color = presence ? userAvatarPresenceColors[presence] : undefined;
+  const presenceIcon = presence ? presenceIcons[presence] : undefined;
 
   const showPresence =
-    presence && presence !== Presence.offline && Icon && color;
+    presence && presence !== Presence.offline && presenceIcon;
 
   return (
     <Box
@@ -96,6 +72,9 @@ export const UserAvatar = ({
           bgcolor: bgColor,
           width: "100%",
           height: "100%",
+          borderColor: "background.default",
+          borderWidth: 2,
+          borderStyle: "solid",
         }}
       />
 
@@ -112,11 +91,11 @@ export const UserAvatar = ({
             justifyContent: "center",
           }}
         >
-          <Icon
+          <presenceIcon.Icon
             sx={{
               width: "100%",
               height: "100%",
-              color: color,
+              color: presenceIcon.color,
               borderRadius: "50%",
               bgcolor: surfaceColor,
               border: `${borderSize} solid`,

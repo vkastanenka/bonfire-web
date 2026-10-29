@@ -15,6 +15,15 @@ export const theme = createTheme({
       paper: grey[50],
     },
   },
+  components: {
+    MuiPopover: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 8, // Set your desired border radius here (12px, '16px', '1rem', etc.)
+        },
+      },
+    },
+  },
   ...THEME_TOKENS,
 });
 
