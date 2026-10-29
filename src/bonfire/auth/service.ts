@@ -1,4 +1,5 @@
 import { type ClientRequestOptions } from "@/http";
+import { type Presence, PRESENCE } from "@/presence";
 import { authClient } from "./client";
 import { useAuthStore } from "./store";
 import type {
@@ -10,7 +11,6 @@ import type {
   VerifyEmailRequest,
 } from "./validation";
 import type { Me } from "../user";
-import { Presence } from "../gateway/presence";
 
 export class AuthService {
   private activeRefreshPromise: Promise<string | null> | null = null;
@@ -29,7 +29,7 @@ export class AuthService {
     }
 
     if (preferred) {
-      return preferred === Presence.invisible ? Presence.offline : preferred;
+      return preferred === PRESENCE.INVISIBLE ? PRESENCE.OFFLINE : preferred;
     }
 
     return preferred ?? null;

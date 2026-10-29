@@ -18,7 +18,7 @@ export const FormField = ({
   ...props
 }: FormFieldProps) => {
   return (
-    <Stack sx={{ gap: (t) => t.spacingTokens.group, ...sx }} {...props}>
+    <Stack sx={{ gap: (t) => t.tokens.spacing.group, ...sx }} {...props}>
       {label && (
         <InputLabel
           htmlFor={htmlFor}

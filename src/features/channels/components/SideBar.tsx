@@ -52,7 +52,7 @@ const DirectMessagesButton = ({ children }: { children: React.ReactNode }) => {
 
 const DirectMessages = () => {
   return (
-    <Stack sx={{ gap: (t) => t.spacingTokens.tight }}>
+    <Stack sx={{ gap: (t) => t.tokens.spacing.tight }}>
       <DirectMessagesHeader />
       <DirectMessagesButton>{"Potato Princess"}</DirectMessagesButton>
       <DirectMessagesButton>{"Hexaclover"}</DirectMessagesButton>
@@ -73,7 +73,7 @@ const SidebarItem = ({ children }: SidebarItemProps) => {
   return (
     <Stack
       sx={{
-        p: (t) => t.spacingTokens.group,
+        p: (t) => t.tokens.spacing.group,
       }}
     >
       {children}

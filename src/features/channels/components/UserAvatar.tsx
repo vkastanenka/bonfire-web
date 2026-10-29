@@ -1,6 +1,10 @@
 import { Avatar, Box } from "@mui/material";
-import { PresenceLabels, Presence } from "@/bonfire";
-import { presenceIcons } from "./Presence";
+import {
+  type Presence,
+  PRESENCE,
+  PRESENCE_ICONS,
+  PRESENCE_LABELS,
+} from "@/presence";
 
 export const userAvatarSizes = {
   sm: 32,
@@ -50,10 +54,10 @@ export const UserAvatar = ({
   const presenceDimension = userAvatarPresenceSizes[size];
   const offset = userAvatarPresenceOffsets[size];
   const borderSize = userAvatarBorderSizes[size];
-  const presenceIcon = presence ? presenceIcons[presence] : undefined;
+  const presenceIcon = presence ? PRESENCE_ICONS[presence] : undefined;
 
   const showPresence =
-    presence && presence !== Presence.offline && presenceIcon;
+    presence && presence !== PRESENCE.OFFLINE && presenceIcon;
 
   return (
     <Box
@@ -112,7 +116,7 @@ export const UserAvatar = ({
 const resolveAlt = (username: string, presence?: Presence) => {
   let alt = username;
   if (presence) {
-    alt = `${alt}, ${PresenceLabels[presence]}`;
+    alt = `${alt}, ${PRESENCE_LABELS[presence]}`;
   }
   return alt;
 };

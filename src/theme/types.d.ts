@@ -1,11 +1,13 @@
-import type { ThemeTokensType } from "./tokens";
+import type { styles, tokens } from "./index";
 
 declare module "@mui/material/styles" {
   interface Theme {
-    spacingTokens: ThemeTokensType["spacingTokens"];
+    styles: typeof styles;
+    tokens: typeof tokens;
   }
 
   interface ThemeOptions {
-    spacingTokens?: Partial<ThemeTokensType["spacingTokens"]>;
+    styles?: Partial<typeof styles>;
+    tokens?: Partial<typeof tokens>;
   }
 }

@@ -18,7 +18,7 @@ export const Nav = () => {
     >
       <Stack
         direction="row"
-        sx={{ alignItems: "center", gap: (t) => t.spacingTokens.tight }}
+        sx={{ alignItems: "center", gap: (t) => t.tokens.spacing.tight }}
       >
         <EmojiPeopleIcon fontSize="small" />
         <Typography variant="body2" sx={{ fontWeight: 500 }}>

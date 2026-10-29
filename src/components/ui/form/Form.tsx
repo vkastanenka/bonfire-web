@@ -39,7 +39,7 @@ const FormRoot = <TFieldValues extends FieldValues>({
         <Stack
           component="form"
           onSubmit={methods.handleSubmit(onSubmit)}
-          sx={{ gap: (t) => t.spacingTokens.stack, ...sx }}
+          sx={{ gap: (t) => t.tokens.spacing.stack, ...sx }}
           {...props}
         >
           {children}

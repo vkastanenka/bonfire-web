@@ -3,7 +3,7 @@ import { logger as baseLogger, Logger } from "@/logger";
 import { API_ERROR_CODES } from "@/http";
 import { bonfireClient } from "../client";
 import { gatewayClient, type GatewayClient } from "./client";
-import { Presence } from "./presence";
+import { type Presence } from "@/presence";
 import type { PrintTicketResponse } from "./validation";
 import {
   dispatcher as baseDispatcher,

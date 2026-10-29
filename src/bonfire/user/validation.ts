@@ -19,7 +19,7 @@ export const avatarUrlSchema = urlSchema.optional();
 export const bioSchema = z.string().max(190).optional();
 export const bannerColorSchema = hexColorSchema.optional();
 export const preferredPresenceSchema = z
-  .enum(["BUSY", "DND", "INVISIBLE"])
+  .enum(["DND", "INVISIBLE"])
   .optional();
 export const preferredPresenceDurationSchema = z
   .enum(["15_MIN", "1_HOUR", "8_HOURS", "24_HOURS", "3_DAYS", "FOREVER"])

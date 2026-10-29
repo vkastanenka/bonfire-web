@@ -1,15 +1,16 @@
-import { useState, useCallback } from "react";
+import { useState, useRef } from "react";
 import { Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { UserAvatar } from "./UserAvatar";
 import { UserPopover } from "./UserPopover";
-import { Presence, PresenceLabels } from "@/bonfire";
+import { type Presence, PRESENCE_LABELS } from "@/presence";
 
 export interface UserCardProps {
   displayName: string;
   username: string;
   presence: Presence;
   avatarSrc?: string;
+  bannerColor?: string;
 }
 
 export const UserCard = ({
@@ -17,28 +18,26 @@ export const UserCard = ({
   username,
   presence,
   avatarSrc,
+  bannerColor,
 }: UserCardProps) => {
-  const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
-  const [open, setOpen] = useState(false);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
+  const popoverOpen = Boolean(popoverAnchor);
 
-  const stackRef = useCallback((node: HTMLDivElement | null) => {
-    if (node !== null) {
-      setAnchorEl(node);
+  const handlePopoverOpen = () => {
+    if (cardRef.current) {
+      setPopoverAnchor(cardRef.current);
     }
-  }, []);
-
-  const handleClick = () => {
-    setOpen(true);
   };
 
-  const handleClose = () => {
-    setOpen(false);
+  const handlePopoverClose = () => {
+    setPopoverAnchor(null);
   };
 
   return (
     <>
       <Stack
-        ref={stackRef}
+        ref={cardRef}
         direction="row"
         sx={{
           bgcolor: "background.default",
@@ -53,9 +52,9 @@ export const UserCard = ({
         }}
       >
         <Button
-          onClick={handleClick}
+          onClick={handlePopoverOpen}
           aria-haspopup="true"
-          aria-expanded={open ? "true" : undefined}
+          aria-expanded={popoverOpen ? "true" : undefined}
           sx={{
             justifyContent: "start",
             py: "3px",
@@ -92,7 +91,7 @@ export const UserCard = ({
               {displayName}
             </Typography>
             <Typography sx={{ lineHeight: 1.2 }} variant="caption">
-              {PresenceLabels[presence]}
+              {PRESENCE_LABELS[presence]}
             </Typography>
           </Stack>
         </Button>
@@ -104,13 +103,14 @@ export const UserCard = ({
       </Stack>
 
       <UserPopover
-        open={open}
-        anchorEl={anchorEl}
-        onClose={handleClose}
+        anchorEl={popoverAnchor}
+        open={popoverOpen}
+        handleClose={handlePopoverClose}
         displayName={displayName}
         username={username}
         presence={presence}
         avatarSrc={avatarSrc}
+        bannerColor={bannerColor}
       />
     </>
   );

@@ -1,7 +1,7 @@
 import { create } from "zustand";
+import { type Presence, PRESENCE, presenceTracker } from "@/presence";
 import { authService, useAuthStore } from "../auth";
 import { gatewayService, GatewayStatus, type GatewayMessage } from "./service";
-import { Presence, presenceTracker } from "./presence";
 import { BroadcastType, broadcaster } from "./broadcaster";
 import { dispatcher } from "./dispatcher";
 
@@ -14,7 +14,7 @@ interface State {
 }
 
 export const useGatewayStore = create<State>((set, get) => ({
-  presence: Presence.online,
+  presence: PRESENCE.ONLINE,
   status: GatewayStatus.disconnected,
 
   init: () => {
@@ -42,7 +42,7 @@ export const useGatewayStore = create<State>((set, get) => ({
     presenceTracker.start();
 
     const initialPresence =
-      authService.getEffectivePresence() ?? Presence.online;
+      authService.getEffectivePresence() ?? PRESENCE.ONLINE;
 
     gatewayService.connect(initialPresence);
 
@@ -63,7 +63,7 @@ export const useGatewayStore = create<State>((set, get) => ({
 
     set({
       status: gatewayService.getStatus(),
-      presence: Presence.online,
+      presence: PRESENCE.ONLINE,
     });
   },
 

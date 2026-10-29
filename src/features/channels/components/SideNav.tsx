@@ -6,7 +6,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 
 export const Sidenav = () => {
   return (
-    <Stack sx={{ bgcolor: "grey.50", gap: (t) => t.spacingTokens.group }}>
+    <Stack sx={{ bgcolor: "grey.50", gap: (t) => t.tokens.spacing.group }}>
       <SidenavButton src="/" />
       <Divider sx={{ width: "75%", alignSelf: "center" }} />
       <SidenavButton src="/" />

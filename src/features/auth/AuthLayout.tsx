@@ -16,15 +16,15 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
         maxWidth: 400,
         mx: "auto",
         px: 2,
-        py: t.spacingTokens.stack,
-        gap: t.spacingTokens.stack,
+        py: t.tokens.spacing.stack,
+        gap: t.tokens.spacing.stack,
       })}
     >
       <Stack
         sx={{
           alignItems: "center",
           textAlign: "center",
-          gap: (t) => t.spacingTokens.group,
+          gap: (t) => t.tokens.spacing.group,
         }}
       >
         <BfLogotype />

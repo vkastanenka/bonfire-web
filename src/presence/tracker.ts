@@ -1,24 +1,7 @@
 import { logger as baseLogger, Logger } from "@/logger";
+import { type Presence, PRESENCE } from "./index";
 
-export const Presence = {
-  online: "ONLINE",
-  offline: "OFFLINE",
-  idle: "IDLE",
-  dnd: "DND",
-  invisible: "INVISIBLE",
-} as const;
-
-export type Presence = (typeof Presence)[keyof typeof Presence];
-
-export const PresenceLabels: Record<Presence, string> = {
-  [Presence.online]: "Online",
-  [Presence.offline]: "Offline",
-  [Presence.idle]: "Idle",
-  [Presence.dnd]: "Do Not Disturb",
-  [Presence.invisible]: "Invisible",
-};
-
-const PresenceEvents = [
+const events = [
   "mousemove",
   "keydown",
   "mousedown",
@@ -62,7 +45,7 @@ export class PresenceTracker {
       return;
     }
 
-    PresenceEvents.forEach((event) => {
+    events.forEach((event) => {
       window.addEventListener(event, this.handleEvent, { passive: true });
     });
 
@@ -83,7 +66,7 @@ export class PresenceTracker {
       return;
     }
 
-    PresenceEvents.forEach((event) => {
+    events.forEach((event) => {
       window.removeEventListener(event, this.handleEvent);
     });
 
@@ -113,7 +96,7 @@ export class PresenceTracker {
 
     this.listeners.add(wrappedListener);
 
-    wrappedListener(this.isIdle ? Presence.idle : Presence.online);
+    wrappedListener(this.isIdle ? PRESENCE.IDLE : PRESENCE.ONLINE);
 
     this.logger.info("Subscribed to presence service.", {
       source,
@@ -150,7 +133,7 @@ export class PresenceTracker {
     if (this.isIdle === isIdle) return;
     this.isIdle = isIdle;
 
-    const presence = isIdle ? Presence.idle : Presence.online;
+    const presence = isIdle ? PRESENCE.IDLE : PRESENCE.ONLINE;
 
     this.listeners.forEach((listener) => listener(presence));
 

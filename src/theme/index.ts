@@ -1,6 +1,25 @@
 import { createTheme } from "@mui/material/styles";
-import { THEME_TOKENS } from "./tokens";
 import { grey } from "@mui/material/colors";
+
+export const styles = {
+  card: {
+    p: 1,
+    gap: 1,
+    borderColor: "divider",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderRadius: 2,
+  },
+} as const;
+
+export const tokens = {
+  spacing: {
+    tight: 0.5,
+    contained: 1,
+    group: 1,
+    stack: 2.5,
+  },
+} as const;
 
 export const theme = createTheme({
   typography: {
@@ -19,12 +38,13 @@ export const theme = createTheme({
     MuiPopover: {
       styleOverrides: {
         paper: {
-          borderRadius: 8, // Set your desired border radius here (12px, '16px', '1rem', etc.)
+          borderRadius: 8,
         },
       },
     },
   },
-  ...THEME_TOKENS,
+  styles,
+  tokens,
 });
 
-export { THEME_TOKENS };
+export type AppTheme = typeof theme;
