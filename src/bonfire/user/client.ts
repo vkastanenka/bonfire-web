@@ -25,7 +25,7 @@ export class UserClient {
   ): Promise<Me> => {
     return this.client.patch<typeof meSchema>({
       ...options,
-      urlPath: `/users/@me/${path}`,
+      urlPath: `/users/@me${path}`,
       data,
       schema: meSchema,
     });

@@ -13,10 +13,10 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import { type Presence, PRESENCE_LABELS, PRESENCE_ICONS } from "@/presence";
-import { UserAvatar } from "../UserAvatar";
 import { useHandleEditProfile, usePresenceMenu } from "./hooks";
 import { DURATION_OPTIONS, PRESENCE_OPTIONS } from "./constants";
 import { EditProfileDialog } from "../EditProfile";
+import { Banner } from "../Banner";
 
 const itemStyles = {
   alignItems: "center",
@@ -31,7 +31,6 @@ export interface UserPopoverProps {
   displayName: string;
   username: string;
   presence: Presence;
-  createdAt: Date;
   avatarSrc?: string;
   bannerColor?: string;
   bio?: string;
@@ -48,7 +47,6 @@ export const UserPopover = ({
   bannerColor,
   avatarSrc,
   bio,
-  createdAt,
   onLogout,
 }: UserPopoverProps) => {
   const { ids, state, handlers } = usePresenceMenu(handleClose);
@@ -94,7 +92,6 @@ export const UserPopover = ({
         displayName={displayName}
         username={username}
         presence={presence}
-        createdAt={createdAt}
         bannerColor={bannerColor}
         avatarSrc={avatarSrc}
         bio={bio}
@@ -140,41 +137,6 @@ export const UserPopover = ({
         ))}
       </Menu>
     </Popover>
-  );
-};
-
-interface BannerProps {
-  username: string;
-  presence: Presence;
-  bannerColor?: string;
-  avatarSrc?: string;
-}
-
-const Banner = ({
-  username,
-  presence,
-  bannerColor,
-  avatarSrc,
-}: BannerProps) => {
-  return (
-    <Box sx={{ px: 1, pt: 6, position: "relative" }}>
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "70%",
-          bgcolor: bannerColor ?? "primary.main",
-        }}
-      />
-      <UserAvatar
-        src={avatarSrc}
-        username={username}
-        presence={presence}
-        size="lg"
-      />
-    </Box>
   );
 };
 

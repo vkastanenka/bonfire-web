@@ -1,11 +1,10 @@
-import { format } from "date-fns";
-import { Stack, Typography, Dialog } from "@mui/material";
+import { Stack, Dialog } from "@mui/material";
 import type { Presence } from "@/presence";
 import { Banner } from "../Banner";
-
 import { Form } from "@/components";
-import { LABELS, FORM_FIELDS } from "./constants";
+import { LABELS, formFields } from "./constants";
 import { useEditProfileForm } from "./hooks";
+import type { UpdateProfileRequest } from "@/bonfire";
 
 export interface EditProfileDialogProps {
   open: boolean;
@@ -13,7 +12,6 @@ export interface EditProfileDialogProps {
   displayName: string;
   username: string;
   presence: Presence;
-  createdAt: Date;
   bannerColor?: string;
   avatarSrc?: string;
   bio?: string;
@@ -27,7 +25,6 @@ export function EditProfileDialog({
   presence,
   bannerColor,
   avatarSrc: avatarUrl,
-  createdAt,
   bio,
 }: EditProfileDialogProps) {
   const { methods, onSubmit, isPending } = useEditProfileForm({
@@ -37,12 +34,18 @@ export function EditProfileDialog({
     bio,
   });
 
+  const watchedBannerColor = methods.watch("bannerColor");
+
   const handleClose = () => {
+    methods.reset();
     onClose();
   };
 
-  const handleListItemClick = () => {
-    onClose();
+  const handleBannerColorChange = (newColor: string) => {
+    methods.setValue("bannerColor", newColor, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
   };
 
   return (
@@ -51,22 +54,32 @@ export function EditProfileDialog({
       open={open}
       slotProps={{
         paper: {
-          sx: { borderRadius: 4, width: 400 },
+          sx: { borderRadius: 4, width: 400, overflow: "hidden" },
         },
       }}
     >
       <Banner
+        editable
+        avatarSize="xl"
         username={username}
         presence={presence}
-        bannerColor={bannerColor}
+        bannerColor={watchedBannerColor}
         avatarSrc={avatarUrl}
-        avatarSize="xl"
+        onColorChange={handleBannerColorChange}
       />
+
       <Stack sx={{ pt: 2, px: 2, pb: 2 }}>
-        <Form methods={methods} onSubmit={onSubmit} disabled={isPending}>
-          <Form.TextField {...FORM_FIELDS.displayName} />
-          <Form.TextField {...FORM_FIELDS.bio} />
-          <Form.SubmitButton>{LABELS.submit}</Form.SubmitButton>
+        <Form
+          methods={methods}
+          onSubmit={(data: UpdateProfileRequest) => {
+            onSubmit(data);
+            onClose();
+          }}
+          disabled={isPending}
+        >
+          <Form.TextField {...formFields.displayName} />
+          <Form.TextField {...formFields.bio} />
+          <Form.SubmitButton>{LABELS.SUBMIT}</Form.SubmitButton>
         </Form>
       </Stack>
     </Dialog>

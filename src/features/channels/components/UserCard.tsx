@@ -9,7 +9,6 @@ export interface UserCardProps {
   displayName: string;
   username: string;
   presence: Presence;
-  createdAt: Date;
   bannerColor?: string;
   avatarSrc?: string;
   bio?: string;
@@ -21,7 +20,6 @@ export const UserCard = ({
   presence,
   bannerColor,
   avatarSrc,
-  createdAt,
   bio,
 }: UserCardProps) => {
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -115,7 +113,6 @@ export const UserCard = ({
         presence={presence}
         avatarSrc={avatarSrc}
         bannerColor={bannerColor}
-        createdAt={createdAt}
         bio={bio}
       />
     </>

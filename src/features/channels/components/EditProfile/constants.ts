@@ -1,18 +1,14 @@
 export const LABELS = {
-  displayName: "Display Name",
-  bio: "Bio",
-  submit: "Update Profile",
+  DISPLAY_NAME: "Display Name",
+  BIO: "Bio",
+  SUBMIT: "Update Profile",
 } as const;
 
-export const VALIDATION_LABELS = {
-  password: "Password must be at least 12 characters long",
-} as const;
-
-export const FORM_FIELDS = {
+export const formFields = {
   displayName: {
     name: "displayName",
     id: "displayName-input",
-    label: LABELS.displayName,
+    label: LABELS.DISPLAY_NAME,
     required: true,
     autoComplete: "displayName",
   },
@@ -20,10 +16,10 @@ export const FORM_FIELDS = {
     name: "bio",
     id: "bio-input",
     type: "bio",
-    label: LABELS.bio,
+    label: LABELS.BIO,
     autoComplete: "bio",
     multiline: true,
     rows: 4,
-    placeholder: "Tell us about yourself! (190 characters or less)",
+    placeholder: "Tell us about yourself! (190 characters max)",
   },
 } as const;
