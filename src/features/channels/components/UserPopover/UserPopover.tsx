@@ -14,8 +14,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import { type Presence, PRESENCE_LABELS, PRESENCE_ICONS } from "@/presence";
 import { UserAvatar } from "../UserAvatar";
-import { usePresenceMenu } from "./hooks";
+import { useHandleEditProfile, usePresenceMenu } from "./hooks";
 import { DURATION_OPTIONS, PRESENCE_OPTIONS } from "./constants";
+import { EditProfileDialog } from "../EditProfile";
 
 const itemStyles = {
   alignItems: "center",
@@ -30,9 +31,10 @@ export interface UserPopoverProps {
   displayName: string;
   username: string;
   presence: Presence;
+  createdAt: Date;
   avatarSrc?: string;
   bannerColor?: string;
-  onEditProfile?: () => void;
+  bio?: string;
   onLogout?: () => void;
 }
 
@@ -45,10 +47,14 @@ export const UserPopover = ({
   presence,
   bannerColor,
   avatarSrc,
-  onEditProfile,
+  bio,
+  createdAt,
   onLogout,
 }: UserPopoverProps) => {
   const { ids, state, handlers } = usePresenceMenu(handleClose);
+
+  const { state: editProfileState, handlers: editProfileHandlers } =
+    useHandleEditProfile();
 
   return (
     <Popover
@@ -77,10 +83,22 @@ export const UserPopover = ({
           presenceMenuId={ids.presenceMenuId}
           presenceOpen={state.presenceOpen}
           onOpenPresenceMenu={handlers.handleOpenPresenceMenu}
-          onEditProfile={onEditProfile}
+          onEditProfile={editProfileHandlers.handleClickOpen}
           onLogout={onLogout}
         />
       </Box>
+
+      <EditProfileDialog
+        open={editProfileState.open}
+        onClose={editProfileHandlers.handleClose}
+        displayName={displayName}
+        username={username}
+        presence={presence}
+        createdAt={createdAt}
+        bannerColor={bannerColor}
+        avatarSrc={avatarSrc}
+        bio={bio}
+      />
 
       <Menu
         id={ids.presenceMenuId}

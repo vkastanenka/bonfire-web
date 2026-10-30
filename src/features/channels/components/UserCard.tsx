@@ -9,16 +9,20 @@ export interface UserCardProps {
   displayName: string;
   username: string;
   presence: Presence;
-  avatarSrc?: string;
+  createdAt: Date;
   bannerColor?: string;
+  avatarSrc?: string;
+  bio?: string;
 }
 
 export const UserCard = ({
   displayName,
   username,
   presence,
-  avatarSrc,
   bannerColor,
+  avatarSrc,
+  createdAt,
+  bio,
 }: UserCardProps) => {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
@@ -111,6 +115,8 @@ export const UserCard = ({
         presence={presence}
         avatarSrc={avatarSrc}
         bannerColor={bannerColor}
+        createdAt={createdAt}
+        bio={bio}
       />
     </>
   );

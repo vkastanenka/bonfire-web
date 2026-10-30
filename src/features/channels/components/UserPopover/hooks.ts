@@ -64,3 +64,33 @@ export const usePresenceMenu = (onClosePopover: () => void) => {
     },
   };
 };
+
+const EMAILS = ["username@gmail.com", "user02@gmail.com"] as const;
+
+export const useHandleEditProfile = () => {
+  const [open, setOpen] = React.useState(false);
+  const [selectedValue, setSelectedValue] = React.useState<string>(EMAILS[1]);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = (value?: string) => {
+    setOpen(false);
+    if (value) {
+      setSelectedValue(value);
+    }
+  };
+
+  return {
+    state: {
+      open,
+      selectedValue,
+      emails: EMAILS,
+    },
+    handlers: {
+      handleClickOpen,
+      handleClose,
+    },
+  };
+};

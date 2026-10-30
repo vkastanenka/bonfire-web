@@ -40,6 +40,9 @@ export const MePage = () => {
               username={me.username}
               avatarSrc={me.avatarUrl}
               presence={presence}
+              createdAt={me.createdAt}
+              bannerColor={me.bannerColor}
+              bio={me.bio}
             />
           </Box>
         </Stack>

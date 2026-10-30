@@ -10,24 +10,35 @@ export const userAvatarSizes = {
   sm: 32,
   md: 40,
   lg: 80,
+  xl: 120,
+} as const;
+
+const userAvatarOutlineSizes = {
+  sm: "2px",
+  md: "2px",
+  lg: "4px",
+  xl: "4px",
 } as const;
 
 const userAvatarPresenceSizes = {
   sm: 12,
   md: 14,
   lg: 24,
+  xl: 36,
 } as const;
 
-const userAvatarBorderSizes = {
+const userAvatarPresenceBorderSizes = {
   sm: "2px",
   md: "2px",
   lg: "3px",
+  xl: "3px",
 } as const;
 
 const userAvatarPresenceOffsets = {
   sm: -1,
   md: -1,
   lg: 1,
+  xl: 1,
 } as const;
 
 export type UserAvatarSize = keyof typeof userAvatarSizes;
@@ -51,9 +62,10 @@ export const UserAvatar = ({
   src,
 }: UserAvatarProps) => {
   const wrapperDimension = userAvatarSizes[size];
+  const outlineSize = userAvatarOutlineSizes[size];
   const presenceDimension = userAvatarPresenceSizes[size];
   const offset = userAvatarPresenceOffsets[size];
-  const borderSize = userAvatarBorderSizes[size];
+  const presenceIconBorderSize = userAvatarPresenceBorderSizes[size];
   const presenceIcon = presence ? PRESENCE_ICONS[presence] : undefined;
 
   const showPresence =
@@ -76,9 +88,9 @@ export const UserAvatar = ({
           bgcolor: bgColor,
           width: "100%",
           height: "100%",
-          borderColor: "background.default",
-          borderWidth: 2,
-          borderStyle: "solid",
+          outlineStyle: "solid",
+          outlineWidth: outlineSize,
+          outlineColor: "background.default",
         }}
       />
 
@@ -102,7 +114,7 @@ export const UserAvatar = ({
               color: presenceIcon.color,
               borderRadius: "50%",
               bgcolor: surfaceColor,
-              border: `${borderSize} solid`,
+              border: `${presenceIconBorderSize} solid`,
               borderColor: surfaceColor,
               boxSizing: "content-box",
             }}
