@@ -9,7 +9,14 @@ import {
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloseIcon from "@mui/icons-material/Close";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
+import DesktopWindowsIcon from "@mui/icons-material/DesktopWindows";
+import SmartphoneIcon from "@mui/icons-material/Smartphone";
 import { useState, type ReactElement, type ReactNode } from "react";
+import {
+  useListValidSessions,
+  useRevokeSession,
+  type Session,
+} from "@/bonfire";
 
 const labels = {
   account: "Account",
@@ -20,6 +27,14 @@ const labels = {
   passwordSecurity: "Password & Security",
   password: "Password",
   loggedInDevices: "Logged-in Devices",
+  loggedInDevicesDescription:
+    "These are all the devices that are currently logged-in with your Bonfire account. Log out of devices that you don't recognize.",
+  currentDevice: "Current Device",
+  otherDevices: "Other Devices",
+  logOutOfAllDevicesTitle: "Log out of all known devices",
+  logOutOfAllDevicesSubtitle:
+    "You'll have to log back in on all logged out devices.",
+  logOutOfAllDevicesButton: "Log Out All Known Devices",
 
   accountClosure: "Account Closure",
   disableTitle: "Disable your account",
@@ -32,6 +47,7 @@ const labels = {
   edit: "Edit",
   reveal: "Reveal",
   hide: "Hide",
+  device: "device",
   devices: "devices",
 } as const;
 
@@ -55,7 +71,13 @@ export const UserSettingsDialog = ({
   username,
   email,
 }: UserSettingsDialogProps) => {
-  const [screen, setScreen] = useState<ScreenLabelKey | undefined>(undefined);
+  const [screen, setScreen] = useState<ScreenLabelKey | undefined>("devices");
+
+  const {
+    data: validSessions,
+    validSessionIsLoading,
+    validSessionsError,
+  } = useListValidSessions({ enabled: open });
 
   const navigateHome = () => {
     setScreen(undefined);
@@ -64,6 +86,8 @@ export const UserSettingsDialog = ({
   const navigateDevices = () => {
     setScreen("devices");
   };
+
+  console.log(validSessions);
 
   return (
     <Dialog
@@ -96,43 +120,17 @@ export const UserSettingsDialog = ({
         ) : undefined}
       </DialogHeader>
       <Stack sx={{ gap: 4, px: 4, py: 5 }}>
-        <Section title={labels.accountInfo}>
-          <Setting title={labels.username}>
-            <Edit onClick={() => {}}>
-              <Typography sx={{ fontWeight: 500 }}>{username}</Typography>
-            </Edit>
-          </Setting>
-          <Setting title={labels.email}>
-            <Edit onClick={() => {}}>
-              <Censor value={email} censoredValue={censorEmail(email)} />
-            </Edit>
-          </Setting>
-        </Section>
-        <Divider />
-        <Section title={labels.passwordSecurity}>
-          <Setting title={labels.password}>
-            <Edit onClick={() => {}} />
-          </Setting>
-          <Navigate title={labels.loggedInDevices} onClick={navigateDevices}>
-            <Typography sx={{ fontWeight: 500 }}>{formatDevices(5)}</Typography>
-          </Navigate>
-        </Section>
-        <Divider />
-        <Section title={labels.accountClosure}>
-          <Setting
-            title={labels.disableTitle}
-            subtitle={labels.disableSubtitle}
-          >
-            <Button variant="outlined" color="error" sx={{ fontSize: 16 }}>
-              {labels.disableButton}
-            </Button>
-          </Setting>
-          <Setting title={labels.closeTitle} subtitle={labels.closeSubtitle}>
-            <Button variant="contained" color="error" sx={{ fontSize: 16 }}>
-              {labels.closeButton}
-            </Button>
-          </Setting>
-        </Section>
+        {!screen && (
+          <ContentAccount
+            username={username}
+            email={email}
+            navigateDevices={navigateDevices}
+            validSessions={validSessions}
+          />
+        )}
+        {screen === "devices" && (
+          <ContentDevices validSessions={validSessions} />
+        )}
       </Stack>
     </Dialog>
   );
@@ -174,17 +172,218 @@ const DialogHeader = ({ title, children, handleClose }: DialogHeaderProps) => {
   );
 };
 
-interface SectionProps {
+interface ContentAccountProps {
+  username: string;
+  email: string;
+  navigateDevices: () => void;
+  validSessions?: Session[];
+}
+
+const ContentAccount = ({
+  username,
+  email,
+  navigateDevices,
+  validSessions,
+}: ContentAccountProps) => {
+  return (
+    <>
+      <Section title={labels.accountInfo}>
+        <Setting title={labels.username}>
+          <Edit onClick={() => {}}>
+            <Typography sx={{ fontWeight: 500 }}>{username}</Typography>
+          </Edit>
+        </Setting>
+        <Setting title={labels.email}>
+          <Edit onClick={() => {}}>
+            <Censor value={email} censoredValue={censorEmail(email)} />
+          </Edit>
+        </Setting>
+      </Section>
+      <Divider />
+      <Section title={labels.passwordSecurity}>
+        <Setting title={labels.password}>
+          <Edit onClick={() => {}} />
+        </Setting>
+        <Navigate title={labels.loggedInDevices} onClick={navigateDevices}>
+          <Typography sx={{ fontWeight: 500 }}>
+            {formatDevices(validSessions ? validSessions.length : 0)}
+          </Typography>
+        </Navigate>
+      </Section>
+      <Divider />
+      <Section title={labels.accountClosure}>
+        <Setting title={labels.disableTitle} subtitle={labels.disableSubtitle}>
+          <Button variant="outlined" color="error" sx={{ fontSize: 16 }}>
+            {labels.disableButton}
+          </Button>
+        </Setting>
+        <Setting title={labels.closeTitle} subtitle={labels.closeSubtitle}>
+          <Button variant="contained" color="error" sx={{ fontSize: 16 }}>
+            {labels.closeButton}
+          </Button>
+        </Setting>
+      </Section>
+    </>
+  );
+};
+
+interface ContentDevicesProps {
+  validSessions?: Session[];
+}
+
+const ContentDevices = ({ validSessions }: ContentDevicesProps) => {
+  if (!validSessions) {
+    return <div>No valid sessions</div>;
+  }
+
+  const currentSession = validSessions?.find((session) => session.isCurrent);
+  const otherSessions = validSessions.filter((session) => !session.isCurrent);
+
+  return (
+    <Section
+      title={labels.loggedInDevices}
+      subtitle={labels.loggedInDevicesDescription}
+    >
+      {currentSession && (
+        <SubSection title={labels.currentDevice}>
+          <Device session={currentSession} />
+        </SubSection>
+      )}
+      {otherSessions && otherSessions.length > 0 && (
+        <SubSection title={labels.otherDevices}>
+          {otherSessions.map((session: Session, i) => (
+            <Device key={`logged-in-device-${i}`} session={session} />
+          ))}
+        </SubSection>
+      )}
+    </Section>
+  );
+};
+
+interface SubSectionProps {
   title: string;
   children: ReactNode;
 }
 
-const Section = ({ title, children }: SectionProps) => {
+const SubSection = ({ title, children }: SubSectionProps) => {
   return (
     <Stack sx={{ gap: 2 }}>
-      <Typography variant="h6" sx={{ fontWeight: 500 }}>
-        {title}
-      </Typography>
+      <Typography sx={{ fontWeight: 500 }}>{title}</Typography>
+      {children}
+    </Stack>
+  );
+};
+
+interface DeviceProps {
+  session: Session;
+}
+
+const Device = ({ session }: DeviceProps) => {
+  const {
+    mutate,
+    // isPending
+  } = useRevokeSession();
+
+  let Icon = DesktopWindowsIcon;
+
+  if (isMobileOS(session.os)) {
+    Icon = SmartphoneIcon;
+  }
+
+  const logOut = async () => {
+    await mutate({ id: session.id, isCurrent: session.isCurrent });
+  };
+
+  return (
+    <Stack
+      direction="row"
+      sx={{ alignItems: "center", justifyContent: "space-between" }}
+    >
+      <Stack direction="row" sx={{ gap: 2, alignItems: "center" }}>
+        <Icon />
+        <Stack>
+          <Stack
+            direction="row"
+            sx={{ gap: 1, alignItems: "center", justifyContent: "center" }}
+          >
+            <Typography sx={{ fontWeight: 700 }}>{session.os}</Typography>
+            <Typography>•</Typography>
+            <Typography>{session.client}</Typography>
+          </Stack>
+          <Typography variant="body2">
+            {formatLastSeen(session.lastSeenAt)}
+          </Typography>
+        </Stack>
+      </Stack>
+      <IconButton onClick={logOut}>
+        <CloseIcon />
+      </IconButton>
+    </Stack>
+  );
+};
+
+const isMobileOS = (os: string): boolean => {
+  const normalized = os.toLowerCase();
+  return (
+    normalized.includes("android") ||
+    normalized.includes("ios") ||
+    normalized.includes("iphone") ||
+    normalized.includes("ipad")
+  );
+};
+
+const formatLastSeen = (dateInput: string | Date): string => {
+  const now = new Date().getTime();
+  const past = new Date(dateInput).getTime();
+  const diffMs = now - past;
+
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffHours < 1) {
+    return "less than an hour ago";
+  }
+  if (diffDays < 1) {
+    return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  }
+  if (diffMonths < 1) {
+    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  }
+  if (diffYears < 1) {
+    return `${diffMonths} month${diffMonths === 1 ? "" : "s"} ago`;
+  }
+  return "more than a year ago";
+};
+
+interface SectionProps {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+}
+
+const Section = ({ title, subtitle, children }: SectionProps) => {
+  let titleEl = (
+    <Typography variant="h6" sx={{ fontWeight: 500 }}>
+      {title}
+    </Typography>
+  );
+
+  if (subtitle) {
+    titleEl = (
+      <Stack>
+        {titleEl}
+        <Typography variant="body2">{subtitle}</Typography>
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack sx={{ gap: 4 }}>
+      {titleEl}
       {children}
     </Stack>
   );
@@ -332,5 +531,6 @@ const censorEmail = (email: string): string => {
 };
 
 const formatDevices = (numDevices: number): string => {
-  return `${numDevices} ${labels.devices}`;
+  const label = numDevices === 1 ? labels.device : labels.devices;
+  return `${numDevices} ${label}`;
 };
