@@ -21,6 +21,8 @@ import {
 import { UpdateUsernameDialog } from "./UpdateUsernameDialog";
 import { UpdateEmailDialog } from "./UpdateEmailDialog";
 import { UpdatePasswordDialog } from "./UpdatePasswordDialog";
+import { DisableAccountDialog } from "./DisableAccountDialog";
+import { DeleteAccountDialog } from "./DeleteAccountDialog";
 
 const labels = {
   account: "Account",
@@ -121,6 +123,26 @@ export const UserSettingsDialog = ({
     setUpdatePasswordOpen(false);
   };
 
+  const [disableAccountOpen, setDisableAccountOpen] = useState(false);
+
+  const handleDisableAccountOpen = () => {
+    setDisableAccountOpen(true);
+  };
+
+  const handleDisableAccountClose = () => {
+    setDisableAccountOpen(false);
+  };
+
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+
+  const handleDeleteAccountOpen = () => {
+    setDeleteAccountOpen(true);
+  };
+
+  const handleDeleteAccountClose = () => {
+    setDeleteAccountOpen(false);
+  };
+
   return (
     <>
       <Dialog
@@ -160,6 +182,8 @@ export const UserSettingsDialog = ({
               handleUpdateUsernameOpen={handleUpdateUsernameOpen}
               handleUpdateEmailOpen={handleUpdateEmailOpen}
               handleUpdatePasswordOpen={handleUpdatePasswordOpen}
+              handleDisableAccountOpen={handleDisableAccountOpen}
+              handleDeleteAccountOpen={handleDeleteAccountOpen}
               navigateDevices={navigateDevices}
               validSessions={validSessions}
             />
@@ -186,6 +210,16 @@ export const UserSettingsDialog = ({
         open={updatePasswordOpen}
         handleClose={handleUpdatePasswordClose}
       />
+
+      <DisableAccountDialog
+        open={disableAccountOpen}
+        handleClose={handleDisableAccountClose}
+      />
+
+      <DeleteAccountDialog
+        open={deleteAccountOpen}
+        handleClose={handleDeleteAccountClose}
+      />
     </>
   );
 };
@@ -196,6 +230,8 @@ interface ContentAccountProps {
   handleUpdateUsernameOpen: () => void;
   handleUpdateEmailOpen: () => void;
   handleUpdatePasswordOpen: () => void;
+  handleDisableAccountOpen: () => void;
+  handleDeleteAccountOpen: () => void;
   navigateDevices: () => void;
   validSessions?: Session[];
 }
@@ -206,6 +242,8 @@ const ContentAccount = ({
   handleUpdateUsernameOpen,
   handleUpdateEmailOpen,
   handleUpdatePasswordOpen,
+  handleDisableAccountOpen,
+  handleDeleteAccountOpen,
   navigateDevices,
   validSessions,
 }: ContentAccountProps) => {
@@ -237,12 +275,22 @@ const ContentAccount = ({
       <Divider />
       <Section title={labels.accountClosure}>
         <Setting title={labels.disableTitle} subtitle={labels.disableSubtitle}>
-          <Button variant="outlined" color="error" sx={{ fontSize: 16 }}>
+          <Button
+            variant="outlined"
+            color="error"
+            sx={{ fontSize: 16 }}
+            onClick={handleDisableAccountOpen}
+          >
             {labels.disableButton}
           </Button>
         </Setting>
         <Setting title={labels.closeTitle} subtitle={labels.closeSubtitle}>
-          <Button variant="contained" color="error" sx={{ fontSize: 16 }}>
+          <Button
+            variant="contained"
+            color="error"
+            sx={{ fontSize: 16 }}
+            onClick={handleDeleteAccountOpen}
+          >
             {labels.closeButton}
           </Button>
         </Setting>
