@@ -24,7 +24,7 @@ export const FormField = ({
           htmlFor={htmlFor}
           required={required}
           error={error}
-          sx={{ fontWeight: "bold", color: "text.primary" }}
+          sx={{ fontWeight: 500, color: "text.primary" }}
         >
           {label}
         </InputLabel>

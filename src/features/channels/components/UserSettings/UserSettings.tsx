@@ -19,6 +19,7 @@ import {
   type Session,
 } from "@/bonfire";
 import { UpdateUsernameDialog } from "./UpdateUsernameDialog";
+import { UpdateEmailDialog } from "./UpdateEmailDialog";
 
 const labels = {
   account: "Account",
@@ -99,6 +100,16 @@ export const UserSettingsDialog = ({
     setUpdateUsernameOpen(false);
   };
 
+  const [updateEmailOpen, setUpdateEmailOpen] = useState(false);
+
+  const handleUpdateEmailOpen = () => {
+    setUpdateEmailOpen(true);
+  };
+
+  const handleUpdateEmailClose = () => {
+    setUpdateEmailOpen(false);
+  };
+
   return (
     <>
       <Dialog
@@ -136,6 +147,7 @@ export const UserSettingsDialog = ({
               username={username}
               email={email}
               handleUpdateUsernameOpen={handleUpdateUsernameOpen}
+              handleUpdateEmailOpen={handleUpdateEmailOpen}
               navigateDevices={navigateDevices}
               validSessions={validSessions}
             />
@@ -146,13 +158,17 @@ export const UserSettingsDialog = ({
         </Stack>
       </Dialog>
 
-      {username && (
-        <UpdateUsernameDialog
-          open={updateUsernameOpen}
-          handleClose={handleUpdateUsernameClose}
-          currentUsername={username}
-        />
-      )}
+      <UpdateUsernameDialog
+        open={updateUsernameOpen}
+        handleClose={handleUpdateUsernameClose}
+        currentUsername={username}
+      />
+
+      <UpdateEmailDialog
+        open={updateEmailOpen}
+        handleClose={handleUpdateEmailClose}
+        currentEmail={email}
+      />
     </>
   );
 };
@@ -161,6 +177,7 @@ interface ContentAccountProps {
   username: string;
   email: string;
   handleUpdateUsernameOpen: () => void;
+  handleUpdateEmailOpen: () => void;
   navigateDevices: () => void;
   validSessions?: Session[];
 }
@@ -169,6 +186,7 @@ const ContentAccount = ({
   username,
   email,
   handleUpdateUsernameOpen,
+  handleUpdateEmailOpen,
   navigateDevices,
   validSessions,
 }: ContentAccountProps) => {
@@ -181,7 +199,7 @@ const ContentAccount = ({
           </Edit>
         </Setting>
         <Setting title={labels.email}>
-          <Edit onClick={() => {}}>
+          <Edit onClick={handleUpdateEmailOpen}>
             <Censor value={email} censoredValue={censorEmail(email)} />
           </Edit>
         </Setting>
