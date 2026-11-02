@@ -20,6 +20,7 @@ import {
 } from "@/bonfire";
 import { UpdateUsernameDialog } from "./UpdateUsernameDialog";
 import { UpdateEmailDialog } from "./UpdateEmailDialog";
+import { UpdatePasswordDialog } from "./UpdatePasswordDialog";
 
 const labels = {
   account: "Account",
@@ -110,6 +111,16 @@ export const UserSettingsDialog = ({
     setUpdateEmailOpen(false);
   };
 
+  const [updatePasswordOpen, setUpdatePasswordOpen] = useState(false);
+
+  const handleUpdatePasswordOpen = () => {
+    setUpdatePasswordOpen(true);
+  };
+
+  const handleUpdatePasswordClose = () => {
+    setUpdatePasswordOpen(false);
+  };
+
   return (
     <>
       <Dialog
@@ -148,6 +159,7 @@ export const UserSettingsDialog = ({
               email={email}
               handleUpdateUsernameOpen={handleUpdateUsernameOpen}
               handleUpdateEmailOpen={handleUpdateEmailOpen}
+              handleUpdatePasswordOpen={handleUpdatePasswordOpen}
               navigateDevices={navigateDevices}
               validSessions={validSessions}
             />
@@ -169,6 +181,11 @@ export const UserSettingsDialog = ({
         handleClose={handleUpdateEmailClose}
         currentEmail={email}
       />
+
+      <UpdatePasswordDialog
+        open={updatePasswordOpen}
+        handleClose={handleUpdatePasswordClose}
+      />
     </>
   );
 };
@@ -178,6 +195,7 @@ interface ContentAccountProps {
   email: string;
   handleUpdateUsernameOpen: () => void;
   handleUpdateEmailOpen: () => void;
+  handleUpdatePasswordOpen: () => void;
   navigateDevices: () => void;
   validSessions?: Session[];
 }
@@ -187,6 +205,7 @@ const ContentAccount = ({
   email,
   handleUpdateUsernameOpen,
   handleUpdateEmailOpen,
+  handleUpdatePasswordOpen,
   navigateDevices,
   validSessions,
 }: ContentAccountProps) => {
@@ -207,7 +226,7 @@ const ContentAccount = ({
       <Divider />
       <Section title={labels.passwordSecurity}>
         <Setting title={labels.password}>
-          <Edit onClick={() => {}} />
+          <Edit onClick={handleUpdatePasswordOpen} />
         </Setting>
         <Navigate title={labels.loggedInDevices} onClick={navigateDevices}>
           <Typography sx={{ fontWeight: 500 }}>
