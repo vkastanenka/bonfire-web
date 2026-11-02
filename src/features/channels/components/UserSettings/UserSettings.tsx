@@ -11,12 +11,14 @@ import CloseIcon from "@mui/icons-material/Close";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import DesktopWindowsIcon from "@mui/icons-material/DesktopWindows";
 import SmartphoneIcon from "@mui/icons-material/Smartphone";
+import { DialogHeader } from "@/components";
 import { useState, type ReactElement, type ReactNode } from "react";
 import {
   useListValidSessions,
   useRevokeSession,
   type Session,
 } from "@/bonfire";
+import { UpdateUsernameDialog } from "./UpdateUsernameDialog";
 
 const labels = {
   account: "Account",
@@ -71,12 +73,12 @@ export const UserSettingsDialog = ({
   username,
   email,
 }: UserSettingsDialogProps) => {
-  const [screen, setScreen] = useState<ScreenLabelKey | undefined>("devices");
+  const [screen, setScreen] = useState<ScreenLabelKey | undefined>(undefined);
 
   const {
     data: validSessions,
-    validSessionIsLoading,
-    validSessionsError,
+    // validSessionIsLoading,
+    // validSessionsError,
   } = useListValidSessions({ enabled: open });
 
   const navigateHome = () => {
@@ -87,94 +89,78 @@ export const UserSettingsDialog = ({
     setScreen("devices");
   };
 
-  console.log(validSessions);
+  const [updateUsernameOpen, setUpdateUsernameOpen] = useState(false);
+
+  const handleUpdateUsernameOpen = () => {
+    setUpdateUsernameOpen(true);
+  };
+
+  const handleUpdateUsernameClose = () => {
+    setUpdateUsernameOpen(false);
+  };
 
   return (
-    <Dialog
-      onClose={handleClose}
-      open={open}
-      slotProps={{
-        paper: {
-          sx: {
-            borderRadius: 4,
-            width: ["auto", "80%"],
-            maxWidth: 1200,
-            overflowX: "hidden",
+    <>
+      <Dialog
+        onClose={handleClose}
+        open={open}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              width: ["auto", "80%"],
+              maxWidth: 1200,
+              overflowX: "hidden",
+            },
           },
-        },
-      }}
-    >
-      <DialogHeader title={labels.account} handleClose={handleClose}>
-        {screen && screenLabels[screen] ? (
-          <Stack
-            direction="row"
-            sx={{ gap: 2, alignItems: "center", justifyContent: "center" }}
-          >
-            <IconButton onClick={navigateHome}>
-              <KeyboardBackspaceIcon fontSize="small" />
-            </IconButton>
-            <Typography sx={{ fontWeight: 500 }}>
-              {formatBreadcrumbs(screenLabels[screen])}
-            </Typography>
-          </Stack>
-        ) : undefined}
-      </DialogHeader>
-      <Stack sx={{ gap: 4, px: 4, py: 5 }}>
-        {!screen && (
-          <ContentAccount
-            username={username}
-            email={email}
-            navigateDevices={navigateDevices}
-            validSessions={validSessions}
-          />
-        )}
-        {screen === "devices" && (
-          <ContentDevices validSessions={validSessions} />
-        )}
-      </Stack>
-    </Dialog>
-  );
-};
+        }}
+      >
+        <DialogHeader title={labels.account} handleClose={handleClose}>
+          {screen && screenLabels[screen] ? (
+            <Stack
+              direction="row"
+              sx={{ gap: 2, alignItems: "center", justifyContent: "center" }}
+            >
+              <IconButton onClick={navigateHome}>
+                <KeyboardBackspaceIcon fontSize="small" />
+              </IconButton>
+              <Typography sx={{ fontWeight: 500 }}>
+                {formatBreadcrumbs(screenLabels[screen])}
+              </Typography>
+            </Stack>
+          ) : undefined}
+        </DialogHeader>
+        <Stack sx={{ gap: 4, px: 4, py: 5 }}>
+          {!screen && (
+            <ContentAccount
+              username={username}
+              email={email}
+              handleUpdateUsernameOpen={handleUpdateUsernameOpen}
+              navigateDevices={navigateDevices}
+              validSessions={validSessions}
+            />
+          )}
+          {screen === "devices" && (
+            <ContentDevices validSessions={validSessions} />
+          )}
+        </Stack>
+      </Dialog>
 
-interface DialogHeaderProps {
-  title?: string;
-  children?: ReactElement;
-  handleClose?: () => void;
-}
-
-const DialogHeader = ({ title, children, handleClose }: DialogHeaderProps) => {
-  if (!title && !children && !handleClose) {
-    return null;
-  }
-
-  return (
-    <Stack
-      direction="row"
-      sx={{
-        p: 2,
-        gap: 2,
-        justifyContent: "space-between",
-        alignItems: "center",
-        borderBottom: "1px solid",
-        borderColor: "divider",
-      }}
-    >
-      {title && !children && (
-        <Typography sx={{ fontWeight: 500 }}>{title}</Typography>
+      {username && (
+        <UpdateUsernameDialog
+          open={updateUsernameOpen}
+          handleClose={handleUpdateUsernameClose}
+          currentUsername={username}
+        />
       )}
-      {children && children}
-      {handleClose && (
-        <IconButton onClick={handleClose}>
-          <CloseIcon />
-        </IconButton>
-      )}
-    </Stack>
+    </>
   );
 };
 
 interface ContentAccountProps {
   username: string;
   email: string;
+  handleUpdateUsernameOpen: () => void;
   navigateDevices: () => void;
   validSessions?: Session[];
 }
@@ -182,6 +168,7 @@ interface ContentAccountProps {
 const ContentAccount = ({
   username,
   email,
+  handleUpdateUsernameOpen,
   navigateDevices,
   validSessions,
 }: ContentAccountProps) => {
@@ -189,7 +176,7 @@ const ContentAccount = ({
     <>
       <Section title={labels.accountInfo}>
         <Setting title={labels.username}>
-          <Edit onClick={() => {}}>
+          <Edit onClick={handleUpdateUsernameOpen}>
             <Typography sx={{ fontWeight: 500 }}>{username}</Typography>
           </Edit>
         </Setting>
