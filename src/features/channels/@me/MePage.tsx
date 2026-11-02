@@ -36,6 +36,7 @@ export const MePage = () => {
           <SideBar />
           <Box sx={{ position: "absolute", bottom: 8, left: 8, right: 8 }}>
             <UserCard
+              email={me.email}
               displayName={me.displayName}
               username={me.username}
               avatarSrc={me.avatarUrl}

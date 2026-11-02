@@ -54,7 +54,7 @@ export function EditProfileDialog({
       open={open}
       slotProps={{
         paper: {
-          sx: { borderRadius: 4, width: 400, overflow: "hidden" },
+          sx: { borderRadius: 4, width: 400 },
         },
       }}
     >

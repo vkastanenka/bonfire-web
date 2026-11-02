@@ -3,9 +3,11 @@ import { Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { UserAvatar } from "./UserAvatar";
 import { UserPopover } from "./UserPopover";
+import { UserSettingsDialog } from "./UserSettings";
 import { type Presence, PRESENCE_LABELS } from "@/presence";
 
 export interface UserCardProps {
+  email: string;
   displayName: string;
   username: string;
   presence: Presence;
@@ -15,6 +17,7 @@ export interface UserCardProps {
 }
 
 export const UserCard = ({
+  email,
   displayName,
   username,
   presence,
@@ -34,6 +37,16 @@ export const UserCard = ({
 
   const handlePopoverClose = () => {
     setPopoverAnchor(null);
+  };
+
+  const [userSettingsOpen, setUserSettingsOpen] = useState(false);
+
+  const handleUserSettingsOpen = () => {
+    setUserSettingsOpen(true);
+  };
+
+  const handleUserSettingsClose = () => {
+    setUserSettingsOpen(false);
   };
 
   return (
@@ -98,7 +111,7 @@ export const UserCard = ({
           </Stack>
         </Button>
         <Tooltip placement="top" title="User Settings">
-          <IconButton sx={{ flexShrink: 0 }}>
+          <IconButton onClick={handleUserSettingsOpen} sx={{ flexShrink: 0 }}>
             <SettingsIcon fontSize="small" />
           </IconButton>
         </Tooltip>
@@ -114,6 +127,13 @@ export const UserCard = ({
         avatarSrc={avatarSrc}
         bannerColor={bannerColor}
         bio={bio}
+      />
+
+      <UserSettingsDialog
+        open={userSettingsOpen}
+        handleClose={handleUserSettingsClose}
+        username={username}
+        email={email}
       />
     </>
   );
