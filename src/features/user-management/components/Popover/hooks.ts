@@ -1,6 +1,6 @@
 import * as React from "react";
 import { type Presence } from "@/presence";
-import { type PRESENCE_OPTIONS } from "./constants";
+import { type presenceOptions } from "./constants";
 
 export const usePresenceMenu = (onClosePopover: () => void) => {
   const id = React.useId();
@@ -28,7 +28,7 @@ export const usePresenceMenu = (onClosePopover: () => void) => {
   };
 
   const handlePresenceItemClick = (
-    option: (typeof PRESENCE_OPTIONS)[number],
+    option: (typeof presenceOptions)[number],
     event: React.MouseEvent<HTMLElement>,
   ) => {
     if (option.hasSubmenu) {

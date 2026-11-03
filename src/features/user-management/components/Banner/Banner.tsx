@@ -1,32 +1,27 @@
 import { useRef, useState } from "react";
 import { Box, ButtonBase, useTheme } from "@mui/material";
 import { Overlay } from "@/components";
-import { type Presence } from "@/presence";
-import { UserAvatar, type UserAvatarSize } from "./UserAvatar";
+import { Avatar, type AvatarSizeKey } from "../../components";
+import { useAuthStore, useGatewayStore } from "@/bonfire";
 
-const LABELS = {
-  COLOR_ARIA: "Change banner color",
+const labels = {
+  colorAria: "Change banner color",
 } as const;
 
 export interface BannerProps {
-  username: string;
-  presence: Presence;
-  bannerColor?: string;
-  avatarSrc?: string;
-  avatarSize?: UserAvatarSize;
-  editable?: boolean;
+  avatarSize?: AvatarSizeKey;
+  canEdit?: boolean;
   onColorChange?: (color: string) => void;
 }
 
 export const Banner = ({
-  username,
-  presence,
-  bannerColor,
-  avatarSrc,
   avatarSize = "lg",
-  editable = false,
+  canEdit = false,
   onColorChange,
 }: BannerProps) => {
+  const me = useAuthStore((state) => state.me)!;
+  const presence = useGatewayStore((state) => state.presence);
+
   const theme = useTheme();
   const colorInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,18 +31,18 @@ export const Banner = ({
     return color;
   };
 
-  const activeColor = bannerColor || "primary.main";
-  const hexValue = getHexColor(bannerColor);
+  const activeColor = me?.bannerColor || "primary.main";
+  const hexValue = getHexColor(me?.bannerColor);
 
   const handleClick = () => {
-    if (editable) {
+    if (canEdit) {
       colorInputRef.current?.click();
     }
   };
 
   return (
     <Box sx={{ px: 2, pt: 5, position: "relative" }}>
-      {editable && (
+      {canEdit && (
         <ColorInput
           ref={colorInputRef}
           value={hexValue}
@@ -56,14 +51,14 @@ export const Banner = ({
       )}
 
       <BannerBackground
-        editable={editable}
+        canEdit={canEdit}
         activeColor={activeColor}
         onClick={handleClick}
       />
 
-      <UserAvatar
-        src={avatarSrc}
-        username={username}
+      <Avatar
+        src={me.avatarUrl}
+        username={me.username}
         presence={presence}
         size={avatarSize}
         bgColor={activeColor}
@@ -73,21 +68,21 @@ export const Banner = ({
 };
 
 interface BannerBackgroundProps {
-  editable: boolean;
+  canEdit: boolean;
   activeColor: string;
   onClick: () => void;
 }
 
 const BannerBackground = ({
-  editable,
+  canEdit,
   activeColor,
   onClick,
 }: BannerBackgroundProps) => {
   return (
     <Box
-      component={editable ? ButtonBase : "div"}
-      onClick={editable ? onClick : undefined}
-      aria-label={editable ? LABELS.COLOR_ARIA : undefined}
+      component={canEdit ? ButtonBase : "div"}
+      onClick={canEdit ? onClick : undefined}
+      aria-label={canEdit ? labels.colorAria : undefined}
       sx={{
         position: "absolute",
         top: 0,
@@ -97,7 +92,7 @@ const BannerBackground = ({
         bgcolor: activeColor,
       }}
     >
-      {editable && <Overlay showIcon />}
+      {canEdit && <Overlay showIcon />}
     </Box>
   );
 };

@@ -1,6 +1,6 @@
 import { Stack, Dialog } from "@mui/material";
 import type { Presence } from "@/presence";
-import { Banner } from "../Banner";
+import { Banner } from "../../../user-management/Banner/Banner";
 import { Form } from "@/components";
 import { LABELS, formFields } from "./constants";
 import { useEditProfileForm } from "./hooks";

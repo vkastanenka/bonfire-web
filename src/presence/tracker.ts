@@ -1,5 +1,5 @@
 import { logger as baseLogger, Logger } from "@/logger";
-import { type Presence, PRESENCE } from "./index";
+import { type Presence, presences } from "./presence";
 
 const events = [
   "mousemove",
@@ -9,8 +9,8 @@ const events = [
   "scroll",
 ] as const;
 
-const THROTTLE_MS = 2000;
-const DEFAULT_IDLE_TIMEOUT_MS = 60000;
+const throttleMs = 2000;
+const defaultIdleTimeoutMs = 60000;
 
 export type PresenceListener = (presence: Presence) => void;
 
@@ -24,7 +24,7 @@ export class PresenceTracker {
   private readonly logger: Logger;
 
   constructor(
-    idleTimeoutMs: number = DEFAULT_IDLE_TIMEOUT_MS,
+    idleTimeoutMs: number = defaultIdleTimeoutMs,
     logger: Logger = baseLogger,
   ) {
     this.idleTimeoutMs = idleTimeoutMs;
@@ -96,7 +96,7 @@ export class PresenceTracker {
 
     this.listeners.add(wrappedListener);
 
-    wrappedListener(this.isIdle ? PRESENCE.IDLE : PRESENCE.ONLINE);
+    wrappedListener(this.isIdle ? presences.idle : presences.online);
 
     this.logger.info("Subscribed to presence service.", {
       source,
@@ -115,7 +115,7 @@ export class PresenceTracker {
 
   private handleEvent = (): void => {
     const now = Date.now();
-    if (now - this.lastActivityTime < THROTTLE_MS) return;
+    if (now - this.lastActivityTime < throttleMs) return;
 
     this.lastActivityTime = now;
 
@@ -133,7 +133,7 @@ export class PresenceTracker {
     if (this.isIdle === isIdle) return;
     this.isIdle = isIdle;
 
-    const presence = isIdle ? PRESENCE.IDLE : PRESENCE.ONLINE;
+    const presence = isIdle ? presences.idle : presences.online;
 
     this.listeners.forEach((listener) => listener(presence));
 
