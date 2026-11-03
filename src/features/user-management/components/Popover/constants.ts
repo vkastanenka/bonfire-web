@@ -2,6 +2,7 @@ import {
   presences,
   presenceLabels,
   presenceIcons,
+  presenceDurations,
   presenceDurationLabels,
 } from "@/presence";
 
@@ -9,17 +10,8 @@ export const itemStyles = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: 2,
+  textAlign: "start",
 };
-
-export const textVariants = {
-  base: { name: "body2", weight: 500, height: 1.2 },
-  sub: { name: "caption", weight: 400, height: 1.2 },
-} as const;
-
-export const iconVariants = {
-  base: { size: 16 },
-  sm: { size: 12 },
-} as const;
 
 export const presenceOptions = [
   {
@@ -54,6 +46,29 @@ export const presenceOptions = [
   },
 ] as const;
 
-export const durationOptions = Object.entries(presenceDurationLabels).map(
-  ([key, label]) => ({ key, label }),
-);
+export const durationOptions = [
+  {
+    key: presenceDurations.fifteenMin,
+    label: presenceDurationLabels[presenceDurations.fifteenMin],
+  },
+  {
+    key: presenceDurations.oneHour,
+    label: presenceDurationLabels[presenceDurations.oneHour],
+  },
+  {
+    key: presenceDurations.eightHours,
+    label: presenceDurationLabels[presenceDurations.eightHours],
+  },
+  {
+    key: presenceDurations.twentyFourHours,
+    label: presenceDurationLabels[presenceDurations.twentyFourHours],
+  },
+  {
+    key: presenceDurations.threeDays,
+    label: presenceDurationLabels[presenceDurations.threeDays],
+  },
+  {
+    key: presenceDurations.forever,
+    label: presenceDurationLabels[presenceDurations.forever],
+  },
+];

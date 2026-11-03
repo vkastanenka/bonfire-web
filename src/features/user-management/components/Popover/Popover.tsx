@@ -3,8 +3,9 @@ import { Popover as MuiPopover, Box, Divider } from "@mui/material";
 import { elIds } from "../constants";
 import { Banner } from "./components/Banner";
 import { durationOptions, presenceOptions } from "./constants";
-import { useHandleEditProfile, usePresenceMenu } from "./hooks";
+// import { useHandleEditProfile, usePresenceMenu } from "./hooks";
 import { Actions, Menu, MenuItem } from "./components";
+import { usePresenceMenu } from "./hooks";
 
 export interface PopoverProps {
   anchorEl: HTMLElement | null;
@@ -13,12 +14,8 @@ export interface PopoverProps {
 }
 
 export const Popover = ({ open, anchorEl, handleClose }: PopoverProps) => {
-  const { ids, state, handlers } = usePresenceMenu(handleClose);
-
-  const {
-    // state: editProfileState,
-    handlers: editProfileHandlers,
-  } = useHandleEditProfile();
+  const { presenceMenu, durationMenu, selectPresence, selectDuration } =
+    usePresenceMenu();
 
   return (
     <MuiPopover
@@ -35,11 +32,11 @@ export const Popover = ({ open, anchorEl, handleClose }: PopoverProps) => {
         <Banner />
 
         <Actions
-          presenceMenuButtonId={ids.presenceMenuButtonId}
-          presenceMenuId={ids.presenceMenuId}
-          presenceOpen={state.presenceOpen}
-          onOpenPresenceMenu={handlers.handleOpenPresenceMenu}
-          onEditProfile={editProfileHandlers.handleClickOpen}
+          presenceButtonId={presenceMenu.buttonId}
+          presenceId={presenceMenu.menuId}
+          presenceOpen={presenceMenu.open}
+          handleOpenPresence={presenceMenu.handleOpen}
+          // onEditProfile={editProfileHandlers.handleClickOpen}
         />
       </Box>
 
@@ -55,11 +52,11 @@ export const Popover = ({ open, anchorEl, handleClose }: PopoverProps) => {
       /> */}
 
       <Menu
-        id={ids.presenceMenuId}
-        buttonId={ids.presenceMenuButtonId}
-        anchorEl={state.presenceAnchor}
-        open={state.presenceOpen}
-        handleClose={handlers.handleCloseMenus}
+        id={presenceMenu.menuId}
+        buttonId={presenceMenu.buttonId}
+        anchorEl={presenceMenu.anchorEl}
+        open={presenceMenu.open}
+        handleClose={presenceMenu.handleClose}
       >
         {presenceOptions.map((option, index) => (
           <React.Fragment key={option.key}>
@@ -72,24 +69,24 @@ export const Popover = ({ open, anchorEl, handleClose }: PopoverProps) => {
                 "description" in option ? option.description : undefined
               }
               hasSubmenu={option.hasSubmenu}
-              onClick={(e) => handlers.handlePresenceItemClick(option, e)}
+              onClick={(e) => selectPresence(e, option.key)}
             />
           </React.Fragment>
         ))}
       </Menu>
 
       <Menu
-        id={ids.durationMenuId}
-        buttonId={ids.presenceMenuButtonId}
-        anchorEl={state.durationAnchor}
-        open={state.durationOpen}
-        handleClose={() => handlers.setDurationAnchor(null)}
+        id={durationMenu.menuId}
+        buttonId={durationMenu.buttonId}
+        anchorEl={durationMenu.anchorEl}
+        open={durationMenu.open}
+        handleClose={durationMenu.handleClose}
       >
         {durationOptions.map((duration) => (
           <MenuItem
             key={duration.key}
             label={duration.label}
-            onClick={() => handlers.handleDurationSelect(duration.key)}
+            onClick={() => selectDuration(duration.key)}
           />
         ))}
       </Menu>

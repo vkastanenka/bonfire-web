@@ -1,96 +1,84 @@
-import * as React from "react";
-import { type Presence } from "@/presence";
-import { type presenceOptions } from "./constants";
+import { useUpdatePreferredPresence } from "@/bonfire";
+import { useMenu } from "@/hooks";
+import { presences, type Presence, type PresenceDuration } from "@/presence";
+import { useState } from "react";
 
-export const usePresenceMenu = (onClosePopover: () => void) => {
-  const id = React.useId();
-  const presenceMenuId = `${id}-presence-menu`;
-  const presenceMenuButtonId = `${id}-presence-menu-button`;
-  const durationMenuId = `${id}-duration-menu`;
+export const usePresenceMenu = () => {
+  const presenceMenu = useMenu();
+  const durationMenu = useMenu();
 
-  const [presenceAnchor, setPresenceAnchor] =
-    React.useState<null | HTMLElement>(null);
-  const [durationAnchor, setDurationAnchor] =
-    React.useState<null | HTMLElement>(null);
-  const [selectedPresence, setSelectedPresence] =
-    React.useState<Presence | null>(null);
+  const { mutate } = useUpdatePreferredPresence();
 
-  const handleOpenPresenceMenu = (
-    event: React.MouseEvent<HTMLButtonElement>,
-  ) => {
-    setPresenceAnchor(event.currentTarget);
-  };
+  const [selectedPresence, setSelectedPresence] = useState<
+    Presence | undefined
+  >(undefined);
 
-  const handleCloseMenus = () => {
-    setPresenceAnchor(null);
-    setDurationAnchor(null);
-    setSelectedPresence(null);
-  };
-
-  const handlePresenceItemClick = (
-    option: (typeof presenceOptions)[number],
+  const selectPresence = (
     event: React.MouseEvent<HTMLElement>,
+    presence: Presence,
   ) => {
-    if (option.hasSubmenu) {
-      setSelectedPresence(option.key as Presence);
-      setDurationAnchor(event.currentTarget);
-    } else {
-      // Immediate selection (e.g., Online)
-      handleCloseMenus();
-      onClosePopover();
+    if (presence === presences.online) {
+      setSelectedPresence(undefined);
+      mutate({
+        presence: undefined,
+        duration: undefined,
+      });
+      return;
     }
+
+    setSelectedPresence(presence);
+    durationMenu.handleOpen(event);
   };
 
-  const handleDurationSelect = (durationKey: string) => {
-    // TODO: Dispatch update presence API action with `selectedPresence` and `durationKey`
-    handleCloseMenus();
-    onClosePopover();
+  const selectDuration = (duration: PresenceDuration) => {
+    if (
+      !selectedPresence ||
+      selectedPresence === presences.online ||
+      selectedPresence === presences.offline
+    ) {
+      return;
+    }
+
+    mutate({
+      presence: selectedPresence,
+      duration,
+    });
   };
 
   return {
-    ids: { presenceMenuId, presenceMenuButtonId, durationMenuId },
-    state: {
-      presenceAnchor,
-      presenceOpen: Boolean(presenceAnchor),
-      durationAnchor,
-      durationOpen: Boolean(durationAnchor),
-    },
-    handlers: {
-      handleOpenPresenceMenu,
-      handleCloseMenus,
-      handlePresenceItemClick,
-      handleDurationSelect,
-      setDurationAnchor,
-    },
+    presenceMenu,
+    durationMenu,
+    selectPresence,
+    selectDuration,
   };
 };
 
-const EMAILS = ["username@gmail.com", "user02@gmail.com"] as const;
+// const EMAILS = ["username@gmail.com", "user02@gmail.com"] as const;
 
-export const useHandleEditProfile = () => {
-  const [open, setOpen] = React.useState(false);
-  const [selectedValue, setSelectedValue] = React.useState<string>(EMAILS[1]);
+// export const useHandleEditProfile = () => {
+//   const [open, setOpen] = React.useState(false);
+//   const [selectedValue, setSelectedValue] = React.useState<string>(EMAILS[1]);
 
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
+//   const handleClickOpen = () => {
+//     setOpen(true);
+//   };
 
-  const handleClose = (value?: string) => {
-    setOpen(false);
-    if (value) {
-      setSelectedValue(value);
-    }
-  };
+//   const handleClose = (value?: string) => {
+//     setOpen(false);
+//     if (value) {
+//       setSelectedValue(value);
+//     }
+//   };
 
-  return {
-    state: {
-      open,
-      selectedValue,
-      emails: EMAILS,
-    },
-    handlers: {
-      handleClickOpen,
-      handleClose,
-    },
-  };
-};
+//   return {
+//     state: {
+//       open,
+//       selectedValue,
+//       emails: EMAILS,
+//     },
+//     handlers: {
+//       handleClickOpen,
+//       handleClose,
+//     },
+//   };
+// };

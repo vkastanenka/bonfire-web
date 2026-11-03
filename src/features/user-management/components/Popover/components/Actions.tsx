@@ -6,10 +6,11 @@ import {
   type ButtonProps,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
+import { isValid, isAfter, isToday, isTomorrow, format } from "date-fns";
+import { useAuthStore, useGatewayStore } from "@/bonfire";
 import { presenceLabels, presenceIcons } from "@/presence";
 import { itemStyles } from "../constants";
 import { Content } from "./Content";
-import { useAuthStore, useGatewayStore } from "@/bonfire";
 
 const labels = {
   editProfile: "Edit Profile",
@@ -17,27 +18,23 @@ const labels = {
 };
 
 export interface ActionsProps {
-  presenceMenuButtonId: string;
-  presenceMenuId: string;
+  presenceButtonId: string;
+  presenceId: string;
   presenceOpen: boolean;
-  onOpenPresenceMenu: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  onEditProfile?: () => void;
-  onLogout?: () => void;
+  handleOpenPresence: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  handleOpenProfile?: () => void;
 }
 
 export const Actions = ({
-  presenceMenuButtonId,
-  presenceMenuId,
+  presenceButtonId,
+  presenceId,
   presenceOpen,
-  onOpenPresenceMenu,
-  onEditProfile,
-  onLogout,
+  handleOpenPresence,
+  handleOpenProfile,
 }: ActionsProps) => {
   const me = useAuthStore((state) => state.me)!;
   const presence = useGatewayStore((state) => state.presence);
-
   const currentPresenceIcon = presenceIcons[presence];
-  const currentPresenceLabel = presenceLabels[presence];
 
   return (
     <Stack sx={{ pt: 1, px: 2, pb: 2, gap: 2 }}>
@@ -49,9 +46,11 @@ export const Actions = ({
       </Stack>
 
       <Stack sx={(t) => ({ ...t.styles.card })}>
-        <ActionButton icon={EditIcon} onClick={onEditProfile}>
-          {labels.editProfile}
-        </ActionButton>
+        <ActionButton
+          icon={EditIcon}
+          label={labels.editProfile}
+          onClick={handleOpenProfile}
+        />
 
         <Divider />
 
@@ -59,17 +58,20 @@ export const Actions = ({
           icon={currentPresenceIcon.Icon}
           iconColor={currentPresenceIcon.color}
           hasSubmenu
-          id={presenceMenuButtonId}
-          aria-controls={presenceOpen ? presenceMenuId : undefined}
+          label={presenceLabels[presence]}
+          description={formatPresenceUntil(me.preferredPresenceUntil)}
+          id={presenceButtonId}
+          aria-controls={presenceOpen ? presenceId : undefined}
           aria-haspopup="true"
           aria-expanded={presenceOpen}
-          onClick={onOpenPresenceMenu}
-        >
-          {currentPresenceLabel}
-        </ActionButton>
+          onClick={handleOpenPresence}
+        />
       </Stack>
 
-      <Button variant="contained" onClick={onLogout}>
+      <Button
+        variant="contained"
+        // onClick={onLogout}
+      >
         <Typography variant="body2">{labels.logOut}</Typography>
       </Button>
     </Stack>
@@ -80,18 +82,51 @@ export interface ActionButtonProps extends ButtonProps {
   icon?: React.ElementType;
   iconColor?: string;
   hasSubmenu?: boolean;
+  label?: string;
+  description?: string;
 }
 
 const ActionButton = ({
   icon,
   iconColor,
-  children,
   hasSubmenu,
+  label,
+  description,
   ...buttonProps
 }: ActionButtonProps) => (
   <Button sx={itemStyles} {...buttonProps}>
-    <Content icon={icon} iconColor={iconColor} hasSubmenu={hasSubmenu}>
-      {children}
-    </Content>
+    <Content
+      icon={icon}
+      iconColor={iconColor}
+      hasSubmenu={hasSubmenu}
+      label={label}
+      description={description}
+    />
   </Button>
 );
+
+export const formatPresenceUntil = (
+  dateInput?: string | Date | number | null,
+): string | undefined => {
+  if (!dateInput) return undefined;
+
+  const targetDate = new Date(dateInput);
+  const now = new Date();
+
+  if (!isValid(targetDate) || !isAfter(targetDate, now)) {
+    return undefined;
+  }
+
+  const timeString = format(targetDate, "h:mm a");
+
+  if (isToday(targetDate)) {
+    return `Until ${timeString}`;
+  }
+
+  if (isTomorrow(targetDate)) {
+    return `Until tomorrow at ${timeString}`;
+  }
+
+  const dateString = format(targetDate, "MM/dd/yy");
+  return `Until ${dateString} at ${timeString}`;
+};

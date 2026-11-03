@@ -18,7 +18,9 @@ export const displayNameSchema = z.string().min(1).max(32);
 export const avatarUrlSchema = urlSchema.optional();
 export const bioSchema = z.string().max(190).optional();
 export const bannerColorSchema = hexColorSchema.optional();
-export const preferredPresenceSchema = z.enum(["DND", "INVISIBLE"]).optional();
+export const preferredPresenceSchema = z
+  .enum(["IDLE", "DND", "INVISIBLE"])
+  .optional();
 export const preferredPresenceDurationSchema = z
   .enum(["15_MIN", "1_HOUR", "8_HOURS", "24_HOURS", "3_DAYS", "FOREVER"])
   .optional();
@@ -46,8 +48,8 @@ export const updatePasswordRequestSchema = z.object({
 export type UpdatePasswordRequest = z.infer<typeof updatePasswordRequestSchema>;
 
 export const updatePreferredPresenceRequestSchema = z.object({
-  preferredPresence: preferredPresenceSchema,
-  preferredPresenceDurationSchema: preferredPresenceDurationSchema,
+  presence: preferredPresenceSchema,
+  duration: preferredPresenceDurationSchema,
 });
 
 export type UpdatePreferredPresenceRequest = z.infer<

@@ -89,7 +89,6 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
             aria-haspopup="dialog"
             aria-expanded={settingsOpen}
             aria-controls={settingsOpen ? elIds.settings : undefined}
-            sx={{ flexShrink: 0 }}
           >
             <SettingsIcon fontSize="small" />
           </IconButton>

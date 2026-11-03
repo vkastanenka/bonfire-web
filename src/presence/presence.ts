@@ -34,12 +34,12 @@ export const presenceIcons = {
 export const presenceSchema = z.enum(presences);
 
 export const presenceDurations = {
-  fifteenMin: "fifteenMin",
-  oneHour: "oneHour",
-  eightHours: "eightHours",
-  twentyFourHours: "twentyFourHours",
-  threeDays: "threeDays",
-  forever: "forever",
+  fifteenMin: "15_MIN",
+  oneHour: "1_HOUR",
+  eightHours: "8_HOURS",
+  twentyFourHours: "24_HOURS",
+  threeDays: "3_DAYS",
+  forever: "FOREVER",
 } as const;
 
 export type PresenceDuration =
