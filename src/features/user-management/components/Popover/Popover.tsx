@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Popover as MuiPopover, Box, Divider } from "@mui/material";
 import { elIds } from "../constants";
-import { Banner } from "../Banner";
+import { Banner } from "./components/Banner";
 import { durationOptions, presenceOptions } from "./constants";
 import { useHandleEditProfile, usePresenceMenu } from "./hooks";
 import { Actions, Menu, MenuItem } from "./components";
@@ -43,7 +43,7 @@ export const Popover = ({ open, anchorEl, handleClose }: PopoverProps) => {
         />
       </Box>
 
-      {/* <EditProfileDialog
+      {/* <Profile
         open={editProfileState.open}
         onClose={editProfileHandlers.handleClose}
         displayName={displayName}

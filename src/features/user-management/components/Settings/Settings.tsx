@@ -1,3 +1,4 @@
+import { useState, type ReactElement, type ReactNode } from "react";
 import {
   Button,
   Dialog,
@@ -11,72 +12,31 @@ import CloseIcon from "@mui/icons-material/Close";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import DesktopWindowsIcon from "@mui/icons-material/DesktopWindows";
 import SmartphoneIcon from "@mui/icons-material/Smartphone";
-import { DialogHeader } from "@/components";
-import { useState, type ReactElement, type ReactNode } from "react";
 import {
+  useAuthStore,
   useListValidSessions,
   useRevokeSession,
   type Session,
 } from "@/bonfire";
-import { UpdateUsernameDialog } from "./UpdateUsernameDialog";
-import { UpdateEmailDialog } from "./UpdateEmailDialog";
-import { UpdatePasswordDialog } from "./UpdatePasswordDialog";
-import { DisableAccountDialog } from "./DisableAccountDialog";
-import { DeleteAccountDialog } from "./DeleteAccountDialog";
+import { DialogHeader } from "@/components";
+import { labels, screenLabels, type ScreenLabelKey } from "./constants";
+import {
+  DeleteAccount,
+  DisableAccount,
+  UpdateEmail,
+  UpdatePassword,
+  UpdateUsername,
+} from "./components";
 
-const labels = {
-  account: "Account",
-  accountInfo: "Account Info",
-  username: "Username",
-  email: "Email",
-
-  passwordSecurity: "Password & Security",
-  password: "Password",
-  loggedInDevices: "Logged-in Devices",
-  loggedInDevicesDescription:
-    "These are all the devices that are currently logged-in with your Bonfire account. Log out of devices that you don't recognize.",
-  currentDevice: "Current Device",
-  otherDevices: "Other Devices",
-  logOutOfAllDevicesTitle: "Log out of all known devices",
-  logOutOfAllDevicesSubtitle:
-    "You'll have to log back in on all logged out devices.",
-  logOutOfAllDevicesButton: "Log Out All Known Devices",
-
-  accountClosure: "Account Closure",
-  disableTitle: "Disable your account",
-  disableSubtitle: "Temporarily disable your account.",
-  disableButton: "Disable Account",
-  closeTitle: "Close your account",
-  closeSubtitle: "Permanently close your account.",
-  closeButton: "Delete Account",
-
-  edit: "Edit",
-  reveal: "Reveal",
-  hide: "Hide",
-  device: "device",
-  devices: "devices",
-} as const;
-
-const screenLabels = {
-  devices: labels.loggedInDevices,
-} as const;
-
-type ScreenLabelKey = keyof typeof screenLabels;
-
-export interface UserSettingsDialogProps {
+export interface SettingsProps {
   // Devices?
   open: boolean;
   handleClose: () => void;
-  username: string;
-  email: string;
 }
 
-export const UserSettingsDialog = ({
-  open,
-  handleClose,
-  username,
-  email,
-}: UserSettingsDialogProps) => {
+export const Settings = ({ open, handleClose }: SettingsProps) => {
+  const me = useAuthStore((state) => state.me)!;
+
   const [screen, setScreen] = useState<ScreenLabelKey | undefined>(undefined);
 
   const {
@@ -177,8 +137,8 @@ export const UserSettingsDialog = ({
         <Stack sx={{ gap: 4, px: 4, py: 5 }}>
           {!screen && (
             <ContentAccount
-              username={username}
-              email={email}
+              username={me.username}
+              email={me.email}
               handleUpdateUsernameOpen={handleUpdateUsernameOpen}
               handleUpdateEmailOpen={handleUpdateEmailOpen}
               handleUpdatePasswordOpen={handleUpdatePasswordOpen}
@@ -194,29 +154,29 @@ export const UserSettingsDialog = ({
         </Stack>
       </Dialog>
 
-      <UpdateUsernameDialog
+      <UpdateUsername
         open={updateUsernameOpen}
         handleClose={handleUpdateUsernameClose}
-        currentUsername={username}
+        currentUsername={me.username}
       />
 
-      <UpdateEmailDialog
+      <UpdateEmail
         open={updateEmailOpen}
         handleClose={handleUpdateEmailClose}
-        currentEmail={email}
+        currentEmail={me.email}
       />
 
-      <UpdatePasswordDialog
+      <UpdatePassword
         open={updatePasswordOpen}
         handleClose={handleUpdatePasswordClose}
       />
 
-      <DisableAccountDialog
+      <DisableAccount
         open={disableAccountOpen}
         handleClose={handleDisableAccountClose}
       />
 
-      <DeleteAccountDialog
+      <DeleteAccount
         open={deleteAccountOpen}
         handleClose={handleDeleteAccountClose}
       />

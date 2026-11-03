@@ -1,14 +1,14 @@
-export const LABELS = {
-  DISPLAY_NAME: "Display Name",
-  BIO: "Bio",
-  SUBMIT: "Update Profile",
+export const labels = {
+  displayName: "Display Name",
+  bio: "Bio",
+  submit: "Update Profile",
 } as const;
 
 export const formFields = {
   displayName: {
     name: "displayName",
     id: "displayName-input",
-    label: LABELS.DISPLAY_NAME,
+    label: labels.displayName,
     required: true,
     autoComplete: "displayName",
   },
@@ -16,7 +16,7 @@ export const formFields = {
     name: "bio",
     id: "bio-input",
     type: "bio",
-    label: LABELS.BIO,
+    label: labels.bio,
     autoComplete: "bio",
     multiline: true,
     rows: 4,

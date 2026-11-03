@@ -36,17 +36,17 @@ const formFields = {
   },
 };
 
-interface UpdateEmailDialogProps {
+interface UpdateEmailProps {
   open: boolean;
   handleClose: () => void;
   currentEmail: string;
 }
 
-export const UpdateEmailDialog = ({
+export const UpdateEmail = ({
   open,
   handleClose,
   currentEmail,
-}: UpdateEmailDialogProps) => {
+}: UpdateEmailProps) => {
   const { methods, onSubmit, isPending } = useUpdateEmailForm({
     currentEmail,
   });

@@ -1,24 +1,21 @@
-// import { useDisableAccount } from "@/bonfire";
+// import { useDeleteAccount } from "@/bonfire";
 import { DialogHeader } from "@/components";
 import { Button, Dialog, Stack, Typography } from "@mui/material";
 
 const labels = {
-  title: "Disable your account",
+  title: "Delete your account",
   subtitle:
-    "Disabling means that other users will no longer be able to interact with your account. You will be logged out upon disable. Logging in re-enables your account. Continue to disable your account?",
-  submit: "Disable Account",
+    "Deleting means that other users will no longer be able to interact with your account. You will be logged out upon delete. Logging in re-enables your account. Failure to log in within 30 days after deleting will anonymize your account. Continue to delete your account?",
+  submit: "Delete Account",
 };
 
-interface DisableAccountDialogProps {
+interface DeleteAccountProps {
   open: boolean;
   handleClose: () => void;
 }
 
-export const DisableAccountDialog = ({
-  open,
-  handleClose,
-}: DisableAccountDialogProps) => {
-  //   const { mutate } = useDisableAccount();
+export const DeleteAccount = ({ open, handleClose }: DeleteAccountProps) => {
+  //   const { mutate } = useDeleteAccount();
 
   return (
     <Dialog

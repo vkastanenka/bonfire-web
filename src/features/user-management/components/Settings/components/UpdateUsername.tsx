@@ -1,26 +1,32 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  type UpdatePasswordRequest,
-  updatePasswordRequestSchema,
+  type UpdateUsernameRequest,
+  updateUsernameRequestSchema,
   // useAuthStore,
-  useUpdatePassword,
+  useUpdateUsername,
 } from "@/bonfire";
 import { handleAipFieldViolations } from "@/errs";
 import { DialogHeader, Form } from "@/components";
 import { Dialog, Stack, Typography } from "@mui/material";
 
 const labels = {
-  title: "Change your password",
-  subtitle: "Enter a new password and confirm your existing password.",
+  title: "Change your username",
+  subtitle: "Enter a new username and your existing password.",
+  username: "Username",
   currentPassword: "Current Password",
-  newPassword: "New Password",
-  newPasswordConfirm: "Confirm New Password",
-  submit: "Update Password",
+  submit: "Update Username",
 };
 
-const formFields = [
-  {
+const formFields = {
+  username: {
+    name: "username",
+    id: "username-input",
+    label: labels.username,
+    required: true,
+    autoComplete: "username",
+  },
+  currentPassword: {
     name: "currentPassword",
     id: "currentPassword-input",
     type: "currentPassword",
@@ -28,34 +34,22 @@ const formFields = [
     required: true,
     autoComplete: "current-password",
   },
-  {
-    name: "newPassword",
-    id: "newPassword-input",
-    type: "newPassword",
-    label: labels.newPassword,
-    required: true,
-    autoComplete: "new-password",
-  },
-  {
-    name: "newPasswordConfirm",
-    id: "newPasswordConfirm-input",
-    type: "newPasswordConfirm",
-    label: labels.newPasswordConfirm,
-    required: true,
-    autoComplete: "new-password-confirm",
-  },
-];
+};
 
-interface UpdatePasswordDialogProps {
+interface UpdateUsernameProps {
   open: boolean;
   handleClose: () => void;
+  currentUsername: string;
 }
 
-export const UpdatePasswordDialog = ({
+export const UpdateUsername = ({
   open,
   handleClose,
-}: UpdatePasswordDialogProps) => {
-  const { methods, onSubmit, isPending } = useUpdatePasswordForm();
+  currentUsername,
+}: UpdateUsernameProps) => {
+  const { methods, onSubmit, isPending } = useUpdateUsernameForm({
+    currentUsername,
+  });
 
   return (
     <Dialog
@@ -74,9 +68,8 @@ export const UpdatePasswordDialog = ({
       <Stack sx={{ gap: 3, p: 3 }}>
         <Typography>{labels.subtitle}</Typography>
         <Form methods={methods} onSubmit={onSubmit} disabled={isPending}>
-          {formFields.map((field, i) => (
-            <Form.TextField key={`update-password-field-${i}`} {...field} />
-          ))}
+          <Form.TextField {...formFields.username} />
+          <Form.TextField {...formFields.currentPassword} />
           <Form.SubmitButton>{labels.submit}</Form.SubmitButton>
         </Form>
       </Stack>
@@ -84,19 +77,24 @@ export const UpdatePasswordDialog = ({
   );
 };
 
-const useUpdatePasswordForm = () => {
-  const methods = useForm<UpdatePasswordRequest>({
-    resolver: zodResolver(updatePasswordRequestSchema),
+const useUpdateUsernameForm = ({
+  currentUsername,
+}: {
+  currentUsername: string;
+}) => {
+  // const me = useAuthStore((state) => state.me);
+
+  const methods = useForm<UpdateUsernameRequest>({
+    resolver: zodResolver(updateUsernameRequestSchema),
     defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      newPasswordConfirm: "",
+      newUsername: currentUsername,
+      password: "",
     },
   });
 
-  const { mutate, isPending } = useUpdatePassword();
+  const { mutate, isPending } = useUpdateUsername();
 
-  const onSubmit = (data: UpdatePasswordRequest) => {
+  const onSubmit = (data: UpdateUsernameRequest) => {
     mutate(data, {
       onError: (err) => {
         handleAipFieldViolations(err, methods);

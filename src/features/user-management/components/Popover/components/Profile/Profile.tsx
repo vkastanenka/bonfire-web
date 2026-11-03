@@ -1,37 +1,23 @@
 import { Stack, Dialog } from "@mui/material";
-import type { Presence } from "@/presence";
-import { Banner } from "../../../user-management/Banner/Banner";
+import { useAuthStore, type UpdateProfileRequest } from "@/bonfire";
 import { Form } from "@/components";
-import { LABELS, formFields } from "./constants";
+import { Banner } from "../Banner";
+import { labels, formFields } from "./constants";
 import { useEditProfileForm } from "./hooks";
-import type { UpdateProfileRequest } from "@/bonfire";
 
-export interface EditProfileDialogProps {
+export interface ProfileProps {
   open: boolean;
   onClose: () => void;
-  displayName: string;
-  username: string;
-  presence: Presence;
-  bannerColor?: string;
-  avatarSrc?: string;
-  bio?: string;
 }
 
-export function EditProfileDialog({
-  open,
-  onClose,
-  displayName,
-  username,
-  presence,
-  bannerColor,
-  avatarSrc: avatarUrl,
-  bio,
-}: EditProfileDialogProps) {
+export function Profile({ open, onClose }: ProfileProps) {
+  const me = useAuthStore((state) => state.me)!;
+
   const { methods, onSubmit, isPending } = useEditProfileForm({
-    displayName,
-    avatarUrl,
-    bannerColor,
-    bio,
+    displayName: me.displayName,
+    avatarUrl: me.avatarUrl,
+    bannerColor: me.bannerColor,
+    bio: me.bio,
   });
 
   const watchedBannerColor = methods.watch("bannerColor");
@@ -59,12 +45,9 @@ export function EditProfileDialog({
       }}
     >
       <Banner
-        editable
+        canEdit
         avatarSize="xl"
-        username={username}
-        presence={presence}
-        bannerColor={watchedBannerColor}
-        avatarSrc={avatarUrl}
+        color={watchedBannerColor}
         onColorChange={handleBannerColorChange}
       />
 
@@ -79,7 +62,7 @@ export function EditProfileDialog({
         >
           <Form.TextField {...formFields.displayName} />
           <Form.TextField {...formFields.bio} />
-          <Form.SubmitButton>{LABELS.SUBMIT}</Form.SubmitButton>
+          <Form.SubmitButton>{labels.submit}</Form.SubmitButton>
         </Form>
       </Stack>
     </Dialog>

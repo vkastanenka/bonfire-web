@@ -1,5 +1,5 @@
 import { type ClientRequestOptions } from "@/http";
-import { type Presence, PRESENCE } from "@/presence";
+import { type Presence, presences } from "@/presence";
 import { authClient } from "./client";
 import { useAuthStore } from "./store";
 import type {
@@ -29,7 +29,7 @@ export class AuthService {
     }
 
     if (preferred) {
-      return preferred === PRESENCE.INVISIBLE ? PRESENCE.OFFLINE : preferred;
+      return preferred === presences.invisible ? presences.offline : preferred;
     }
 
     return preferred ?? null;

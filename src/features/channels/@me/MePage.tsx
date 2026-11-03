@@ -2,16 +2,15 @@ import { Box, Stack } from "@mui/material";
 // import { router } from "@/app";
 import {
   useAuthStore,
-  useGatewayStore,
   // useLogout
 } from "@/bonfire";
 // import { Text } from "@/components";
 // import { PATHS } from "@/constants";
-import { Dashboard, Nav, SideBar, UserCard } from "../components";
+import { Dashboard, Nav, SideBar } from "../components";
+import { UserManagement } from "@/features/user-management/UserManagement";
 
 export const MePage = () => {
   const me = useAuthStore((state) => state.me);
-  const presence = useGatewayStore((state) => state.presence);
 
   if (!me) return null;
 
@@ -35,15 +34,7 @@ export const MePage = () => {
         >
           <SideBar />
           <Box sx={{ position: "absolute", bottom: 8, left: 8, right: 8 }}>
-            <UserCard
-              email={me.email}
-              displayName={me.displayName}
-              username={me.username}
-              avatarSrc={me.avatarUrl}
-              presence={presence}
-              bannerColor={me.bannerColor}
-              bio={me.bio}
-            />
+            <UserManagement />
           </Box>
         </Stack>
         <Dashboard />

@@ -1,7 +1,6 @@
 import { useRef } from "react";
 import { usePopup, useDialog } from "@/hooks";
-import { Card, Popover } from "./components";
-// import { UserSettingsDialog } from "./UserSettings";
+import { Card, Popover, Settings } from "./components";
 
 export const UserManagement = () => {
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -24,10 +23,7 @@ export const UserManagement = () => {
         handleClose={popover.handleClose}
       />
 
-      {/* <UserSettingsDialog
-        open={settings.open}
-        handleClose={settings.handleClose}
-      /> */}
+      <Settings open={settings.open} handleClose={settings.handleClose} />
     </>
   );
 };

@@ -1,20 +1,22 @@
 import { useRef, useState } from "react";
 import { Box, ButtonBase, useTheme } from "@mui/material";
-import { Overlay } from "@/components";
-import { Avatar, type AvatarSizeKey } from "../../components";
 import { useAuthStore, useGatewayStore } from "@/bonfire";
+import { Overlay } from "@/components";
+import { Avatar, type AvatarSizeKey } from "@/features/components";
 
 const labels = {
   colorAria: "Change banner color",
 } as const;
 
 export interface BannerProps {
+  color?: string;
   avatarSize?: AvatarSizeKey;
   canEdit?: boolean;
   onColorChange?: (color: string) => void;
 }
 
 export const Banner = ({
+  color,
   avatarSize = "lg",
   canEdit = false,
   onColorChange,
@@ -31,8 +33,9 @@ export const Banner = ({
     return color;
   };
 
-  const activeColor = me?.bannerColor || "primary.main";
-  const hexValue = getHexColor(me?.bannerColor);
+  const resolvedColor = color ?? me.bannerColor;
+  const activeColor = resolvedColor || "primary.main";
+  const hexValue = getHexColor(resolvedColor);
 
   const handleClick = () => {
     if (canEdit) {
