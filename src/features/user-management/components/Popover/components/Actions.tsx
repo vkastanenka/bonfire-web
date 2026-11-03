@@ -11,6 +11,7 @@ import { useAuthStore, useGatewayStore } from "@/bonfire";
 import { presenceLabels, presenceIcons } from "@/presence";
 import { itemStyles } from "../constants";
 import { Content } from "./Content";
+import { elIds } from "../../constants";
 
 const labels = {
   editProfile: "Edit Profile",
@@ -18,19 +19,25 @@ const labels = {
 };
 
 export interface ActionsProps {
+  profileOpen: boolean;
+  handleOpenProfile?: () => void;
   presenceButtonId: string;
   presenceId: string;
   presenceOpen: boolean;
-  handleOpenPresence: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  handleOpenProfile?: () => void;
+  handleOpenPresence: (
+    event:
+      | React.MouseEvent<HTMLButtonElement>
+      | React.KeyboardEvent<HTMLButtonElement>,
+  ) => void;
 }
 
 export const Actions = ({
+  profileOpen,
+  handleOpenProfile,
   presenceButtonId,
   presenceId,
   presenceOpen,
   handleOpenPresence,
-  handleOpenProfile,
 }: ActionsProps) => {
   const me = useAuthStore((state) => state.me)!;
   const presence = useGatewayStore((state) => state.presence);
@@ -50,6 +57,10 @@ export const Actions = ({
           icon={EditIcon}
           label={labels.editProfile}
           onClick={handleOpenProfile}
+          aria-label={labels.editProfile}
+          aria-haspopup="dialog"
+          aria-expanded={profileOpen}
+          aria-controls={profileOpen ? elIds.profile : undefined}
         />
 
         <Divider />

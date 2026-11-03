@@ -11,7 +11,6 @@ import { UserManagement } from "@/features/user-management/UserManagement";
 
 export const MePage = () => {
   const me = useAuthStore((state) => state.me);
-
   if (!me) return null;
 
   // const { mutate, isPending } = useLogout({

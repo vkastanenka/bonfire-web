@@ -3,9 +3,9 @@ import { Popover as MuiPopover, Box, Divider } from "@mui/material";
 import { elIds } from "../constants";
 import { Banner } from "./components/Banner";
 import { durationOptions, presenceOptions } from "./constants";
-// import { useHandleEditProfile, usePresenceMenu } from "./hooks";
-import { Actions, Menu, MenuItem } from "./components";
+import { Actions, Menu, MenuItem, Profile } from "./components";
 import { usePresenceMenu } from "./hooks";
+import { useDialog } from "@/hooks";
 
 export interface PopoverProps {
   anchorEl: HTMLElement | null;
@@ -14,6 +14,7 @@ export interface PopoverProps {
 }
 
 export const Popover = ({ open, anchorEl, handleClose }: PopoverProps) => {
+  const profile = useDialog();
   const { presenceMenu, durationMenu, selectPresence, selectDuration } =
     usePresenceMenu();
 
@@ -32,24 +33,16 @@ export const Popover = ({ open, anchorEl, handleClose }: PopoverProps) => {
         <Banner />
 
         <Actions
+          profileOpen={profile.open}
+          handleOpenProfile={profile.handleOpen}
           presenceButtonId={presenceMenu.buttonId}
           presenceId={presenceMenu.menuId}
           presenceOpen={presenceMenu.open}
           handleOpenPresence={presenceMenu.handleOpen}
-          // onEditProfile={editProfileHandlers.handleClickOpen}
         />
       </Box>
 
-      {/* <Profile
-        open={editProfileState.open}
-        onClose={editProfileHandlers.handleClose}
-        displayName={displayName}
-        username={username}
-        presence={presence}
-        bannerColor={bannerColor}
-        avatarSrc={avatarSrc}
-        bio={bio}
-      /> */}
+      <Profile open={profile.open} onClose={profile.handleClose} />
 
       <Menu
         id={presenceMenu.menuId}

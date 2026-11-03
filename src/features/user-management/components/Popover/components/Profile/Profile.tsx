@@ -4,6 +4,7 @@ import { Form } from "@/components";
 import { Banner } from "../Banner";
 import { labels, formFields } from "./constants";
 import { useEditProfileForm } from "./hooks";
+import { elIds } from "../../../constants";
 
 export interface ProfileProps {
   open: boolean;
@@ -36,6 +37,7 @@ export function Profile({ open, onClose }: ProfileProps) {
 
   return (
     <Dialog
+      id={elIds.profile}
       onClose={handleClose}
       open={open}
       slotProps={{
