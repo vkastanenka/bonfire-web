@@ -9,6 +9,7 @@ import {
 import { handleAipFieldViolations } from "@/errs";
 import { DialogHeader, Form } from "@/components";
 import { Dialog, Stack, Typography } from "@mui/material";
+import { useMemo } from "react";
 
 const labels = {
   title: "Change your username",
@@ -19,17 +20,17 @@ const labels = {
 };
 
 const formFields = {
-  username: {
-    name: "username",
-    id: "username-input",
+  newUsername: {
+    name: "newUsername",
+    id: "newUsername-input",
     label: labels.username,
     required: true,
-    autoComplete: "username",
+    autoComplete: "newUsername",
   },
-  currentPassword: {
-    name: "currentPassword",
-    id: "currentPassword-input",
-    type: "currentPassword",
+  password: {
+    name: "password",
+    id: "password-input",
+    type: "password",
     label: labels.currentPassword,
     required: true,
     autoComplete: "current-password",
@@ -42,7 +43,7 @@ interface UpdateUsernameProps {
 }
 
 export const UpdateUsername = ({ open, handleClose }: UpdateUsernameProps) => {
-  const { methods, onSubmit, isPending } = useUpdateUsernameForm({
+  const { methods, onSubmit, isPending, resetForm } = useUpdateUsernameForm({
     handleClose,
   });
 
@@ -56,14 +57,17 @@ export const UpdateUsername = ({ open, handleClose }: UpdateUsernameProps) => {
             width: 400,
           },
         },
+        transition: {
+          onExited: resetForm,
+        },
       }}
     >
       <DialogHeader title={labels.title} handleClose={handleClose} />
       <Stack sx={{ gap: 3, p: 3 }}>
         <Typography>{labels.subtitle}</Typography>
         <Form methods={methods} onSubmit={onSubmit} disabled={isPending}>
-          <Form.TextField {...formFields.username} />
-          <Form.TextField {...formFields.currentPassword} />
+          <Form.TextField {...formFields.newUsername} />
+          <Form.TextField {...formFields.password} />
           <Form.SubmitButton>{labels.submit}</Form.SubmitButton>
         </Form>
       </Stack>
@@ -78,17 +82,31 @@ const useUpdateUsernameForm = ({
 }) => {
   const me = useAuthStore((state) => state.me)!;
 
-  const methods = useForm<UpdateUsernameRequest>({
-    resolver: zodResolver(updateUsernameRequestSchema),
-    defaultValues: {
+  const defaultValues = useMemo(
+    () => ({
       newUsername: me.username,
       password: "",
-    },
+    }),
+    [me.username],
+  );
+
+  const methods = useForm<UpdateUsernameRequest>({
+    resolver: zodResolver(updateUsernameRequestSchema),
+    defaultValues,
   });
+
+  const resetForm = () => {
+    methods.reset(defaultValues);
+  };
 
   const { mutate, isPending } = useUpdateUsername();
 
   const onSubmit = (data: UpdateUsernameRequest) => {
+    if (data.newUsername === me.username) {
+      handleClose();
+      return;
+    }
+
     mutate(data, {
       onSuccess: handleClose,
       onError: (err) => {
@@ -101,5 +119,6 @@ const useUpdateUsernameForm = ({
     methods,
     onSubmit,
     isPending,
+    resetForm,
   };
 };
