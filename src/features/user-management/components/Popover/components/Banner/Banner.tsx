@@ -83,6 +83,7 @@ const BannerBackground = ({
 }: BannerBackgroundProps) => {
   return (
     <Box
+      className="overlay-container"
       component={canEdit ? ButtonBase : "div"}
       onClick={canEdit ? onClick : undefined}
       aria-label={canEdit ? labels.colorAria : undefined}
@@ -133,6 +134,7 @@ const ColorInput = ({ ref, value, onColorChange }: ColorInputProps) => {
 
   return (
     <input
+      tabIndex={-1}
       type="color"
       ref={ref}
       value={localValue}

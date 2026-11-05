@@ -48,7 +48,7 @@ export const Overlay = ({
         p: 1,
         alignItems,
         justifyContent,
-        "&:hover": {
+        [`.overlay-container:hover &, .overlay-container:focus-visible &`]: {
           opacity: 1,
         },
         ...sx,

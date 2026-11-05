@@ -1,5 +1,4 @@
 import { Stack, Dialog } from "@mui/material";
-import { useAuthStore, type UpdateProfileRequest } from "@/bonfire";
 import { Form } from "@/components";
 import { Banner } from "../Banner";
 import { labels, formFields } from "./constants";
@@ -8,32 +7,17 @@ import { elIds } from "../../../constants";
 
 export interface ProfileProps {
   open: boolean;
-  onClose: () => void;
+  handleClose: () => void;
 }
 
-export function Profile({ open, onClose }: ProfileProps) {
-  const me = useAuthStore((state) => state.me)!;
-
-  const { methods, onSubmit, isPending } = useEditProfileForm({
-    displayName: me.displayName,
-    avatarUrl: me.avatarUrl,
-    bannerColor: me.bannerColor,
-    bio: me.bio,
-  });
-
-  const watchedBannerColor = methods.watch("bannerColor");
-
-  const handleClose = () => {
-    methods.reset();
-    onClose();
-  };
-
-  const handleBannerColorChange = (newColor: string) => {
-    methods.setValue("bannerColor", newColor, {
-      shouldDirty: true,
-      shouldTouch: true,
-    });
-  };
+export function Profile({ open, handleClose }: ProfileProps) {
+  const {
+    methods,
+    onSubmit,
+    isPending,
+    watchedBannerColor,
+    handleBannerColorChange,
+  } = useEditProfileForm({ handleClose });
 
   return (
     <Dialog
@@ -42,7 +26,7 @@ export function Profile({ open, onClose }: ProfileProps) {
       open={open}
       slotProps={{
         paper: {
-          sx: { borderRadius: 4, width: 400 },
+          sx: { width: 400 },
         },
       }}
     >
@@ -54,14 +38,7 @@ export function Profile({ open, onClose }: ProfileProps) {
       />
 
       <Stack sx={{ pt: 2, px: 2, pb: 2 }}>
-        <Form
-          methods={methods}
-          onSubmit={(data: UpdateProfileRequest) => {
-            onSubmit(data);
-            onClose();
-          }}
-          disabled={isPending}
-        >
+        <Form methods={methods} onSubmit={onSubmit} disabled={isPending}>
           <Form.TextField {...formFields.displayName} />
           <Form.TextField {...formFields.bio} />
           <Form.SubmitButton>{labels.submit}</Form.SubmitButton>

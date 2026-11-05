@@ -42,7 +42,7 @@ export const Popover = ({ open, anchorEl, handleClose }: PopoverProps) => {
         />
       </Box>
 
-      <Profile open={profile.open} onClose={profile.handleClose} />
+      <Profile open={profile.open} handleClose={profile.handleClose} />
 
       <Menu
         id={presenceMenu.menuId}
