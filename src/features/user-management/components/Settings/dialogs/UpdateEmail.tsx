@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   type UpdateEmailRequest,
   updateEmailRequestSchema,
-  // useAuthStore,
+  useAuthStore,
   useUpdateEmail,
 } from "@/bonfire";
 import { handleAipFieldViolations } from "@/errs";
@@ -39,17 +39,10 @@ const formFields = {
 interface UpdateEmailProps {
   open: boolean;
   handleClose: () => void;
-  currentEmail: string;
 }
 
-export const UpdateEmail = ({
-  open,
-  handleClose,
-  currentEmail,
-}: UpdateEmailProps) => {
-  const { methods, onSubmit, isPending } = useUpdateEmailForm({
-    currentEmail,
-  });
+export const UpdateEmail = ({ open, handleClose }: UpdateEmailProps) => {
+  const { methods, onSubmit, isPending } = useUpdateEmailForm({ handleClose });
 
   return (
     <Dialog
@@ -58,7 +51,6 @@ export const UpdateEmail = ({
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 4,
             width: 400,
           },
         },
@@ -77,13 +69,13 @@ export const UpdateEmail = ({
   );
 };
 
-const useUpdateEmailForm = ({ currentEmail }: { currentEmail: string }) => {
-  // const me = useAuthStore((state) => state.me);
+const useUpdateEmailForm = ({ handleClose }: { handleClose: () => void }) => {
+  const me = useAuthStore((state) => state.me)!;
 
   const methods = useForm<UpdateEmailRequest>({
     resolver: zodResolver(updateEmailRequestSchema),
     defaultValues: {
-      newEmail: currentEmail,
+      newEmail: me.email,
       password: "",
     },
   });
@@ -92,6 +84,7 @@ const useUpdateEmailForm = ({ currentEmail }: { currentEmail: string }) => {
 
   const onSubmit = (data: UpdateEmailRequest) => {
     mutate(data, {
+      onSuccess: handleClose,
       onError: (err) => {
         handleAipFieldViolations(err, methods);
       },

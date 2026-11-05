@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   type UpdateUsernameRequest,
   updateUsernameRequestSchema,
-  // useAuthStore,
+  useAuthStore,
   useUpdateUsername,
 } from "@/bonfire";
 import { handleAipFieldViolations } from "@/errs";
@@ -39,16 +39,11 @@ const formFields = {
 interface UpdateUsernameProps {
   open: boolean;
   handleClose: () => void;
-  currentUsername: string;
 }
 
-export const UpdateUsername = ({
-  open,
-  handleClose,
-  currentUsername,
-}: UpdateUsernameProps) => {
+export const UpdateUsername = ({ open, handleClose }: UpdateUsernameProps) => {
   const { methods, onSubmit, isPending } = useUpdateUsernameForm({
-    currentUsername,
+    handleClose,
   });
 
   return (
@@ -58,7 +53,6 @@ export const UpdateUsername = ({
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 4,
             width: 400,
           },
         },
@@ -78,16 +72,16 @@ export const UpdateUsername = ({
 };
 
 const useUpdateUsernameForm = ({
-  currentUsername,
+  handleClose,
 }: {
-  currentUsername: string;
+  handleClose: () => void;
 }) => {
-  // const me = useAuthStore((state) => state.me);
+  const me = useAuthStore((state) => state.me)!;
 
   const methods = useForm<UpdateUsernameRequest>({
     resolver: zodResolver(updateUsernameRequestSchema),
     defaultValues: {
-      newUsername: currentUsername,
+      newUsername: me.username,
       password: "",
     },
   });
@@ -96,6 +90,7 @@ const useUpdateUsernameForm = ({
 
   const onSubmit = (data: UpdateUsernameRequest) => {
     mutate(data, {
+      onSuccess: handleClose,
       onError: (err) => {
         handleAipFieldViolations(err, methods);
       },

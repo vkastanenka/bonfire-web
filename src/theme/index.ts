@@ -46,6 +46,8 @@ export const theme = createTheme({
       styleOverrides: {
         paper: {
           borderRadius: 16,
+          width: ["auto", "80%"],
+          maxWidth: 1200,
         },
       },
     },

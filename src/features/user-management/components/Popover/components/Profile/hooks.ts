@@ -15,14 +15,16 @@ export const useEditProfileForm = ({
 }) => {
   const me = useAuthStore((state) => state.me)!;
 
+  const defaultValues = {
+    displayName: me.displayName,
+    bio: me.bio,
+    avatarUrl: me.avatarUrl,
+    bannerColor: me.bannerColor,
+  };
+
   const methods = useForm<UpdateProfileRequest>({
     resolver: zodResolver(updateProfileRequestSchema),
-    defaultValues: {
-      displayName: me.displayName,
-      bio: me.bio,
-      avatarUrl: me.avatarUrl,
-      bannerColor: me.bannerColor,
-    },
+    defaultValues,
   });
 
   const watchedBannerColor = useWatch({
@@ -35,6 +37,10 @@ export const useEditProfileForm = ({
       shouldDirty: true,
       shouldTouch: true,
     });
+  };
+
+  const resetForm = () => {
+    methods.reset(defaultValues);
   };
 
   const { mutate, isPending } = useUpdateProfile();
@@ -54,5 +60,6 @@ export const useEditProfileForm = ({
     isPending,
     watchedBannerColor,
     handleBannerColorChange,
+    resetForm,
   };
 };

@@ -17,6 +17,7 @@ export function Profile({ open, handleClose }: ProfileProps) {
     isPending,
     watchedBannerColor,
     handleBannerColorChange,
+    resetForm,
   } = useEditProfileForm({ handleClose });
 
   return (
@@ -27,6 +28,9 @@ export function Profile({ open, handleClose }: ProfileProps) {
       slotProps={{
         paper: {
           sx: { width: 400 },
+        },
+        transition: {
+          onExited: resetForm,
         },
       }}
     >

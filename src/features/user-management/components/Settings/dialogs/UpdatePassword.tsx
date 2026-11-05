@@ -3,7 +3,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   type UpdatePasswordRequest,
   updatePasswordRequestSchema,
-  // useAuthStore,
   useUpdatePassword,
 } from "@/bonfire";
 import { handleAipFieldViolations } from "@/errs";
@@ -51,11 +50,10 @@ interface UpdatePasswordProps {
   handleClose: () => void;
 }
 
-export const UpdatePassword = ({
-  open,
-  handleClose,
-}: UpdatePasswordProps) => {
-  const { methods, onSubmit, isPending } = useUpdatePasswordForm();
+export const UpdatePassword = ({ open, handleClose }: UpdatePasswordProps) => {
+  const { methods, onSubmit, isPending } = useUpdatePasswordForm({
+    handleClose,
+  });
 
   return (
     <Dialog
@@ -64,7 +62,6 @@ export const UpdatePassword = ({
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 4,
             width: 400,
           },
         },
@@ -84,7 +81,11 @@ export const UpdatePassword = ({
   );
 };
 
-const useUpdatePasswordForm = () => {
+const useUpdatePasswordForm = ({
+  handleClose,
+}: {
+  handleClose: () => void;
+}) => {
   const methods = useForm<UpdatePasswordRequest>({
     resolver: zodResolver(updatePasswordRequestSchema),
     defaultValues: {
@@ -98,6 +99,7 @@ const useUpdatePasswordForm = () => {
 
   const onSubmit = (data: UpdatePasswordRequest) => {
     mutate(data, {
+      onSuccess: handleClose,
       onError: (err) => {
         handleAipFieldViolations(err, methods);
       },
