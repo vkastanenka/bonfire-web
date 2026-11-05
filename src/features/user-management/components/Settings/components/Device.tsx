@@ -23,6 +23,7 @@ export const Device = ({ session }: DeviceProps) => {
 
   const logOut = async () => {
     await mutate({ id: session.id, isCurrent: session.isCurrent });
+    console.log("Success!");
   };
 
   return (
@@ -46,9 +47,11 @@ export const Device = ({ session }: DeviceProps) => {
           </Typography>
         </Stack>
       </Stack>
-      <IconButton onClick={logOut}>
-        <CloseIcon />
-      </IconButton>
+      {!session.isCurrent && (
+        <IconButton onClick={logOut}>
+          <CloseIcon />
+        </IconButton>
+      )}
     </Stack>
   );
 };

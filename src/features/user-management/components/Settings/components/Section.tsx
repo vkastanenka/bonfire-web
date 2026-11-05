@@ -33,13 +33,17 @@ export const Section = ({ title, subtitle, children }: SectionProps) => {
 
 interface SubSectionProps {
   title: string;
+  subtitle?: string;
   children: ReactNode;
 }
 
-export const SubSection = ({ title, children }: SubSectionProps) => {
+export const SubSection = ({ title, subtitle, children }: SubSectionProps) => {
   return (
     <Stack sx={{ gap: 2 }}>
-      <Typography sx={{ fontWeight: 500 }}>{title}</Typography>
+      <Stack>
+        <Typography sx={{ fontWeight: 500 }}>{title}</Typography>
+        {subtitle && <Typography variant="body2">{subtitle}</Typography>}
+      </Stack>
       {children}
     </Stack>
   );

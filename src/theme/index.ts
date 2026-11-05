@@ -35,6 +35,13 @@ export const theme = createTheme({
     },
   },
   components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          fontSize: "1rem",
+        },
+      },
+    },
     MuiPopover: {
       styleOverrides: {
         paper: {
@@ -47,7 +54,7 @@ export const theme = createTheme({
         paper: {
           borderRadius: 16,
           width: ["auto", "80%"],
-          maxWidth: 1200,
+          maxWidth: 800,
         },
       },
     },

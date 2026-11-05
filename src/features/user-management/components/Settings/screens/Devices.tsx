@@ -1,5 +1,6 @@
 import { type Session } from "@/bonfire";
 import { Section, SubSection, Device } from "../components";
+import { Button } from "@mui/material";
 
 const labels = {
   loggedInDevices: "Logged-in Devices",
@@ -42,6 +43,18 @@ export const Devices = ({ sessions }: DevicesProps) => {
           ))}
         </SubSection>
       )}
+      <SubSection
+        title={labels.logOutOfAllDevicesTitle}
+        subtitle={labels.logOutOfAllDevicesSubtitle}
+      >
+        <Button
+          variant="contained"
+          color="error"
+          sx={{ alignSelf: "flex-start" }}
+        >
+          {labels.logOutOfAllDevicesButton}
+        </Button>
+      </SubSection>
     </Section>
   );
 };
