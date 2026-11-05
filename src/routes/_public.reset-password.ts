@@ -1,6 +1,6 @@
 import { jwtString, z } from "@/validation";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { PATHS } from "@/constants";
+import { paths } from "@/constants";
 import { ResetPasswordPage } from "@/features";
 
 const verifySearchSchema = z.object({
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_public/reset-password")({
   beforeLoad: ({ search }) => {
     if (!search.token) {
       throw redirect({
-        to: PATHS.login,
+        to: paths.login,
         replace: true,
       });
     }

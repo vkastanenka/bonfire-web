@@ -1,5 +1,5 @@
 import { Form, Link } from "@/components";
-import { PATHS } from "@/constants";
+import { paths } from "@/constants";
 import { AuthLayout } from "../AuthLayout";
 import { LABELS, FORM_FIELDS } from "./constants";
 import { useRegisterForm } from "./hooks";
@@ -15,7 +15,7 @@ export const RegisterPage = () => {
         <Form.TextField {...FORM_FIELDS.password} />
         <Form.SubmitButton>{LABELS.submit}</Form.SubmitButton>
       </Form>
-      <Link.Text to={PATHS.login} disabled={isPending}>
+      <Link.Text to={paths.login} disabled={isPending}>
         {LABELS.login}
       </Link.Text>
     </AuthLayout>

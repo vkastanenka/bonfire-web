@@ -52,7 +52,6 @@ export class UserService {
 
   public async disable(req: DisableRequest, options?: ClientRequestOptions) {
     await userClient.disable(req, options);
-    useAuthStore.getState().clearSession();
   }
 
   public async scheduleDelete(
@@ -60,7 +59,6 @@ export class UserService {
     options?: ClientRequestOptions,
   ) {
     await userClient.scheduleDelete(req, options);
-    useAuthStore.getState().clearSession();
   }
 }
 

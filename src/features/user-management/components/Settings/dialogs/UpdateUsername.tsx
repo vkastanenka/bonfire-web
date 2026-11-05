@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Dialog, Stack, Typography } from "@mui/material";
 import {
   type UpdateUsernameRequest,
   updateUsernameRequestSchema,
@@ -8,8 +9,6 @@ import {
 } from "@/bonfire";
 import { handleAipFieldViolations } from "@/errs";
 import { DialogHeader, Form } from "@/components";
-import { Dialog, Stack, Typography } from "@mui/material";
-import { useMemo } from "react";
 
 const labels = {
   title: "Change your username",
@@ -82,13 +81,10 @@ const useUpdateUsernameForm = ({
 }) => {
   const me = useAuthStore((state) => state.me)!;
 
-  const defaultValues = useMemo(
-    () => ({
-      newUsername: me.username,
-      password: "",
-    }),
-    [me.username],
-  );
+  const defaultValues = {
+    newUsername: me.username,
+    password: "",
+  };
 
   const methods = useForm<UpdateUsernameRequest>({
     resolver: zodResolver(updateUsernameRequestSchema),

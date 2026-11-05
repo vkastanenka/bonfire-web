@@ -22,7 +22,7 @@ const formFields = [
   {
     name: "currentPassword",
     id: "currentPassword-input",
-    type: "currentPassword",
+    type: "password",
     label: labels.currentPassword,
     required: true,
     autoComplete: "current-password",
@@ -30,7 +30,7 @@ const formFields = [
   {
     name: "newPassword",
     id: "newPassword-input",
-    type: "newPassword",
+    type: "password",
     label: labels.newPassword,
     required: true,
     autoComplete: "new-password",
@@ -38,7 +38,7 @@ const formFields = [
   {
     name: "newPasswordConfirm",
     id: "newPasswordConfirm-input",
-    type: "newPasswordConfirm",
+    type: "password",
     label: labels.newPasswordConfirm,
     required: true,
     autoComplete: "new-password-confirm",
@@ -51,7 +51,7 @@ interface UpdatePasswordProps {
 }
 
 export const UpdatePassword = ({ open, handleClose }: UpdatePasswordProps) => {
-  const { methods, onSubmit, isPending } = useUpdatePasswordForm({
+  const { methods, onSubmit, isPending, resetForm } = useUpdatePasswordForm({
     handleClose,
   });
 
@@ -64,6 +64,9 @@ export const UpdatePassword = ({ open, handleClose }: UpdatePasswordProps) => {
           sx: {
             width: 400,
           },
+        },
+        transition: {
+          onExited: resetForm,
         },
       }}
     >
@@ -86,14 +89,20 @@ const useUpdatePasswordForm = ({
 }: {
   handleClose: () => void;
 }) => {
+  const defaultValues = {
+    currentPassword: "",
+    newPassword: "",
+    newPasswordConfirm: "",
+  };
+
   const methods = useForm<UpdatePasswordRequest>({
     resolver: zodResolver(updatePasswordRequestSchema),
-    defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      newPasswordConfirm: "",
-    },
+    defaultValues,
   });
+
+  const resetForm = () => {
+    methods.reset(defaultValues);
+  };
 
   const { mutate, isPending } = useUpdatePassword();
 
@@ -110,5 +119,6 @@ const useUpdatePasswordForm = ({
     methods,
     onSubmit,
     isPending,
+    resetForm,
   };
 };

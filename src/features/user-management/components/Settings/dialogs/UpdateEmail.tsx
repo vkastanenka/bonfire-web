@@ -19,17 +19,17 @@ const labels = {
 };
 
 const formFields = {
-  email: {
-    name: "email",
-    id: "email-input",
+  newEmail: {
+    name: "newEmail",
+    id: "newEmail-input",
     label: labels.email,
     required: true,
-    autoComplete: "email",
+    autoComplete: "newEmail",
   },
-  currentPassword: {
-    name: "currentPassword",
-    id: "currentPassword-input",
-    type: "currentPassword",
+  password: {
+    name: "password",
+    id: "password-input",
+    type: "password",
     label: labels.currentPassword,
     required: true,
     autoComplete: "current-password",
@@ -42,7 +42,9 @@ interface UpdateEmailProps {
 }
 
 export const UpdateEmail = ({ open, handleClose }: UpdateEmailProps) => {
-  const { methods, onSubmit, isPending } = useUpdateEmailForm({ handleClose });
+  const { methods, onSubmit, isPending, resetForm } = useUpdateEmailForm({
+    handleClose,
+  });
 
   return (
     <Dialog
@@ -54,14 +56,17 @@ export const UpdateEmail = ({ open, handleClose }: UpdateEmailProps) => {
             width: 400,
           },
         },
+        transition: {
+          onExited: resetForm,
+        },
       }}
     >
       <DialogHeader title={labels.title} handleClose={handleClose} />
       <Stack sx={{ gap: 3, p: 3 }}>
         <Typography>{labels.subtitle}</Typography>
         <Form methods={methods} onSubmit={onSubmit} disabled={isPending}>
-          <Form.TextField {...formFields.email} />
-          <Form.TextField {...formFields.currentPassword} />
+          <Form.TextField {...formFields.newEmail} />
+          <Form.TextField {...formFields.password} />
           <Form.SubmitButton>{labels.submit}</Form.SubmitButton>
         </Form>
       </Stack>
@@ -72,17 +77,28 @@ export const UpdateEmail = ({ open, handleClose }: UpdateEmailProps) => {
 const useUpdateEmailForm = ({ handleClose }: { handleClose: () => void }) => {
   const me = useAuthStore((state) => state.me)!;
 
+  const defaultValues = {
+    newEmail: me.email,
+    password: "",
+  };
+
   const methods = useForm<UpdateEmailRequest>({
     resolver: zodResolver(updateEmailRequestSchema),
-    defaultValues: {
-      newEmail: me.email,
-      password: "",
-    },
+    defaultValues,
   });
+
+  const resetForm = () => {
+    methods.reset(defaultValues);
+  };
 
   const { mutate, isPending } = useUpdateEmail();
 
   const onSubmit = (data: UpdateEmailRequest) => {
+    if (data.newEmail === me.email) {
+      handleClose();
+      return;
+    }
+
     mutate(data, {
       onSuccess: handleClose,
       onError: (err) => {
@@ -95,5 +111,6 @@ const useUpdateEmailForm = ({ handleClose }: { handleClose: () => void }) => {
     methods,
     onSubmit,
     isPending,
+    resetForm,
   };
 };

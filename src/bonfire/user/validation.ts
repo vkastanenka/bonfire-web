@@ -39,11 +39,16 @@ export const updateUsernameRequestSchema = z.object({
 
 export type UpdateUsernameRequest = z.infer<typeof updateUsernameRequestSchema>;
 
-export const updatePasswordRequestSchema = z.object({
-  currentPassword: passwordSchema,
-  newPassword: passwordSchema,
-  newPasswordConfirm: passwordSchema,
-});
+export const updatePasswordRequestSchema = z
+  .object({
+    currentPassword: passwordSchema,
+    newPassword: passwordSchema,
+    newPasswordConfirm: passwordSchema,
+  })
+  .refine((data) => data.newPassword === data.newPasswordConfirm, {
+    message: "Passwords must match",
+    path: ["newPasswordConfirm"],
+  });
 
 export type UpdatePasswordRequest = z.infer<typeof updatePasswordRequestSchema>;
 

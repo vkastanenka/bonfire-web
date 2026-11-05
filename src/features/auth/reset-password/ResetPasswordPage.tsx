@@ -1,6 +1,6 @@
 import { getRouteApi } from "@tanstack/react-router";
 import { Link, Form } from "@/components";
-import { PATHS } from "@/constants";
+import { paths } from "@/constants";
 import { AuthLayout } from "../AuthLayout";
 import { LABELS, FORM_FIELDS } from "./constants";
 import { useResetPasswordForm } from "./hooks";
@@ -25,7 +25,7 @@ export const ResetPasswordPage = () => {
         <Form.TextField {...FORM_FIELDS.password} />
         <Form.SubmitButton>{LABELS.submit}</Form.SubmitButton>
       </Form>
-      <Link.Text to={PATHS.login}>{LABELS.login}</Link.Text>
+      <Link.Text to={paths.login}>{LABELS.login}</Link.Text>
     </AuthLayout>
   );
 };

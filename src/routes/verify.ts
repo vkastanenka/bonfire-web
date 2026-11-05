@@ -1,7 +1,7 @@
 import { jwtString, z } from "@/validation";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { VerifyPage } from "@/features";
-import { PATHS } from "@/constants";
+import { paths } from "@/constants";
 
 const verifySearchSchema = z.object({
   token: jwtString,
@@ -19,11 +19,11 @@ export const Route = createFileRoute("/verify")({
   beforeLoad: ({ search }) => {
     if (!search.token) {
       throw redirect({
-        to: PATHS.login,
+        to: paths.login,
         replace: true,
       });
     }
   },
-  
+
   component: VerifyPage,
 });

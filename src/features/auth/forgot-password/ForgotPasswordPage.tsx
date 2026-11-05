@@ -1,5 +1,5 @@
 import { Link, Text, Form } from "@/components";
-import { PATHS } from "@/constants";
+import { paths } from "@/constants";
 import { AuthLayout } from "../AuthLayout";
 import { FORM_FIELDS, LABELS } from "./constants";
 import { useForgotPasswordForm } from "./hooks";
@@ -15,7 +15,7 @@ export const ForgotPasswordPage = () => {
           instructions to reset your password. Please check your inbox (and your
           spam folder!).
         </Text>
-        <Link.Text to={PATHS.login}>{LABELS.loginSuccess}</Link.Text>
+        <Link.Text to={paths.login}>{LABELS.loginSuccess}</Link.Text>
       </AuthLayout>
     );
   }
@@ -26,7 +26,7 @@ export const ForgotPasswordPage = () => {
         <Form.TextField {...FORM_FIELDS.email} />
         <Form.SubmitButton>{LABELS.submit}</Form.SubmitButton>
       </Form>
-      <Link.Text to={PATHS.login} disabled={isPending}>
+      <Link.Text to={paths.login} disabled={isPending}>
         {LABELS.login}
       </Link.Text>
     </AuthLayout>

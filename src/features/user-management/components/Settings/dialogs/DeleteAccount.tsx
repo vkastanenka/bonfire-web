@@ -1,11 +1,15 @@
+import { useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, Stack, Typography } from "@mui/material";
 import {
   disableRequestSchema,
+  useAuthStore,
   useScheduleDeleteAccount,
   type DisableRequest,
 } from "@/bonfire";
+import { queryClient } from "@/app";
+import { paths } from "@/constants";
 import { DialogHeader, Form } from "@/components";
 import { handleAipFieldViolations } from "@/errs";
 
@@ -34,9 +38,7 @@ interface DeleteAccountProps {
 }
 
 export const DeleteAccount = ({ open, handleClose }: DeleteAccountProps) => {
-  const { methods, onSubmit, isPending } = useDeleteAccountForm({
-    handleClose,
-  });
+  const { methods, onSubmit, isPending, resetForm } = useDeleteAccountForm();
 
   return (
     <Dialog
@@ -47,6 +49,9 @@ export const DeleteAccount = ({ open, handleClose }: DeleteAccountProps) => {
           sx: {
             width: 400,
           },
+        },
+        transition: {
+          onExited: resetForm,
         },
       }}
     >
@@ -64,19 +69,31 @@ export const DeleteAccount = ({ open, handleClose }: DeleteAccountProps) => {
   );
 };
 
-const useDeleteAccountForm = ({ handleClose }: { handleClose: () => void }) => {
+const useDeleteAccountForm = () => {
+  const navigate = useNavigate();
+
+  const defaultValues = {
+    password: "",
+  };
+
   const methods = useForm<DisableRequest>({
     resolver: zodResolver(disableRequestSchema),
-    defaultValues: {
-      password: "",
-    },
+    defaultValues,
   });
+
+  const resetForm = () => {
+    methods.reset(defaultValues);
+  };
 
   const { mutate, isPending } = useScheduleDeleteAccount();
 
   const onSubmit = (data: DisableRequest) => {
     mutate(data, {
-      onSuccess: handleClose,
+      onSuccess: () => {
+        queryClient.clear();
+        useAuthStore.getState().clearSession();
+        navigate({ to: paths.login });
+      },
       onError: (err) => {
         handleAipFieldViolations(err, methods);
       },
@@ -87,5 +104,6 @@ const useDeleteAccountForm = ({ handleClose }: { handleClose: () => void }) => {
     methods,
     onSubmit,
     isPending,
+    resetForm,
   };
 };
