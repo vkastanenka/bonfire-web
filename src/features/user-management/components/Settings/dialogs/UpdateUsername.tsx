@@ -4,7 +4,7 @@ import { Dialog, Stack, Typography } from "@mui/material";
 import {
   type UpdateUsernameRequest,
   updateUsernameRequestSchema,
-  useAuthStore,
+  useMe,
   useUpdateUsername,
 } from "@/bonfire";
 import { handleAipFieldViolations } from "@/errs";
@@ -79,7 +79,7 @@ const useUpdateUsernameForm = ({
 }: {
   handleClose: () => void;
 }) => {
-  const me = useAuthStore((state) => state.me)!;
+  const me = useMe();
 
   const defaultValues = {
     newUsername: me.username,

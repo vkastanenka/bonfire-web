@@ -7,14 +7,11 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import { isValid, isAfter, isToday, isTomorrow, format } from "date-fns";
-import { useAuthStore, useEffectivePresence, useLogout } from "@/bonfire";
+import { useEffectivePresence, useLogout, useMe } from "@/bonfire";
 import { presenceLabels, presenceIcons } from "@/presence";
 import { itemStyles } from "../constants";
 import { Content } from "./Content";
 import { elIds } from "../../constants";
-import { useNavigate } from "@tanstack/react-router";
-import { queryClient } from "@/app";
-import { paths } from "@/constants";
 
 const labels = {
   editProfile: "Edit Profile",
@@ -42,21 +39,14 @@ export const Actions = ({
   presenceOpen,
   handleOpenPresence,
 }: ActionsProps) => {
-  const me = useAuthStore((state) => state.me)!;
+  const me = useMe();
   const presence = useEffectivePresence();
   const currentPresenceIcon = presenceIcons[presence];
 
   const { mutate, isPending } = useLogout();
-  const navigate = useNavigate();
 
-  const logOut = async () => {
-    mutate(undefined, {
-      onSuccess: () => {
-        queryClient.clear();
-        useAuthStore.getState().clearSession();
-        navigate({ to: paths.login });
-      },
-    });
+  const logOut = () => {
+    mutate();
   };
 
   return (

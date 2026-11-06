@@ -1,8 +1,9 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { createRouter, redirect } from "@tanstack/react-router";
 import { routeTree } from "../routeTree.gen";
-import { authService } from "@/bonfire";
+import { useAuthStore } from "@/bonfire";
 import { queryClient } from "./query-client";
+import { paths } from "@/constants";
 
 export interface RouterContext {
   queryClient: QueryClient;
@@ -22,10 +23,10 @@ declare module "@tanstack/react-router" {
 }
 
 export function requireAuth(options: { redirectTo?: string } = {}) {
-  const { redirectTo = "/login" } = options;
+  const { redirectTo = paths.login } = options;
 
-  return async () => {
-    const token = await authService.restore();
+  return () => {
+    const token = useAuthStore.getState().accessToken;
 
     if (!token) {
       throw redirect({
@@ -36,10 +37,10 @@ export function requireAuth(options: { redirectTo?: string } = {}) {
 }
 
 export function requireGuest(options: { redirectTo?: string } = {}) {
-  const { redirectTo = "/channels/@me" } = options;
+  const { redirectTo = paths.me } = options;
 
-  return async () => {
-    const token = await authService.restore();
+  return () => {
+    const token = useAuthStore.getState().accessToken;
 
     if (token) {
       throw redirect({

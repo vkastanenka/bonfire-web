@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   type UpdateEmailRequest,
   updateEmailRequestSchema,
-  useAuthStore,
+  useMe,
   useUpdateEmail,
 } from "@/bonfire";
 import { handleAipFieldViolations } from "@/errs";
@@ -75,7 +75,7 @@ export const UpdateEmail = ({ open, handleClose }: UpdateEmailProps) => {
 };
 
 const useUpdateEmailForm = ({ handleClose }: { handleClose: () => void }) => {
-  const me = useAuthStore((state) => state.me)!;
+  const me = useMe();
 
   const defaultValues = {
     newEmail: me.email,

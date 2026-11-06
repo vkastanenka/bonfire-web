@@ -1,5 +1,5 @@
 import { Button, Divider, Typography } from "@mui/material";
-import { useAuthStore } from "@/bonfire";
+import { useMe } from "@/bonfire";
 import { Section, Setting, Edit, Censor, Navigate } from "../components";
 
 const labels = {
@@ -42,7 +42,7 @@ export const Account = ({
   navigateDevices,
   sessionsLength = 0,
 }: AccountProps) => {
-  const me = useAuthStore((state) => state.me)!;
+  const me = useMe();
 
   return (
     <>

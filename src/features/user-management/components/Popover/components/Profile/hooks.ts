@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   type UpdateProfileRequest,
   updateProfileRequestSchema,
-  useAuthStore,
+  useMe,
   useUpdateProfile,
 } from "@/bonfire";
 import { handleAipFieldViolations } from "@/errs";
@@ -13,7 +13,7 @@ export const useEditProfileForm = ({
 }: {
   handleClose: () => void;
 }) => {
-  const me = useAuthStore((state) => state.me)!;
+  const me = useMe();
 
   const defaultValues = {
     displayName: me.displayName,

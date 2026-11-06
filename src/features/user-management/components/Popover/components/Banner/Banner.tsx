@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Box, ButtonBase, useTheme } from "@mui/material";
-import { useAuthStore, useEffectivePresence } from "@/bonfire";
+import { useEffectivePresence, useMe } from "@/bonfire";
 import { Overlay } from "@/components";
 import { Avatar, type AvatarSizeKey } from "@/features/components";
 
@@ -21,7 +21,7 @@ export const Banner = ({
   canEdit = false,
   onColorChange,
 }: BannerProps) => {
-  const me = useAuthStore((state) => state.me)!;
+  const me = useMe();
   const presence = useEffectivePresence();
 
   const theme = useTheme();

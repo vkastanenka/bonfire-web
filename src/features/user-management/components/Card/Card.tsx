@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { useAuthStore, useEffectivePresence } from "@/bonfire";
+import { useEffectivePresence, useMe } from "@/bonfire";
 import { presenceLabels } from "@/presence";
 import { Avatar } from "@/features/components";
 import { elIds } from "../constants";
@@ -22,7 +22,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     { popoverOpen, settingsOpen, handlePopoverOpen, handleSettingsOpen },
     ref,
   ) => {
-    const me = useAuthStore((state) => state.me)!;
+    const me = useMe();
     const presence = useEffectivePresence();
 
     return (
@@ -53,6 +53,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
           <Avatar
             src={me.avatarUrl}
             username={me.username}
+            bgColor={me.bannerColor}
             presence={presence}
             size="sm"
           />

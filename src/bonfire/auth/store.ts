@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Me } from "../user";
+import { queryClient } from "@/app";
 
 export interface AuthState {
   accessToken: string | null;
@@ -18,5 +19,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   me: null,
   setAccessToken: (accessToken) => set({ accessToken }),
   setMe: (me) => set({ me }),
-  clearSession: () => set({ accessToken: null, me: null }),
+  clearSession: () => {
+    set({ accessToken: null, me: null });
+    queryClient.clear();
+  },
 }));

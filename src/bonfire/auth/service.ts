@@ -45,8 +45,10 @@ export class AuthService {
     useAuthStore.getState().setAccessToken(data.accessToken);
   }
 
-  public async logout(options?: ClientRequestOptions) {
-    await authClient.logout(options);
+  public logout(options?: ClientRequestOptions): Promise<unknown> {
+    const requestPromise = authClient.logout(options);
+    useAuthStore.getState().clearSession();
+    return requestPromise;
   }
 
   public async refresh(): Promise<string | null> {

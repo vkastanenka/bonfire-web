@@ -5,7 +5,7 @@ import {
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import { queryClient } from "@/app";
-import type { AppError } from "@/errs";
+import { AppError } from "@/errs";
 import { authService } from "./service";
 import {
   type ForgotPasswordRequest,
@@ -15,6 +15,8 @@ import {
   type ResetPasswordRequest,
   type VerifyEmailRequest,
 } from "./validation";
+import type { Me } from "../user";
+import { useAuthStore } from "./store";
 
 export const authKeys = {
   all: ["auth"] as const,
@@ -28,6 +30,16 @@ export const authKeys = {
   listValidSessions: () => [...authKeys.all, "listValidSessions"] as const,
   revokeAllSessions: () => [...authKeys.all, "revokeAllSessions"] as const,
   revokeSession: () => [...authKeys.all, "revokeSession"] as const,
+};
+
+export const useMe = (): Me => {
+  const me = useAuthStore((state) => state.me);
+  if (!me) {
+    throw new AppError(
+      "useMe must only be used within an authenticated route where me is guaranteed.",
+    );
+  }
+  return me;
 };
 
 export const useRegister = (
@@ -59,16 +71,12 @@ export const useLogin = (
 };
 
 export const useLogout = (
-  options?: Partial<UseMutationOptions<void, AppError, void>>,
+  options?: Partial<UseMutationOptions<unknown, AppError, void>>,
 ) => {
   return useMutation({
     mutationKey: authKeys.logout(),
     mutationFn: () => authService.logout(),
     ...options,
-    onSuccess: async (data, variables, context, mutation) => {
-      queryClient.clear();
-      await options?.onSuccess?.(data, variables, context, mutation);
-    },
   });
 };
 

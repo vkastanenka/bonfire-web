@@ -9,11 +9,14 @@ import "@fontsource/quicksand/500.css";
 import "@fontsource/quicksand/700.css";
 
 import { queryClient, router } from "@/app";
+import { authService } from "@/bonfire";
 import { ToastProvider } from "@/toast";
 
 const App = () => {
   return <RouterProvider router={router} />;
 };
+
+await authService.restore();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
