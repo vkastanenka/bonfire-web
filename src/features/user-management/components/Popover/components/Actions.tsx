@@ -86,7 +86,7 @@ export const Actions = ({
       </Stack>
 
       <Button variant="contained" onClick={logOut} disabled={isPending}>
-        <Typography variant="body2">{labels.logOut}</Typography>
+        {labels.logOut}
       </Button>
     </Stack>
   );
