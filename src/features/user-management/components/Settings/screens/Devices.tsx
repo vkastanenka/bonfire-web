@@ -1,6 +1,9 @@
-import { type Session } from "@/bonfire";
+import { useAuthStore, useRevokeAllSessions, type Session } from "@/bonfire";
 import { Section, SubSection, Device } from "../components";
 import { Button } from "@mui/material";
+import { useNavigate } from "@tanstack/react-router";
+import { paths } from "@/constants";
+import { queryClient } from "@/app";
 
 const labels = {
   loggedInDevices: "Logged-in Devices",
@@ -19,6 +22,19 @@ interface DevicesProps {
 }
 
 export const Devices = ({ sessions }: DevicesProps) => {
+  const { mutate, isPending } = useRevokeAllSessions();
+  const navigate = useNavigate();
+
+  const logOutAll = async () => {
+    mutate(undefined, {
+      onSuccess: () => {
+        queryClient.clear();
+        useAuthStore.getState().clearSession();
+        navigate({ to: paths.login });
+      },
+    });
+  };
+
   if (!sessions) {
     return <div>No valid sessions</div>;
   }
@@ -51,6 +67,8 @@ export const Devices = ({ sessions }: DevicesProps) => {
           variant="contained"
           color="error"
           sx={{ alignSelf: "flex-start" }}
+          disabled={isPending}
+          onClick={logOutAll}
         >
           {labels.logOutOfAllDevicesButton}
         </Button>

@@ -7,11 +7,14 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import { isValid, isAfter, isToday, isTomorrow, format } from "date-fns";
-import { useAuthStore, useGatewayStore } from "@/bonfire";
+import { useAuthStore, useGatewayStore, useLogout } from "@/bonfire";
 import { presenceLabels, presenceIcons } from "@/presence";
 import { itemStyles } from "../constants";
 import { Content } from "./Content";
 import { elIds } from "../../constants";
+import { useNavigate } from "@tanstack/react-router";
+import { queryClient } from "@/app";
+import { paths } from "@/constants";
 
 const labels = {
   editProfile: "Edit Profile",
@@ -42,6 +45,19 @@ export const Actions = ({
   const me = useAuthStore((state) => state.me)!;
   const presence = useGatewayStore((state) => state.presence);
   const currentPresenceIcon = presenceIcons[presence];
+
+  const { mutate, isPending } = useLogout();
+  const navigate = useNavigate();
+
+  const logOut = async () => {
+    mutate(undefined, {
+      onSuccess: () => {
+        queryClient.clear();
+        useAuthStore.getState().clearSession();
+        navigate({ to: paths.login });
+      },
+    });
+  };
 
   return (
     <Stack sx={{ pt: 1, px: 2, pb: 2, gap: 2 }}>
@@ -79,10 +95,7 @@ export const Actions = ({
         />
       </Stack>
 
-      <Button
-        variant="contained"
-        // onClick={onLogout}
-      >
+      <Button variant="contained" onClick={logOut} disabled={isPending}>
         <Typography variant="body2">{labels.logOut}</Typography>
       </Button>
     </Stack>

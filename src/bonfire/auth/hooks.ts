@@ -146,14 +146,12 @@ export const useRevokeAllSessions = (
 };
 
 export const useRevokeSession = (
-  options?: Partial<
-    UseMutationOptions<void, AppError, { id: string; isCurrent: boolean }>
-  >,
+  options?: Partial<UseMutationOptions<void, AppError, { id: string }>>,
 ) => {
   return useMutation({
     mutationKey: authKeys.revokeSession(),
     mutationFn: (data: { id: string; isCurrent: boolean }) =>
-      authService.revokeSession(data.id, data.isCurrent),
+      authService.revokeSession(data.id),
     ...options,
     onSuccess: async (data, variables, context, mutation) => {
       if (variables.isCurrent) {

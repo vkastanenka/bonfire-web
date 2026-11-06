@@ -47,7 +47,6 @@ export class AuthService {
 
   public async logout(options?: ClientRequestOptions) {
     await authClient.logout(options);
-    useAuthStore.getState().clearSession();
   }
 
   public async refresh(): Promise<string | null> {
@@ -114,18 +113,10 @@ export class AuthService {
 
   public async revokeAllSessions(options?: ClientRequestOptions) {
     await authClient.revokeAllSessions(options);
-    useAuthStore.getState().clearSession();
   }
 
-  public async revokeSession(
-    id: string,
-    isCurrent: boolean,
-    options?: ClientRequestOptions,
-  ) {
+  public async revokeSession(id: string, options?: ClientRequestOptions) {
     await authClient.revokeSession(id, options);
-    if (isCurrent) {
-      useAuthStore.getState().clearSession();
-    }
   }
 }
 
