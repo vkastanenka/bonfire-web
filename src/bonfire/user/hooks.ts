@@ -9,6 +9,8 @@ import {
   type UpdateProfileRequest,
   type UpdateUsernameRequest,
 } from "./validation";
+import { usePresenceStore, type Presence } from "@/presence";
+import { useAuthStore } from "../auth";
 
 export const userKeys = {
   all: ["user"] as const,
@@ -96,4 +98,25 @@ export const useScheduleDeleteAccount = (
     mutationFn: (data: DisableRequest) => userService.scheduleDelete(data),
     ...options,
   });
+};
+
+export const useEffectivePresence = (): Presence => {
+  const presence = usePresenceStore((state) => state.presence);
+  const preferredPresence = useAuthStore(
+    (state) => state.me?.preferredPresence,
+  );
+  const preferredPresenceUntil = useAuthStore(
+    (state) => state.me?.preferredPresenceUntil,
+  );
+
+  if (preferredPresence) {
+    if (preferredPresenceUntil) {
+      const isExpired = new Date() > new Date(preferredPresenceUntil);
+      if (!isExpired) return preferredPresence;
+    } else {
+      return preferredPresence;
+    }
+  }
+
+  return presence;
 };

@@ -2,46 +2,59 @@ import { type ClientRequestOptions } from "@/http";
 import { userClient } from "./client";
 import {
   type DisableRequest,
+  type Me,
   type UpdateEmailRequest,
   type UpdatePasswordRequest,
   type UpdatePreferredPresenceRequest,
   type UpdateProfileRequest,
   type UpdateUsernameRequest,
 } from "./validation";
-import { useAuthStore } from "../auth";
+import { useAuthStore, type AuthState } from "../auth";
 
 export class UserService {
   public async updateEmail(
     req: UpdateEmailRequest,
     options?: ClientRequestOptions,
   ) {
-    const data = await userClient.updateEmail(req, options);
-    useAuthStore.getState().setMe(data);
+    return withOptimisticMe(
+      (me) => ({ ...me, email: req.newEmail }),
+      () => userClient.updateEmail(req, options),
+    );
   }
 
   public async updateUsername(
     req: UpdateUsernameRequest,
     options?: ClientRequestOptions,
   ) {
-    const data = await userClient.updateUsername(req, options);
-    useAuthStore.getState().setMe(data);
+    return withOptimisticMe(
+      (me) => ({ ...me, username: req.newUsername }),
+      () => userClient.updateUsername(req, options),
+    );
   }
 
   public async updatePreferredPresence(
     req: UpdatePreferredPresenceRequest,
     options?: ClientRequestOptions,
   ) {
-    const data = await userClient.updatePreferredPresence(req, options);
-    useAuthStore.getState().setMe(data);
+    return withOptimisticMe(
+      (me) => ({ ...me, preferredPresence: req.presence }),
+      () => userClient.updatePreferredPresence(req, options),
+    );
   }
 
   public async updateProfile(
     req: UpdateProfileRequest,
     options?: ClientRequestOptions,
   ) {
-    const data = await userClient.updateProfile(req, options);
-    useAuthStore.getState().setMe(data);
+    return withOptimisticMe(
+      (me) => ({ ...me, ...req }),
+      () => userClient.updateProfile(req, options),
+    );
   }
+
+  /**
+   * TODO: Check if we can handle things here
+   */
 
   public async updatePassword(
     req: UpdatePasswordRequest,
@@ -63,3 +76,24 @@ export class UserService {
 }
 
 export const userService = new UserService();
+
+async function withOptimisticMe(
+  optimisticUpdate: (
+    currentMe: NonNullable<AuthState["me"]>,
+  ) => NonNullable<AuthState["me"]>,
+  apiCall: () => Promise<Me>,
+): Promise<void> {
+  const previousMe = useAuthStore.getState().me;
+
+  if (previousMe) {
+    useAuthStore.setState({ me: optimisticUpdate(previousMe) });
+  }
+
+  try {
+    const data = await apiCall();
+    useAuthStore.getState().setMe(data);
+  } catch (error) {
+    useAuthStore.setState({ me: previousMe });
+    throw error;
+  }
+}

@@ -6,6 +6,7 @@ import {
 } from "@/bonfire";
 import { queryClient, requireAuth } from "@/app";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { usePresence } from "@/presence";
 
 export const authLoader = async () => {
   await queryClient.ensureQueryData({
@@ -16,6 +17,7 @@ export const authLoader = async () => {
 
 function AuthLayout() {
   useBootstrap();
+  usePresence();
   // useGateway();
   return <Outlet />;
 }

@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { useAuthStore, useGatewayStore } from "@/bonfire";
+import { useAuthStore, useEffectivePresence } from "@/bonfire";
 import { presenceLabels } from "@/presence";
 import { Avatar } from "@/features/components";
 import { elIds } from "../constants";
@@ -23,7 +23,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     ref,
   ) => {
     const me = useAuthStore((state) => state.me)!;
-    const presence = useGatewayStore((state) => state.presence);
+    const presence = useEffectivePresence();
 
     return (
       <Stack

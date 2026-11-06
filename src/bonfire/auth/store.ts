@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Me } from "../user";
 
-interface AuthState {
+export interface AuthState {
   accessToken: string | null;
   me: Me | null;
   setAccessToken: (accessToken: string | null) => void;

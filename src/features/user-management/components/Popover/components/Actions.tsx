@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import { isValid, isAfter, isToday, isTomorrow, format } from "date-fns";
-import { useAuthStore, useGatewayStore, useLogout } from "@/bonfire";
+import { useAuthStore, useEffectivePresence, useLogout } from "@/bonfire";
 import { presenceLabels, presenceIcons } from "@/presence";
 import { itemStyles } from "../constants";
 import { Content } from "./Content";
@@ -43,7 +43,7 @@ export const Actions = ({
   handleOpenPresence,
 }: ActionsProps) => {
   const me = useAuthStore((state) => state.me)!;
-  const presence = useGatewayStore((state) => state.presence);
+  const presence = useEffectivePresence();
   const currentPresenceIcon = presenceIcons[presence];
 
   const { mutate, isPending } = useLogout();

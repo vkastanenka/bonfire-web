@@ -10,7 +10,8 @@ const events = [
 ] as const;
 
 const throttleMs = 2000;
-const defaultIdleTimeoutMs = 60000;
+// const defaultIdleTimeoutMs = 60000;
+const defaultIdleTimeoutMs = 3000;
 
 export type PresenceListener = (presence: Presence) => void;
 
