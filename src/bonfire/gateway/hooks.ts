@@ -1,6 +1,19 @@
-// import { useEffect } from "react";
-// import { useGatewayStore } from "./store";
-// import { logger as baseLogger } from "@/logger";
+import { useEffect } from "react";
+import { useGatewayStore } from "./store";
+import { logger as baseLogger } from "@/logger";
+
+export function useGateway() {
+  const init = useGatewayStore((state) => state.init);
+  const close = useGatewayStore((state) => state.close);
+
+  useEffect(() => {
+    init();
+
+    return () => {
+      close();
+    };
+  }, [init, close]);
+}
 
 // const logger = baseLogger.child({
 //   package: "Gateway",

@@ -117,13 +117,17 @@ export const useScheduleDeleteAccount = (
 };
 
 export const useEffectivePresence = (): Presence => {
-  const presence = usePresenceStore((state) => state.presence);
-  const preferredPresence = useAuthStore(
-    (state) => state.me?.preferredPresence,
-  );
-  const preferredPresenceUntil = useAuthStore(
-    (state) => state.me?.preferredPresenceUntil,
-  );
+  usePresenceStore((state) => state.presence);
+  useAuthStore((state) => state.me?.preferredPresence);
+  useAuthStore((state) => state.me?.preferredPresenceUntil);
+  return getEffectivePresence();
+};
+
+export const getEffectivePresence = (): Presence => {
+  const presence = usePresenceStore.getState().presence;
+  const me = useAuthStore.getState().me;
+  const preferredPresence = me?.preferredPresence;
+  const preferredPresenceUntil = me?.preferredPresenceUntil;
 
   if (preferredPresence) {
     if (preferredPresenceUntil) {
