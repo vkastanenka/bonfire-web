@@ -52,10 +52,6 @@ export class UserService {
     );
   }
 
-  /**
-   * TODO: Check if we can handle things here
-   */
-
   public async updatePassword(
     req: UpdatePasswordRequest,
     options?: ClientRequestOptions,
@@ -63,15 +59,22 @@ export class UserService {
     await userClient.updatePassword(req, options);
   }
 
-  public async disable(req: DisableRequest, options?: ClientRequestOptions) {
-    await userClient.disable(req, options);
-  }
-
-  public async scheduleDelete(
+  public disable(
     req: DisableRequest,
     options?: ClientRequestOptions,
-  ) {
-    await userClient.scheduleDelete(req, options);
+  ): Promise<unknown> {
+    const promise = userClient.disable(req, options);
+    useAuthStore.getState().clearSession();
+    return promise;
+  }
+
+  public scheduleDelete(
+    req: DisableRequest,
+    options?: ClientRequestOptions,
+  ): Promise<unknown> {
+    const promise = userClient.scheduleDelete(req, options);
+    useAuthStore.getState().clearSession();
+    return promise;
   }
 }
 

@@ -11,7 +11,7 @@ const events = [
 
 const throttleMs = 2000;
 // const defaultIdleTimeoutMs = 60000;
-const defaultIdleTimeoutMs = 3000;
+const defaultIdleTimeoutMs = 5000;
 
 export type PresenceListener = (presence: Presence) => void;
 

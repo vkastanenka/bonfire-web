@@ -8,9 +8,11 @@ export const useSettings = ({
 }: {
   sessionQueryEnabled: boolean;
 }) => {
-  const { data: sessions } = useListValidSessions({
-    enabled: sessionQueryEnabled,
-  });
+  const { data: sessions, isPending: sessionsIsPending } = useListValidSessions(
+    {
+      enabled: sessionQueryEnabled,
+    },
+  );
 
   const [screen, setScreen] = useState<ScreenLabelKey | undefined>(undefined);
 
@@ -40,6 +42,7 @@ export const useSettings = ({
   return {
     screen,
     sessions,
+    sessionsIsPending,
     navigate,
     dialogs,
   };

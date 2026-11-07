@@ -1,4 +1,4 @@
-import { Button, Divider, Typography } from "@mui/material";
+import { Button, Divider, Skeleton, Typography } from "@mui/material";
 import { useMe } from "@/bonfire";
 import { Section, Setting, Edit, Censor, Navigate } from "../components";
 
@@ -31,6 +31,7 @@ export interface AccountProps {
   handleDeleteAccountOpen: () => void;
   navigateDevices: () => void;
   sessionsLength?: number;
+  sessionsIsPending: boolean;
 }
 
 export const Account = ({
@@ -41,6 +42,7 @@ export const Account = ({
   handleDeleteAccountOpen,
   navigateDevices,
   sessionsLength = 0,
+  sessionsIsPending,
 }: AccountProps) => {
   const me = useMe();
 
@@ -63,11 +65,15 @@ export const Account = ({
         <Setting title={labels.password}>
           <Edit onClick={handleUpdatePasswordOpen} />
         </Setting>
-        <Navigate title={labels.loggedInDevices} onClick={navigateDevices}>
-          <Typography sx={{ fontWeight: 500 }}>
-            {formatDevices(sessionsLength)}
-          </Typography>
-        </Navigate>
+        {!sessionsIsPending ? (
+          <Navigate title={labels.loggedInDevices} onClick={navigateDevices}>
+            <Typography sx={{ fontWeight: 500 }}>
+              {formatDevices(sessionsLength)}
+            </Typography>
+          </Navigate>
+        ) : (
+          <Skeleton height={40} />
+        )}
       </Section>
       <Divider />
       <Section title={labels.accountClosure}>

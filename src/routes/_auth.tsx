@@ -1,39 +1,26 @@
-import {
-  bootstrapKeys,
-  bootstrapService,
-  useAuthStore,
-  useBootstrap,
-  // useGateway,
-} from "@/bonfire";
+import { bootstrapKeys, bootstrapService, useAuthStore } from "@/bonfire";
 import { queryClient, requireAuth } from "@/app";
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { usePresence } from "@/presence";
-import { useEffect } from "react";
-import { paths } from "@/constants";
 
 export const authLoader = async () => {
-  await queryClient.ensureQueryData({
+  const data = await queryClient.ensureQueryData({
     queryKey: bootstrapKeys.all,
     queryFn: () => bootstrapService.bootstrap(),
   });
+
+  if (data?.me) {
+    useAuthStore.getState().setMe(data.me);
+  }
+
+  return data;
 };
 
 function AuthLayout() {
-  useBootstrap();
   usePresence();
   // useGateway();
 
   const me = useAuthStore((state) => state.me);
-  const accessToken = useAuthStore((state) => state.accessToken);
-  const clearSession = useAuthStore((state) => state.clearSession);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!me || !accessToken) {
-      clearSession();
-      navigate({ to: paths.login });
-    }
-  }, [me, accessToken, clearSession, navigate]);
 
   if (!me) {
     return null;

@@ -21,6 +21,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setMe: (me) => set({ me }),
   clearSession: () => {
     set({ accessToken: null, me: null });
+    queryClient.cancelQueries();
     queryClient.clear();
   },
 }));

@@ -113,8 +113,10 @@ export class AuthService {
     return authClient.listValidSessions(options);
   }
 
-  public async revokeAllSessions(options?: ClientRequestOptions) {
-    await authClient.revokeAllSessions(options);
+  public revokeAllSessions(options?: ClientRequestOptions): Promise<unknown> {
+    const requestPromise = authClient.revokeAllSessions(options);
+    useAuthStore.getState().clearSession();
+    return requestPromise;
   }
 
   public async revokeSession(id: string, options?: ClientRequestOptions) {

@@ -22,9 +22,10 @@ export interface SettingsProps {
 }
 
 export const Settings = ({ open, handleClose }: SettingsProps) => {
-  const { screen, sessions, navigate, dialogs } = useSettings({
-    sessionQueryEnabled: open,
-  });
+  const { screen, sessions, sessionsIsPending, navigate, dialogs } =
+    useSettings({
+      sessionQueryEnabled: open,
+    });
 
   return (
     <>
@@ -44,6 +45,7 @@ export const Settings = ({ open, handleClose }: SettingsProps) => {
               handleDeleteAccountOpen={dialogs.deleteAccount.handleOpen}
               navigateDevices={navigate.devices}
               sessionsLength={sessions ? sessions.length : 0}
+              sessionsIsPending={sessionsIsPending}
             />
           )}
           {screen === "devices" && <Devices sessions={sessions} />}

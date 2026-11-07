@@ -1,9 +1,6 @@
-import { useAuthStore, useRevokeAllSessions, type Session } from "@/bonfire";
+import { useRevokeAllSessions, type Session } from "@/bonfire";
 import { Section, SubSection, Device } from "../components";
-import { Button } from "@mui/material";
-import { useNavigate } from "@tanstack/react-router";
-import { paths } from "@/constants";
-import { queryClient } from "@/app";
+import { Button, Typography } from "@mui/material";
 
 const labels = {
   loggedInDevices: "Logged-in Devices",
@@ -15,6 +12,7 @@ const labels = {
   logOutOfAllDevicesSubtitle:
     "You'll have to log back in on all logged out devices.",
   logOutOfAllDevicesButton: "Log Out All Known Devices",
+  noValidDevices: "No valid devices. Please refresh and try again.",
 };
 
 interface DevicesProps {
@@ -23,56 +21,50 @@ interface DevicesProps {
 
 export const Devices = ({ sessions }: DevicesProps) => {
   const { mutate, isPending } = useRevokeAllSessions();
-  const navigate = useNavigate();
 
   const logOutAll = async () => {
-    mutate(undefined, {
-      onSuccess: () => {
-        queryClient.clear();
-        useAuthStore.getState().clearSession();
-        navigate({ to: paths.login });
-      },
-    });
+    mutate();
   };
 
-  if (!sessions) {
-    return <div>No valid sessions</div>;
-  }
-
   const currentSession = sessions?.find((session) => session.isCurrent);
-  const otherSessions = sessions.filter((session) => !session.isCurrent);
+  const otherSessions = sessions?.filter((session) => !session.isCurrent);
+  const hasOtherSessions = otherSessions && otherSessions.length > 0;
+  const hasSessions = currentSession || hasOtherSessions;
 
   return (
     <Section
       title={labels.loggedInDevices}
       subtitle={labels.loggedInDevicesDescription}
     >
+      {!hasSessions && <Typography>{labels.noValidDevices}</Typography>}
       {currentSession && (
         <SubSection title={labels.currentDevice}>
           <Device session={currentSession} />
         </SubSection>
       )}
-      {otherSessions && otherSessions.length > 0 && (
+      {hasOtherSessions && (
         <SubSection title={labels.otherDevices}>
           {otherSessions.map((session: Session, i) => (
             <Device key={`logged-in-device-${i}`} session={session} />
           ))}
         </SubSection>
       )}
-      <SubSection
-        title={labels.logOutOfAllDevicesTitle}
-        subtitle={labels.logOutOfAllDevicesSubtitle}
-      >
-        <Button
-          variant="contained"
-          color="error"
-          sx={{ alignSelf: "flex-start" }}
-          disabled={isPending}
-          onClick={logOutAll}
+      {hasSessions && (
+        <SubSection
+          title={labels.logOutOfAllDevicesTitle}
+          subtitle={labels.logOutOfAllDevicesSubtitle}
         >
-          {labels.logOutOfAllDevicesButton}
-        </Button>
-      </SubSection>
+          <Button
+            variant="contained"
+            color="error"
+            sx={{ alignSelf: "flex-start" }}
+            disabled={isPending}
+            onClick={logOutAll}
+          >
+            {labels.logOutOfAllDevicesButton}
+          </Button>
+        </SubSection>
+      )}
     </Section>
   );
 };

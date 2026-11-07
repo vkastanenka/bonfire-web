@@ -13,10 +13,14 @@ import {
   type LoginRequest,
   type RegisterRequest,
   type ResetPasswordRequest,
+  type Session,
   type VerifyEmailRequest,
 } from "./validation";
 import type { Me } from "../user";
 import { useAuthStore } from "./store";
+import { useNavigate } from "@tanstack/react-router";
+import { paths } from "@/constants";
+import { bootstrapService } from "../bootstrap";
 
 export const authKeys = {
   all: ["auth"] as const,
@@ -34,49 +38,90 @@ export const authKeys = {
 
 export const useMe = (): Me => {
   const me = useAuthStore((state) => state.me);
+
   if (!me) {
+    if (import.meta.env.DEV) {
+      // 1. Attempt to refresh tokens/session first to restore the auth header
+      authService
+        .refresh()
+        .then(() => bootstrapService.bootstrap())
+        .then((data) => {
+          if (data?.me) {
+            useAuthStore.getState().setMe(data.me);
+          }
+        })
+        .catch(() => {
+          // If refresh fails, user needs to log in again manually
+        });
+
+      return {
+        id: "00000000-0000-0000-0000-000000000000",
+        email: "dev@example.com",
+        username: "dev_user",
+        displayName: "Dev User",
+        avatarUrl: "",
+        bio: "",
+        bannerColor: "#000000",
+        isVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
+
     throw new AppError(
       "useMe must only be used within an authenticated route where me is guaranteed.",
     );
   }
+
   return me;
 };
 
 export const useRegister = (
   options?: Partial<UseMutationOptions<void, AppError, RegisterRequest>>,
 ) => {
+  const { onSuccess, ...restOptions } = options ?? {};
+
   return useMutation({
+    ...restOptions,
     mutationKey: authKeys.register(),
     mutationFn: (data: RegisterRequest) => authService.register(data),
     onSuccess: async (data, variables, context, mutation) => {
-      await queryClient.invalidateQueries();
-      options?.onSuccess?.(data, variables, context, mutation);
+      queryClient.clear();
+      await onSuccess?.(data, variables, context, mutation);
     },
-    ...options,
   });
 };
 
 export const useLogin = (
   options?: Partial<UseMutationOptions<void, AppError, LoginRequest>>,
 ) => {
+  const { onSuccess, ...restOptions } = options ?? {};
+
   return useMutation({
+    ...restOptions,
     mutationKey: authKeys.login(),
     mutationFn: (data: LoginRequest) => authService.login(data),
     onSuccess: async (data, variables, context, mutation) => {
-      await queryClient.invalidateQueries();
-      options?.onSuccess?.(data, variables, context, mutation);
+      queryClient.clear();
+      await onSuccess?.(data, variables, context, mutation);
     },
-    ...options,
   });
 };
 
 export const useLogout = (
   options?: Partial<UseMutationOptions<unknown, AppError, void>>,
 ) => {
+  const navigate = useNavigate();
+  const { onSuccess, ...restOptions } = options ?? {};
+
   return useMutation({
+    ...restOptions,
     mutationKey: authKeys.logout(),
     mutationFn: () => authService.logout(),
-    ...options,
+    onSuccess: async (data, variables, context, mutation) => {
+      navigate({ to: paths.login });
+      await onSuccess?.(data, variables, context, mutation);
+    },
   });
 };
 
@@ -114,14 +159,16 @@ export const useForgotPassword = (
 export const useResetPassword = (
   options?: Partial<UseMutationOptions<void, AppError, ResetPasswordRequest>>,
 ) => {
+  const { onSuccess, ...restOptions } = options ?? {};
+
   return useMutation({
+    ...restOptions,
     mutationKey: authKeys.resetPassword(),
     mutationFn: (data: ResetPasswordRequest) => authService.resetPassword(data),
     onSuccess: async (data, variables, context, mutation) => {
-      await queryClient.invalidateQueries();
-      options?.onSuccess?.(data, variables, context, mutation);
+      queryClient.clear();
+      await onSuccess?.(data, variables, context, mutation);
     },
-    ...options,
   });
 };
 
@@ -140,36 +187,44 @@ export const useListValidSessions = (
 };
 
 export const useRevokeAllSessions = (
-  options?: Partial<UseMutationOptions<void, AppError, void>>,
+  options?: Partial<UseMutationOptions<unknown, AppError, void>>,
 ) => {
+  const navigate = useNavigate();
+  const { onSuccess, ...restOptions } = options ?? {};
+
   return useMutation({
+    ...restOptions,
     mutationKey: authKeys.revokeAllSessions(),
     mutationFn: () => authService.revokeAllSessions(),
-    ...options,
     onSuccess: async (data, variables, context, mutation) => {
-      queryClient.clear();
-      await options?.onSuccess?.(data, variables, context, mutation);
+      navigate({ to: paths.login });
+      await onSuccess?.(data, variables, context, mutation);
     },
   });
 };
 
 export const useRevokeSession = (
-  options?: Partial<UseMutationOptions<void, AppError, { id: string }>>,
+  options?: Partial<
+    UseMutationOptions<void, AppError, { id: string; isCurrent: boolean }>
+  >,
 ) => {
+  const { onSuccess, ...restOptions } = options ?? {};
+
   return useMutation({
+    ...restOptions,
     mutationKey: authKeys.revokeSession(),
     mutationFn: (data: { id: string; isCurrent: boolean }) =>
       authService.revokeSession(data.id),
-    ...options,
     onSuccess: async (data, variables, context, mutation) => {
-      if (variables.isCurrent) {
-        queryClient.clear();
-      } else {
-        await queryClient.invalidateQueries({
-          queryKey: authKeys.listValidSessions(),
-        });
-      }
-      await options?.onSuccess?.(data, variables, context, mutation);
+      queryClient.setQueryData<Session[]>(
+        authKeys.listValidSessions(),
+        (oldSessions) => {
+          if (!oldSessions) return [];
+          return oldSessions.filter((session) => session.id !== variables.id);
+        },
+      );
+
+      await onSuccess?.(data, variables, context, mutation);
     },
   });
 };

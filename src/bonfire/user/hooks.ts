@@ -11,6 +11,8 @@ import {
 } from "./validation";
 import { usePresenceStore, type Presence } from "@/presence";
 import { useAuthStore } from "../auth";
+import { paths } from "@/constants";
+import { useNavigate } from "@tanstack/react-router";
 
 export const userKeys = {
   all: ["user"] as const,
@@ -81,22 +83,36 @@ export const useUpdatePassword = (
 };
 
 export const useDisableAccount = (
-  options?: Partial<UseMutationOptions<void, AppError, DisableRequest>>,
+  options?: Partial<UseMutationOptions<unknown, AppError, DisableRequest>>,
 ) => {
+  const navigate = useNavigate();
+  const { onSuccess, ...restOptions } = options ?? {};
+
   return useMutation({
+    ...restOptions,
     mutationKey: userKeys.disable(),
     mutationFn: (data: DisableRequest) => userService.disable(data),
-    ...options,
+    onSuccess: async (data, variables, context, mutation) => {
+      navigate({ to: paths.login });
+      await onSuccess?.(data, variables, context, mutation);
+    },
   });
 };
 
 export const useScheduleDeleteAccount = (
-  options?: Partial<UseMutationOptions<void, AppError, DisableRequest>>,
+  options?: Partial<UseMutationOptions<unknown, AppError, DisableRequest>>,
 ) => {
+  const navigate = useNavigate();
+  const { onSuccess, ...restOptions } = options ?? {};
+
   return useMutation({
+    ...restOptions,
     mutationKey: userKeys.scheduleDelete(),
     mutationFn: (data: DisableRequest) => userService.scheduleDelete(data),
-    ...options,
+    onSuccess: async (data, variables, context, mutation) => {
+      navigate({ to: paths.login });
+      await onSuccess?.(data, variables, context, mutation);
+    },
   });
 };
 
