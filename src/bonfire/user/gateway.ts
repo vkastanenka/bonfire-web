@@ -1,0 +1,184 @@
+import { dispatcher, useGatewayStore } from "../gateway";
+import { useAuthStore } from "../auth";
+import { useEffect } from "react";
+import { usePresenceStore, type Presence } from "@/presence";
+
+export const userMessageTypes = {
+  emailUpdates: "user.email_updated",
+  usernameUpdated: "user.username_updated",
+  passwordUpdated: "user.password_updated",
+  preferredPresenceUpdated: "user.preferred_presence_updated",
+  profileUpdated: "user.profile_updated",
+  disabled: "user.disabled",
+  presenceUpdated: "user.presence_updated",
+} as const;
+
+export interface EmailUpdatedPayload {
+  userId: string;
+  email: string;
+  updatedAt: Date;
+}
+
+export interface UsernameUpdatedPayload {
+  userId: string;
+  username: string;
+  updatedAt: Date;
+}
+
+export interface PreferredPresenceUpdatedPayload {
+  userId: string;
+  presence?: "IDLE" | "DND" | "INVISIBLE";
+  updatedAt: Date;
+}
+
+export interface ProfileUpdatedPayload {
+  userId: string;
+  displayName: string;
+  bio?: string;
+  avatarUrl?: string;
+  bannerColor?: string;
+  updatedAt: Date;
+}
+
+export interface DisabledPayload {
+  userId: string;
+  updatedAt: Date;
+}
+
+export interface PresenceUpdatedPayload {
+  userId: string;
+  presence: Presence;
+}
+
+const handleEmailUpdated = (payload: EmailUpdatedPayload) => {
+  const currentMe = useAuthStore.getState().me;
+
+  if (currentMe && currentMe.id === payload.userId) {
+    useAuthStore.getState().setMe({
+      ...currentMe,
+      email: payload.email,
+      updatedAt: payload.updatedAt,
+    });
+  }
+};
+
+const handleUsernameUpdated = (payload: UsernameUpdatedPayload) => {
+  const currentMe = useAuthStore.getState().me;
+
+  if (currentMe && currentMe.id === payload.userId) {
+    useAuthStore.getState().setMe({
+      ...currentMe,
+      username: payload.username,
+      updatedAt: payload.updatedAt,
+    });
+  }
+};
+
+const handlePasswordUpdated = (_payload: unknown) => {
+  // Password updates usually don't send payload data or require state mutations,
+  // but you can log out sessions or trigger security notices here if needed.
+};
+
+const handlePreferredPresenceUpdated = (
+  payload: PreferredPresenceUpdatedPayload,
+) => {
+  const currentMe = useAuthStore.getState().me;
+
+  if (currentMe && currentMe.id === payload.userId) {
+    useAuthStore.getState().setMe({
+      ...currentMe,
+      preferredPresence: payload.presence,
+      updatedAt: payload.updatedAt,
+    });
+  }
+};
+
+const handleProfileUpdated = (payload: ProfileUpdatedPayload) => {
+  const currentMe = useAuthStore.getState().me;
+
+  if (currentMe && currentMe.id === payload.userId) {
+    console.log("Set profile from handleProfileUpdated");
+    useAuthStore.getState().setMe({
+      ...currentMe,
+      displayName: payload.displayName,
+      bio: payload.bio,
+      avatarUrl: payload.avatarUrl,
+      bannerColor: payload.bannerColor,
+      updatedAt: payload.updatedAt,
+    });
+  }
+};
+
+const handleDisabled = (payload: DisabledPayload) => {
+  //   const currentMe = useAuthStore.getState().me;
+  //   if (currentMe && currentMe.id === payload.userId) {
+  //     useAuthStore.getState().setMe({
+  //       ...currentMe,
+  //       isDisabled: true,
+  //       updatedAt: payload.updatedAt,
+  //     });
+  //   }
+};
+
+const handlePresenceUpdated = (payload: PresenceUpdatedPayload) => {
+  const currentMe = useAuthStore.getState().me;
+
+  if (currentMe && currentMe.id === payload.userId) {
+    console.log("Set received presence from handlePresenceUpdated");
+    // Sync the local echo blocker so incoming presence updates don't trigger outbound network echoes
+    useGatewayStore.getState().setLastSentPresence(payload.presence);
+    usePresenceStore.setState({ presence: payload.presence });
+  }
+};
+
+export const useUserGatewayEvents = () => {
+  useEffect(() => {
+    const unregisterEmailUpdated = dispatcher.register<EmailUpdatedPayload>(
+      userMessageTypes.emailUpdates,
+      handleEmailUpdated,
+    );
+
+    const unregisterUsernameUpdated =
+      dispatcher.register<UsernameUpdatedPayload>(
+        userMessageTypes.usernameUpdated,
+        handleUsernameUpdated,
+      );
+
+    const unregisterPasswordUpdated = dispatcher.register(
+      userMessageTypes.passwordUpdated,
+      handlePasswordUpdated,
+    );
+
+    const unregisterPreferredPresenceUpdated =
+      dispatcher.register<PreferredPresenceUpdatedPayload>(
+        userMessageTypes.preferredPresenceUpdated,
+        handlePreferredPresenceUpdated,
+      );
+
+    const unregisterProfileUpdated = dispatcher.register<ProfileUpdatedPayload>(
+      userMessageTypes.profileUpdated,
+      handleProfileUpdated,
+    );
+
+    const unregisterDisabled = dispatcher.register<DisabledPayload>(
+      userMessageTypes.disabled,
+      handleDisabled,
+    );
+
+    const unregisterPresenceUpdated =
+      dispatcher.register<PresenceUpdatedPayload>(
+        userMessageTypes.presenceUpdated,
+        handlePresenceUpdated,
+      );
+
+    return () => {
+      unregisterEmailUpdated();
+      unregisterUsernameUpdated();
+      unregisterPasswordUpdated();
+      unregisterPreferredPresenceUpdated();
+      unregisterProfileUpdated();
+      unregisterDisabled();
+      unregisterPresenceUpdated();
+    };
+  }, []);
+};

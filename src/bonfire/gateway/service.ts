@@ -74,11 +74,11 @@ export class GatewayService {
     this.status = newStatus;
     this.statusListeners.forEach((listener) => listener(newStatus));
 
-    this.logger.info("Gateway status updated.", {
-      prevStatus,
-      newStatus,
-      listenerCount: this.statusListeners.size,
-    });
+    // this.logger.info("Gateway status updated.", {
+    //   prevStatus,
+    //   newStatus,
+    //   listenerCount: this.statusListeners.size,
+    // });
   }
 
   public subscribeStatus(
@@ -88,32 +88,32 @@ export class GatewayService {
     const wrappedListener: StatusListener = (status) => {
       try {
         listener(status);
-        this.logger.debug("Dispatched status to listener.", {
-          status,
-          source,
-        });
+        // this.logger.debug("Dispatched status to listener.", {
+        //   status,
+        //   source,
+        // });
       } catch (error) {
-        this.logger.error("Status listener execution error.", {
-          status,
-          source,
-          error,
-        });
+        // this.logger.error("Status listener execution error.", {
+        //   status,
+        //   source,
+        //   error,
+        // });
       }
     };
 
     this.statusListeners.add(wrappedListener);
 
-    this.logger.info("Subscribed to status updates.", {
-      listenerCount: this.statusListeners.size,
-      source,
-    });
+    // this.logger.info("Subscribed to status updates.", {
+    //   listenerCount: this.statusListeners.size,
+    //   source,
+    // });
 
     return () => {
       this.statusListeners.delete(wrappedListener);
-      this.logger.info("Unsubscribed from status updates.", {
-        listenerCount: this.statusListeners.size,
-        source,
-      });
+      // this.logger.info("Unsubscribed from status updates.", {
+      //   listenerCount: this.statusListeners.size,
+      //   source,
+      // });
     };
   }
 
@@ -124,32 +124,32 @@ export class GatewayService {
     const wrappedListener: MessageListener = (message) => {
       try {
         listener(message);
-        this.logger.debug("Dispatched message to listener.", {
-          type: message.t,
-          source,
-        });
+        // this.logger.debug("Dispatched message to listener.", {
+        //   type: message.t,
+        //   source,
+        // });
       } catch (error) {
-        this.logger.error("Message listener execution error.", {
-          type: message.t,
-          source,
-          error,
-        });
+        // this.logger.error("Message listener execution error.", {
+        //   type: message.t,
+        //   source,
+        //   error,
+        // });
       }
     };
 
     this.messageListeners.add(wrappedListener);
 
-    this.logger.info("Subscribed to messages.", {
-      listenerCount: this.messageListeners.size,
-      source,
-    });
+    // this.logger.info("Subscribed to messages.", {
+    //   listenerCount: this.messageListeners.size,
+    //   source,
+    // });
 
     return () => {
       this.messageListeners.delete(wrappedListener);
-      this.logger.info("Unsubscribed from messages.", {
-        listenerCount: this.messageListeners.size,
-        source,
-      });
+      // this.logger.info("Unsubscribed from messages.", {
+      //   listenerCount: this.messageListeners.size,
+      //   source,
+      // });
     };
   }
 
@@ -158,9 +158,9 @@ export class GatewayService {
       this.status === GatewayStatus.connected ||
       this.status === GatewayStatus.connecting
     ) {
-      this.logger.debug(
-        "Gateway connected or connecting, start connect aborted.",
-      );
+      // this.logger.debug(
+      //   "Gateway connected or connecting, start connect aborted.",
+      // );
       return;
     }
 
@@ -181,35 +181,35 @@ export class GatewayService {
           this.printTicketPromise = null;
         });
       } else {
-        this.logger.debug(
-          "Ticket request already in flight, reusing existing promise.",
-        );
+        // this.logger.debug(
+        //   "Ticket request already in flight, reusing existing promise.",
+        // );
       }
 
       const res = await this.printTicketPromise;
 
       if (this.forcedClose) {
-        this.logger.debug(
-          "Connection aborted post-ticket: gateway was forcibly closed.",
-        );
+        // this.logger.debug(
+        //   "Connection aborted post-ticket: gateway was forcibly closed.",
+        // );
         return;
       }
 
       if (this.status === GatewayStatus.disconnected) {
-        this.logger.debug(
-          "Connection aborted post-ticket: gateway status is disconnected.",
-        );
+        // this.logger.debug(
+        //   "Connection aborted post-ticket: gateway status is disconnected.",
+        // );
         return;
       }
 
       if (this.connectionVersion !== currentVersion) {
-        this.logger.debug(
-          "Connection aborted post-ticket: stale connection version.",
-          {
-            expectedVersion: currentVersion,
-            actualVersion: this.connectionVersion,
-          },
-        );
+        // this.logger.debug(
+        //   "Connection aborted post-ticket: stale connection version.",
+        //   {
+        //     expectedVersion: currentVersion,
+        //     actualVersion: this.connectionVersion,
+        //   },
+        // );
         return;
       }
 
@@ -219,11 +219,11 @@ export class GatewayService {
       this.setupWs(presence);
     } catch (error) {
       if (this.connectionVersion === currentVersion && !this.forcedClose) {
-        this.logger.error("WebSocket connection failed, retrying.", {
-          connectionVersion: this.connectionVersion,
-          reconnectAttempts: this.reconnectAttempts,
-          error,
-        });
+        // this.logger.error("WebSocket connection failed, retrying.", {
+        //   connectionVersion: this.connectionVersion,
+        //   reconnectAttempts: this.reconnectAttempts,
+        //   error,
+        // });
         this.handleReconnect(presence, error);
       }
     }
@@ -248,14 +248,14 @@ export class GatewayService {
       this.ws = null;
     }
     this.reconnectAttempts = 0;
-    this.logger.info("Disconnected WebSocket gateway.");
+    // this.logger.info("Disconnected WebSocket gateway.");
   }
 
   public send(type: string, data: unknown): void {
     if (!this.ws || this.status !== GatewayStatus.connected) {
-      this.logger.warn("Outbound WebSocket message dropped.", {
-        status: this.status,
-      });
+      // this.logger.warn("Outbound WebSocket message dropped.", {
+      //   status: this.status,
+      // });
       return;
     }
     this.ws.send(JSON.stringify({ t: type, d: data }));
@@ -290,18 +290,18 @@ export class GatewayService {
           this.messageListeners.forEach((listener) => listener(message));
         }
       } catch (err) {
-        this.logger.error(
-          "Failed to parse incoming WebSocket message envelope.",
-          {
-            raw: event.data,
-            error: err,
-          },
-        );
+        // this.logger.error(
+        //   "Failed to parse incoming WebSocket message envelope.",
+        //   {
+        //     raw: event.data,
+        //     error: err,
+        //   },
+        // );
       }
     };
 
     this.ws.onerror = (event) => {
-      this.logger.error("WebSocket network error encountered.", { event });
+      // this.logger.error("WebSocket network error encountered.", { event });
     };
 
     this.ws.onclose = (event) => {
@@ -328,9 +328,9 @@ export class GatewayService {
       error.code === API_ERROR_CODES.RATE_LIMIT_EXCEEDED;
 
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      this.logger.warn(
-        "Max reconnection attempts reached. Stopping auto-retry.",
-      );
+      // this.logger.warn(
+      //   "Max reconnection attempts reached. Stopping auto-retry.",
+      // );
       this.updateStatus(GatewayStatus.disconnected);
       this.cleanupSocket();
       this.reconnectAttempts = 0;
@@ -355,17 +355,17 @@ export class GatewayService {
       this.connect(presence);
     }, jitteredDelay);
 
-    this.logger.info("Scheduled WebSocket reconnection attempt.", {
-      attempt: this.reconnectAttempts + 1,
-      delayMs: Math.round(jitteredDelay),
-    });
+    // this.logger.info("Scheduled WebSocket reconnection attempt.", {
+    //   attempt: this.reconnectAttempts + 1,
+    //   delayMs: Math.round(jitteredDelay),
+    // });
   }
 
   private startWatchdog(): void {
     this.stopWatchdog();
     this.watchdogTimeout = setTimeout(() => {
       if (this.ws) {
-        this.logger.warn("Watchdog timeout reached, closing socket.");
+        // this.logger.warn("Watchdog timeout reached, closing socket.");
         this.ws.close(4000, "Heartbeat Timeout");
       }
     }, this.watchdogTimeoutMs);

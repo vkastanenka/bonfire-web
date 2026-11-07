@@ -30,26 +30,26 @@ export class Dispatcher {
     const wrappedHandler: Handler<unknown> = (data) => {
       try {
         castHandler(data);
-        this.logger.debug("Dispatched message to handler.", {
-          type,
-          source,
-        });
+        // this.logger.debug("Dispatched message to handler.", {
+        //   type,
+        //   source,
+        // });
       } catch (error) {
-        this.logger.error("Message handler execution error.", {
-          type,
-          source,
-          error,
-        });
+        // this.logger.error("Message handler execution error.", {
+        //   type,
+        //   source,
+        //   error,
+        // });
       }
     };
 
     handlers.add(wrappedHandler);
 
-    this.logger.info("Registered message handler.", {
-      type,
-      source,
-      handlerCount: handlers.size,
-    });
+    // this.logger.info("Registered message handler.", {
+    //   type,
+    //   source,
+    //   handlerCount: handlers.size,
+    // });
 
     return () => {
       const currentHandlers = this.handlers.get(type);
@@ -57,11 +57,11 @@ export class Dispatcher {
       if (currentHandlers) {
         currentHandlers.delete(wrappedHandler);
 
-        this.logger.info("Unregistered message handler.", {
-          type,
-          source,
-          handlerCount: currentHandlers.size,
-        });
+        // this.logger.info("Unregistered message handler.", {
+        //   type,
+        //   source,
+        //   handlerCount: currentHandlers.size,
+        // });
 
         if (currentHandlers.size === 0) {
           this.handlers.delete(type);
@@ -73,7 +73,7 @@ export class Dispatcher {
   public dispatch(type: string, data: unknown): void {
     const handlers = this.handlers.get(type);
     if (!handlers) {
-      this.logger.warn("No message handlers for type.", { type });
+      // this.logger.warn("No message handlers for type.", { type });
       return;
     }
 

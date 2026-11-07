@@ -1,24 +1,17 @@
 import { create } from "zustand";
-import {
-//   type Presence,
-//   presences,
-//   presenceTracker,
-  usePresenceStore,
-} from "@/presence";
-import { authService, useAuthStore } from "../auth";
-import { gatewayService, GatewayStatus, type GatewayMessage } from "./service";
-import { BroadcastType, broadcaster } from "./broadcaster";
-import { dispatcher } from "./dispatcher";
+import { presences, usePresenceStore, type Presence } from "@/presence";
+import { useAuthStore } from "../auth";
+import { gatewayService, GatewayStatus } from "./service";
 import { getEffectivePresence } from "../user";
+import { userMessageTypes } from "../user/gateway";
 
 interface State {
   status: GatewayStatus;
   init: () => void;
   close: () => void;
   send: (type: string, data: unknown) => void;
+  setLastSentPresence: (presence: Presence) => void;
 }
-
-let presenceUnsubscribe: (() => void) | null = null;
 
 export const useGatewayStore = create<State>((set, get) => ({
   status: GatewayStatus.disconnected,
@@ -33,11 +26,10 @@ export const useGatewayStore = create<State>((set, get) => ({
     const initialPresence = getEffectivePresence();
     gatewayService.connect(initialPresence);
 
+    lastSentPresence = initialPresence;
+
     presenceUnsubscribe = usePresenceStore.subscribe(() => {
-    //   const currentPresence = getEffectivePresence();
-    //   if (get().status === GatewayStatus.connected) {
-    //     gatewayService.send("UPDATE_PRESENCE", { presence: currentPresence });
-    //   }
+      handlePresenceChange(() => get().status);
     });
 
     set({ status: gatewayService.getStatus() });
@@ -55,111 +47,48 @@ export const useGatewayStore = create<State>((set, get) => ({
   send: (type, data) => {
     gatewayService.send(type, data);
   },
+
+  setLastSentPresence: (presence) => {
+    lastSentPresence = presence;
+  },
 }));
 
-// interface State {
-//   status: GatewayStatus;
-//   init: () => void;
-//   close: () => void;
-//   send: (type: string, data: unknown) => void;
-// }
+let presenceUnsubscribe: (() => void) | null = null;
+let lastSentPresence: Presence | null = null;
 
-// export const useGatewayStore = create<State>((set, get) => ({
-//   status: GatewayStatus.disconnected,
+const handlePresenceChange = (getStatus: () => GatewayStatus) => {
+  const me = useAuthStore.getState().me;
 
-//   init: () => {
-//     get().close();
+  if (!me) return;
 
-//     // gatewayService.subscribeMessage((message: GatewayMessage) => {
-//     //   broadcaster.post(BroadcastType.message, message);
-//     // });
+  const preferredPresence = me.preferredPresence;
+  const preferredPresenceUntil = me.preferredPresenceUntil;
 
-//     gatewayService.subscribeStatus((status: GatewayStatus) => {
-//       set({ status });
-//       // broadcaster.post(BroadcastType.status, status);
-//     });
+  let hasActiveOverride = false;
+  if (preferredPresence) {
+    if (preferredPresenceUntil) {
+      const isExpired = new Date() > new Date(preferredPresenceUntil);
+      hasActiveOverride = !isExpired;
+    } else {
+      hasActiveOverride = true;
+    }
+  }
 
-//     const initialPresence = getEffectivePresence();
-//     gatewayService.connect(initialPresence);
+  if (hasActiveOverride) return;
 
-//     const initialStatus = gatewayService.getStatus();
-//     set({ status: initialStatus });
-//   },
+  const currentPresence = getEffectivePresence();
 
-//   close: () => {
-//     gatewayService.disconnect();
-//     set({ status: gatewayService.getStatus() });
-//   },
+  if (currentPresence === lastSentPresence) return;
 
-//   send: (type, data) => {
-//     gatewayService.send(type, data);
-//   },
-// }));
-
-// broadcaster.subscribe((type, payload) => {
-//   switch (type) {
-//     case BroadcastType.message: {
-//       const message = payload as GatewayMessage;
-//       dispatcher.dispatch(message.t, message.d);
-//       break;
-//     }
-
-//     case BroadcastType.presence:
-//       useGatewayStore.setState({ presence: payload as Presence });
-//       break;
-
-//     case BroadcastType.status:
-//       useGatewayStore.setState({ status: payload as GatewayStatus });
-//       break;
-//   }
-// });
-
-// let previousToken = useAuthStore.getState().accessToken;
-
-// useAuthStore.subscribe((state) => {
-//   if (previousToken && !state.accessToken) {
-//     useGatewayStore.getState().close();
-//   }
-//   previousToken = state.accessToken;
-// });
-
-//   init: () => {
-//     get().close();
-
-//     // gatewayService.subscribeMessage((message: GatewayMessage) => {
-//     //   broadcaster.post(BroadcastType.message, message);
-//     // });
-
-//     gatewayService.subscribeStatus((status: GatewayStatus) => {
-//       set({ status });
-//       // broadcaster.post(BroadcastType.status, status);
-//     });
-
-//     const initialPresence = getEffectivePresence();
-//     gatewayService.connect(initialPresence);
-
-//     presenceTracker.subscribe((presence: Presence) => {
-//       const effectivePresence = authService.getEffectivePresence() ?? presence;
-
-//       if (get().presence !== effectivePresence) {
-//         set({ presence: effectivePresence });
-//         // gatewayService.send("UPDATE_PRESENCE", { presence: effectivePresence });
-//         // broadcaster.post(BroadcastType.presence, effectivePresence);
-//       }
-//     });
-
-//     // const initialPresence =
-//     //   authService.getEffectivePresence() ?? presences.online;
-
-//     // gatewayService.connect(initialPresence);
-
-//     // const initialStatus = gatewayService.getStatus();
-
-//     // set({
-//     //   status: initialStatus,
-//     //   presence: initialPresence,
-//     // });
-
-//     // broadcaster.post(BroadcastType.status, initialStatus);
-//     // broadcaster.post(BroadcastType.presence, initialPresence);
-//   },
+  if (
+    getStatus() === GatewayStatus.connected &&
+    (currentPresence === presences.online || currentPresence === presences.idle)
+  ) {
+    lastSentPresence = currentPresence;
+    console.log("Sent presence to gateway:", lastSentPresence);
+    gatewayService.send(userMessageTypes.presenceUpdated, {
+      userId: me.id,
+      presence: currentPresence,
+    });
+  }
+};

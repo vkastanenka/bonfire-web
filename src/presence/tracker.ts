@@ -37,12 +37,12 @@ export class PresenceTracker {
 
   public start(): void {
     if (typeof window === "undefined") {
-      this.logger.debug("Window undefined, start aborted.");
+      // this.logger.debug("Window undefined, start aborted.");
       return;
     }
 
     if (this.isRunning) {
-      this.logger.debug("Service already running, start aborted.");
+      // this.logger.debug("Service already running, start aborted.");
       return;
     }
 
@@ -53,17 +53,17 @@ export class PresenceTracker {
     this.resetTimeout();
     this.isRunning = true;
 
-    this.logger.info("Started presence service.");
+    // this.logger.info("Started presence service.");
   }
 
   public stop(): void {
     if (typeof window === "undefined") {
-      this.logger.debug("Window undefined, stop aborted.");
+      // this.logger.debug("Window undefined, stop aborted.");
       return;
     }
 
     if (!this.isRunning) {
-      this.logger.debug("Service not running, stop aborted.");
+      // this.logger.debug("Service not running, stop aborted.");
       return;
     }
 
@@ -75,23 +75,24 @@ export class PresenceTracker {
     this.listeners.clear();
     this.isRunning = false;
 
-    this.logger.info("Stopped presence service.");
+    // this.logger.info("Stopped presence service.");
   }
 
   public subscribe(callback: PresenceListener, source?: string): () => void {
     const wrappedListener: PresenceListener = (presence) => {
       try {
         callback(presence);
-        this.logger.debug("Dispatched presence to listener.", {
-          presence,
-          source,
-        });
-      } catch (error) {
-        this.logger.error("Presence listener execution error.", {
-          presence,
-          source,
-          error,
-        });
+        // this.logger.debug("Dispatched presence to listener.", {
+        //   presence,
+        //   source,
+        // });
+      } catch {
+        // (error)
+        // this.logger.error("Presence listener execution error.", {
+        //   presence,
+        //   source,
+        //   error,
+        // });
       }
     };
 
@@ -99,18 +100,18 @@ export class PresenceTracker {
 
     wrappedListener(this.isIdle ? presences.idle : presences.online);
 
-    this.logger.info("Subscribed to presence service.", {
-      source,
-      listenerCount: this.listeners.size,
-    });
+    // this.logger.info("Subscribed to presence service.", {
+    //   source,
+    //   listenerCount: this.listeners.size,
+    // });
 
     return () => {
       this.listeners.delete(wrappedListener);
 
-      this.logger.info("Unsubscribed from presence service.", {
-        source,
-        listenerCount: this.listeners.size,
-      });
+      // this.logger.info("Unsubscribed from presence service.", {
+      //   source,
+      //   listenerCount: this.listeners.size,
+      // });
     };
   }
 
@@ -121,9 +122,9 @@ export class PresenceTracker {
     this.lastActivityTime = now;
 
     if (this.isIdle) {
-      this.logger.debug(
-        "Activity detected while idle, transitioning to online.",
-      );
+      // this.logger.debug(
+      //   "Activity detected while idle, transitioning to online.",
+      // );
       this.updateIdleState(false);
     }
 
@@ -138,17 +139,17 @@ export class PresenceTracker {
 
     this.listeners.forEach((listener) => listener(presence));
 
-    this.logger.info("Presence state updated and broadcasted.", {
-      isIdle,
-      presence,
-      listenerCount: this.listeners.size,
-    });
+    // this.logger.info("Presence state updated and broadcasted.", {
+    //   isIdle,
+    //   presence,
+    //   listenerCount: this.listeners.size,
+    // });
   }
 
   private resetTimeout(): void {
     this.clearTimeout();
     this.timeoutId = setTimeout(() => {
-      this.logger.debug("Idle timeout reached, switching state to idle.");
+      // this.logger.debug("Idle timeout reached, switching state to idle.");
       this.updateIdleState(true);
     }, this.idleTimeoutMs);
   }
