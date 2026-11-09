@@ -1,5 +1,9 @@
 import { AipError, AppError, mapFetchToUnknownAipErrorData } from "@/errs";
-import { clientErrors, requestErrors, responseErrors } from "./errors";
+import {
+  clientErrors,
+  requestErrors,
+  responseErrors,
+} from "./errors";
 import { logger as defaultLogger, type Logger } from "./logger";
 import {
   appendQueryParams,
