@@ -21,9 +21,9 @@ export class UserClient {
   private patchMe = <TData>(
     path: string,
     data: TData,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<Me>,
   ): Promise<Me> => {
-    return this.client.patch<typeof meSchema>({
+    return this.client.patch<Me>({
       ...options,
       urlPath: `/users/@me${path}`,
       data,
@@ -33,22 +33,22 @@ export class UserClient {
 
   public updateEmail = (
     data: UpdateEmailRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<Me>,
   ): Promise<Me> => this.patchMe("/email", data, options);
 
   public updateUsername = (
     data: UpdateUsernameRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<Me>,
   ): Promise<Me> => this.patchMe("/username", data, options);
 
   public updatePreferredPresence = (
     data: UpdatePreferredPresenceRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<Me>,
   ): Promise<Me> => this.patchMe("/presence", data, options);
 
   public updateProfile = (
     data: UpdateProfileRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<Me>,
   ): Promise<Me> => this.patchMe("/profile", data, options);
 
   public updatePassword = (

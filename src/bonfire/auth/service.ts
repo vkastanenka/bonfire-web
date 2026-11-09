@@ -3,6 +3,7 @@ import { type Presence, presences } from "@/presence";
 import { authClient } from "./client";
 import { useAuthStore } from "./store";
 import type {
+  AccessTokenResponse,
   ForgotPasswordRequest,
   ListValidSessionsResponse,
   LoginRequest,
@@ -35,12 +36,18 @@ export class AuthService {
     return preferred ?? null;
   }
 
-  public async register(req: RegisterRequest, options?: ClientRequestOptions) {
+  public async register(
+    req: RegisterRequest,
+    options?: ClientRequestOptions<AccessTokenResponse>,
+  ) {
     const data = await authClient.register(req, options);
     useAuthStore.getState().setAccessToken(data.accessToken);
   }
 
-  public async login(req: LoginRequest, options?: ClientRequestOptions) {
+  public async login(
+    req: LoginRequest,
+    options?: ClientRequestOptions<AccessTokenResponse>,
+  ) {
     const data = await authClient.login(req, options);
     useAuthStore.getState().setAccessToken(data.accessToken);
   }
@@ -83,43 +90,51 @@ export class AuthService {
     return useAuthStore.getState().accessToken;
   }
 
-  public async verify(req: VerifyEmailRequest, options?: ClientRequestOptions) {
+  public async verify(
+    req: VerifyEmailRequest,
+    options?: ClientRequestOptions<Me>,
+  ) {
     const data = await authClient.verify(req, options);
     useAuthStore.getState().setMe(data);
   }
 
-  public async resendVerify(options?: ClientRequestOptions) {
+  public async resendVerify(options?: ClientRequestOptions<unknown>) {
     await authClient.resendVerify(options);
   }
 
   public async forgotPassword(
     req: ForgotPasswordRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<unknown>,
   ) {
     await authClient.forgotPassword(req, options);
   }
 
   public async resetPassword(
     req: ResetPasswordRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<AccessTokenResponse>,
   ) {
     const data = await authClient.resetPassword(req, options);
     useAuthStore.getState().setAccessToken(data.accessToken);
   }
 
   public async listValidSessions(
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<ListValidSessionsResponse>,
   ): Promise<ListValidSessionsResponse> {
     return authClient.listValidSessions(options);
   }
 
-  public revokeAllSessions(options?: ClientRequestOptions): Promise<unknown> {
+  public revokeAllSessions(
+    options?: ClientRequestOptions<unknown>,
+  ): Promise<unknown> {
     const requestPromise = authClient.revokeAllSessions(options);
     useAuthStore.getState().clearSession();
     return requestPromise;
   }
 
-  public async revokeSession(id: string, options?: ClientRequestOptions) {
+  public async revokeSession(
+    id: string,
+    options?: ClientRequestOptions<unknown>,
+  ) {
     await authClient.revokeSession(id, options);
   }
 }

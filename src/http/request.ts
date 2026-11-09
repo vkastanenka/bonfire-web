@@ -1,5 +1,5 @@
 import { AipError, AppError, mapFetchToUnknownAipErrorData } from "@/errs";
-import { z } from "@/validation";
+import { clientErrors, requestErrors, responseErrors } from "./errors";
 import { logger as defaultLogger, type Logger } from "./logger";
 import {
   appendQueryParams,
@@ -7,7 +7,7 @@ import {
   parseJSON,
   resolveRequestBody,
 } from "./utils";
-import { clientErrors, requestErrors, responseErrors } from "./errors";
+import { type Validator } from "./validator";
 
 export type QueryParamValue = string | number | boolean | null | undefined;
 export type QueryParams = Record<string, QueryParamValue | QueryParamValue[]>;
@@ -17,10 +17,10 @@ export type CustomFetch = (
   init?: RequestInit,
 ) => Promise<Response>;
 
-export interface RequestOptions<T extends z.ZodType = z.ZodType> {
+export interface RequestOptions<T = unknown> {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   url: string;
-  schema?: T;
+  schema?: Validator<T>;
   data?: unknown;
   signal?: AbortSignal;
   headers?: HeadersInit;
@@ -42,7 +42,7 @@ export const defaultRequestOptions = {
   maxAttempts: 1,
 } as const satisfies Partial<RequestOptions>;
 
-export type ResolvedRequestOptions<T extends z.ZodType = z.ZodType> = Required<
+export type ResolvedRequestOptions<T = unknown> = Required<
   Pick<RequestOptions<T>, "timeout" | "fetch" | "maxAttempts">
 > &
   Omit<RequestOptions<T>, "headers"> & {
@@ -50,9 +50,9 @@ export type ResolvedRequestOptions<T extends z.ZodType = z.ZodType> = Required<
     logger: Logger;
   };
 
-export const request = async <T extends z.ZodType = z.ZodType>(
+export const request = async <T = unknown>(
   options: RequestOptions<T>,
-): Promise<z.infer<T>> => {
+): Promise<T> => {
   const resolvedOptions = resolveRequestOptions(options);
 
   const timeoutSignal = AbortSignal.timeout(resolvedOptions.timeout);
@@ -144,7 +144,7 @@ export const request = async <T extends z.ZodType = z.ZodType>(
   }
 
   if (!resolvedOptions.schema) {
-    return responseBody as z.infer<T>;
+    return responseBody as T;
   }
 
   const parsed = resolvedOptions.schema.safeParse(responseBody);
@@ -166,7 +166,7 @@ export const request = async <T extends z.ZodType = z.ZodType>(
   return parsed.data;
 };
 
-export const resolveRequestOptions = <T extends z.ZodType = z.ZodType>(
+export const resolveRequestOptions = <T = unknown>(
   options: RequestOptions<T>,
 ): ResolvedRequestOptions<T> => {
   const fetchImpl = options.fetch ?? globalThis.fetch?.bind(globalThis);

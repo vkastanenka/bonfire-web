@@ -1,5 +1,6 @@
-import { z } from "@/validation";
-import { AppError } from "@/errs";
+import { AppError, AipError, RETRYABLE_STATUS_CODES } from "@/errs";
+import { clientErrors, requestErrors } from "./errors";
+import { logger as defaultLogger, type Logger, logMessages } from "./logger";
 import {
   type CustomFetch,
   type QueryParams,
@@ -9,9 +10,7 @@ import {
   resolveRequestOptions,
 } from "./request";
 import { buildHeaders } from "./utils";
-import { clientErrors, requestErrors } from "./errors";
-import { logger as defaultLogger, type Logger, logMessages } from "./logger";
-import { AipError, RETRYABLE_STATUS_CODES } from "@/errs";
+import { type Validator } from "./validator";
 
 export interface ClientConfig {
   baseUrl: string;
@@ -29,12 +28,12 @@ export interface ClientConfig {
   onResponseError?: ResponseErrorFn[];
 }
 
-export type ClientRequestOptions<T extends z.ZodType = z.ZodType> = Omit<
+export type ClientRequestOptions<T = unknown> = Omit<
   RequestOptions<T>,
   "url"
 > & {
   urlPath: string;
-  schema?: T;
+  schema?: Validator<T>;
   logger?: Logger;
 };
 
@@ -51,18 +50,18 @@ export type BeforeRequestFn = (
   context: RequestContext,
 ) => Promise<void> | void;
 
-export type ResponseSuccessFn<T extends z.ZodType = z.ZodType> = (
+export type ResponseSuccessFn<T = unknown> = (
   options: ResolvedRequestOptions<T>,
   context: RequestContext,
-  result: z.infer<T>,
+  result: T,
 ) => Promise<void> | void;
 
-export type ResponseErrorFn<T extends z.ZodType = z.ZodType> = (
+export type ResponseErrorFn<T = unknown> = (
   options: ResolvedRequestOptions<T>,
   context: RequestContext,
   error: AppError,
-  retry: () => Promise<z.infer<T>>,
-) => Promise<z.infer<T> | void> | z.infer<T> | void;
+  retry: () => Promise<T>,
+) => Promise<T | void> | T | void;
 
 export const defaultClientConfig = {
   headers: {
@@ -91,39 +90,39 @@ export class Client {
     this.config = resolveClientConfig(config);
   }
 
-  public async get<T extends z.ZodType = z.ZodType>(
+  public async get<T = unknown>(
     options: Omit<ClientRequestOptions<T>, "method">,
-  ): Promise<z.infer<T>> {
+  ): Promise<T> {
     return this.request({ ...options, method: "GET" });
   }
 
-  public async post<T extends z.ZodType = z.ZodType>(
+  public async post<T = unknown>(
     options: Omit<ClientRequestOptions<T>, "method">,
-  ): Promise<z.infer<T>> {
+  ): Promise<T> {
     return this.request({ ...options, method: "POST" });
   }
 
-  public async put<T extends z.ZodType = z.ZodType>(
+  public async put<T = unknown>(
     options: Omit<ClientRequestOptions<T>, "method">,
-  ): Promise<z.infer<T>> {
+  ): Promise<T> {
     return this.request({ ...options, method: "PUT" });
   }
 
-  public async patch<T extends z.ZodType = z.ZodType>(
+  public async patch<T = unknown>(
     options: Omit<ClientRequestOptions<T>, "method">,
-  ): Promise<z.infer<T>> {
+  ): Promise<T> {
     return this.request({ ...options, method: "PATCH" });
   }
 
-  public async delete<T extends z.ZodType = z.ZodType>(
+  public async delete<T = unknown>(
     options: Omit<ClientRequestOptions<T>, "method">,
-  ): Promise<z.infer<T>> {
+  ): Promise<T> {
     return this.request({ ...options, method: "DELETE" });
   }
 
-  private async request<T extends z.ZodType = z.ZodType>(
+  private async request<T = unknown>(
     options: ClientRequestOptions<T>,
-  ): Promise<z.infer<T>> {
+  ): Promise<T> {
     const resolvedOptions = resolveRequestOptions(
       createFallbackOptions(this.config, options),
     );
@@ -136,7 +135,7 @@ export class Client {
       }
     }
 
-    const executeCall = async (): Promise<z.infer<T>> => {
+    const executeCall = async (): Promise<T> => {
       context.attemptCount++;
 
       if (context.attemptCount > resolvedOptions.maxAttempts) {
@@ -200,7 +199,7 @@ export class Client {
                 executeCall,
               );
               if (shortCircuit !== undefined) {
-                return shortCircuit as z.infer<T>;
+                return shortCircuit as T;
               }
             }
           }
@@ -308,7 +307,7 @@ const resolveClientConfig = (config: ClientConfig): ResolvedClientConfig => {
   });
 };
 
-const createFallbackOptions = <T extends z.ZodType = z.ZodType>(
+const createFallbackOptions = <T = unknown>(
   config: ResolvedClientConfig,
   options: ClientRequestOptions<T>,
 ): RequestOptions<T> => {

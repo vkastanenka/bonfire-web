@@ -14,7 +14,7 @@ import { useAuthStore, type AuthState } from "../auth";
 export class UserService {
   public async updateEmail(
     req: UpdateEmailRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<Me>,
   ) {
     return withOptimisticMe(
       (me) => ({ ...me, email: req.newEmail }),
@@ -24,7 +24,7 @@ export class UserService {
 
   public async updateUsername(
     req: UpdateUsernameRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<Me>,
   ) {
     return withOptimisticMe(
       (me) => ({ ...me, username: req.newUsername }),
@@ -34,7 +34,7 @@ export class UserService {
 
   public async updatePreferredPresence(
     req: UpdatePreferredPresenceRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<Me>,
   ) {
     return withOptimisticMe(
       (me) => ({ ...me, preferredPresence: req.presence }),
@@ -44,7 +44,7 @@ export class UserService {
 
   public async updateProfile(
     req: UpdateProfileRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<Me>,
   ) {
     return withOptimisticMe(
       (me) => ({ ...me, ...req }),

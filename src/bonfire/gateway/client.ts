@@ -13,9 +13,9 @@ export class GatewayClient {
   }
 
   public printTicket = (
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<PrintTicketResponse>,
   ): Promise<PrintTicketResponse> => {
-    return this.client.post<typeof printTicketResponseSchema>({
+    return this.client.post<PrintTicketResponse>({
       ...options,
       urlPath: "/gateway/ticket",
       schema: printTicketResponseSchema,

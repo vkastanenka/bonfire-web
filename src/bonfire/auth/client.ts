@@ -22,9 +22,9 @@ export class AuthClient {
 
   public register = (
     data: RegisterRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<AccessTokenResponse>,
   ): Promise<AccessTokenResponse> => {
-    return this.client.post<typeof accessTokenResponseSchema>({
+    return this.client.post<AccessTokenResponse>({
       ...options,
       urlPath: "/auth/register",
       data,
@@ -35,9 +35,9 @@ export class AuthClient {
 
   public login = (
     data: LoginRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<AccessTokenResponse>,
   ): Promise<AccessTokenResponse> => {
-    return this.client.post<typeof accessTokenResponseSchema>({
+    return this.client.post<AccessTokenResponse>({
       ...options,
       urlPath: "/auth/login",
       data,
@@ -47,9 +47,9 @@ export class AuthClient {
   };
 
   public refresh = (
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<AccessTokenResponse>,
   ): Promise<AccessTokenResponse> => {
-    return this.client.post<typeof accessTokenResponseSchema>({
+    return this.client.post<AccessTokenResponse>({
       ...options,
       urlPath: "/auth/refresh",
       schema: accessTokenResponseSchema,
@@ -59,9 +59,9 @@ export class AuthClient {
 
   public verify = (
     data: VerifyEmailRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<Me>,
   ): Promise<Me> => {
-    return this.client.post<typeof meSchema>({
+    return this.client.post<Me>({
       ...options,
       urlPath: "/auth/verify",
       data,
@@ -72,7 +72,7 @@ export class AuthClient {
 
   public forgotPassword = (
     data: ForgotPasswordRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<unknown>,
   ): Promise<unknown> => {
     return this.client.post({
       ...options,
@@ -84,9 +84,9 @@ export class AuthClient {
 
   public resetPassword = (
     data: ResetPasswordRequest,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<AccessTokenResponse>,
   ): Promise<AccessTokenResponse> => {
-    return this.client.post<typeof accessTokenResponseSchema>({
+    return this.client.post<AccessTokenResponse>({
       ...options,
       urlPath: "/auth/reset-password",
       data,
@@ -95,14 +95,18 @@ export class AuthClient {
     });
   };
 
-  public logout = (options?: ClientRequestOptions): Promise<unknown> => {
+  public logout = (
+    options?: ClientRequestOptions<unknown>,
+  ): Promise<unknown> => {
     return this.client.post({
       ...options,
       urlPath: "/auth/logout",
     });
   };
 
-  public resendVerify = (options?: ClientRequestOptions): Promise<unknown> => {
+  public resendVerify = (
+    options?: ClientRequestOptions<unknown>,
+  ): Promise<unknown> => {
     return this.client.post({
       ...options,
       urlPath: "/auth/resend-verify",
@@ -110,9 +114,9 @@ export class AuthClient {
   };
 
   public listValidSessions = (
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<ListValidSessionsResponse>,
   ): Promise<ListValidSessionsResponse> => {
-    return this.client.get<typeof listValidSessionsResponseSchema>({
+    return this.client.get<ListValidSessionsResponse>({
       ...options,
       urlPath: "/users/@me/sessions",
       schema: listValidSessionsResponseSchema,
@@ -120,7 +124,7 @@ export class AuthClient {
   };
 
   public revokeAllSessions = (
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<unknown>,
   ): Promise<unknown> => {
     return this.client.delete({
       ...options,
@@ -130,7 +134,7 @@ export class AuthClient {
 
   public revokeSession = (
     id: string,
-    options?: ClientRequestOptions,
+    options?: ClientRequestOptions<unknown>,
   ): Promise<unknown> => {
     return this.client.delete({
       ...options,
