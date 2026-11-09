@@ -1,9 +1,11 @@
 import { create } from "zustand";
 import { presences, usePresenceStore, type Presence } from "@/presence";
 import { useAuthStore } from "../auth";
-import { gatewayService, GatewayStatus } from "./service";
+import { gatewayService, GatewayStatus, type GatewayMessage } from "./service";
 import { getEffectivePresence } from "../user";
 import { userMessageTypes } from "../user/gateway";
+import { broadcaster, broadcastTypes } from "./broadcaster";
+import { dispatcher } from "./dispatcher";
 
 interface State {
   status: GatewayStatus;
@@ -19,20 +21,26 @@ export const useGatewayStore = create<State>((set, get) => ({
   init: () => {
     get().close();
 
+    gatewayService.subscribeMessage((message: GatewayMessage) => {
+      broadcaster.post(broadcastTypes.message, message);
+    });
+
     gatewayService.subscribeStatus((status: GatewayStatus) => {
       set({ status });
+      broadcaster.post(broadcastTypes.status, status);
     });
 
     const initialPresence = getEffectivePresence();
     gatewayService.connect(initialPresence);
-
     lastSentPresence = initialPresence;
 
     presenceUnsubscribe = usePresenceStore.subscribe(() => {
       handlePresenceChange(() => get().status);
     });
 
-    set({ status: gatewayService.getStatus() });
+    const currentStatus = gatewayService.getStatus();
+    set({ status: currentStatus });
+    broadcaster.post(broadcastTypes.status, currentStatus);
   },
 
   close: () => {
@@ -41,7 +49,9 @@ export const useGatewayStore = create<State>((set, get) => ({
       presenceUnsubscribe = null;
     }
     gatewayService.disconnect();
-    set({ status: gatewayService.getStatus() });
+    const currentStatus = gatewayService.getStatus();
+    set({ status: currentStatus });
+    broadcaster.post(broadcastTypes.status, currentStatus);
   },
 
   send: (type, data) => {
@@ -52,6 +62,33 @@ export const useGatewayStore = create<State>((set, get) => ({
     lastSentPresence = presence;
   },
 }));
+
+broadcaster.subscribe((type, payload) => {
+  switch (type) {
+    case broadcastTypes.message: {
+      const message = payload as GatewayMessage;
+      dispatcher.dispatch(message.t, message.d);
+      break;
+    }
+
+    case broadcastTypes.presence:
+      usePresenceStore.setState({ presence: payload as Presence });
+      break;
+
+    case broadcastTypes.status:
+      useGatewayStore.setState({ status: payload as GatewayStatus });
+      break;
+  }
+});
+
+let previousToken = useAuthStore.getState().accessToken;
+
+useAuthStore.subscribe((state) => {
+  if (previousToken && !state.accessToken) {
+    useGatewayStore.getState().close();
+  }
+  previousToken = state.accessToken;
+});
 
 let presenceUnsubscribe: (() => void) | null = null;
 let lastSentPresence: Presence | null = null;
@@ -85,10 +122,10 @@ const handlePresenceChange = (getStatus: () => GatewayStatus) => {
     (currentPresence === presences.online || currentPresence === presences.idle)
   ) {
     lastSentPresence = currentPresence;
-    console.log("Sent presence to gateway:", lastSentPresence);
     gatewayService.send(userMessageTypes.presenceUpdated, {
       userId: me.id,
       presence: currentPresence,
     });
+    broadcaster.post(broadcastTypes.presence, currentPresence);
   }
 };

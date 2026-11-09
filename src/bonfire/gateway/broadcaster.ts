@@ -2,13 +2,14 @@ import { logger as baseLogger, Logger } from "@/logger";
 
 const CHANNEL_NAME = "bonfire_gateway_broadcast";
 
-export const BroadcastType = {
+export const broadcastTypes = {
   message: "MESSAGE",
   presence: "PRESENCE",
   status: "STATUS",
 } as const;
 
-export type BroadcastType = (typeof BroadcastType)[keyof typeof BroadcastType];
+export type BroadcastType =
+  (typeof broadcastTypes)[keyof typeof broadcastTypes];
 
 interface Message<T = unknown> {
   senderId: string;
