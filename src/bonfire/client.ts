@@ -1,5 +1,5 @@
 import { logger } from "@/logger";
-import { Client, type ClientConfig } from "@/http";
+import { Client, type ClientConfig } from "./http";
 import { handleAuthError, setAuthHeader } from "./middleware";
 
 export const defaultConfig: ClientConfig = {

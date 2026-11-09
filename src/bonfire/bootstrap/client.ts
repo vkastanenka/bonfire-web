@@ -1,4 +1,4 @@
-import { Client, type ClientRequestOptions } from "@/http";
+import { Client, type ClientRequestOptions } from "../http";
 import { bonfireClient } from "../client";
 import { type BootstrapResponse, bootstrapResponseSchema } from "./validation";
 
@@ -12,7 +12,7 @@ export class BootstrapClient {
   public bootstrap = (
     options?: ClientRequestOptions,
   ): Promise<BootstrapResponse> => {
-    return this.client.get<typeof bootstrapResponseSchema>({
+    return this.client.get<BootstrapResponse>({
       ...options,
       urlPath: "/users/@me",
       schema: bootstrapResponseSchema,

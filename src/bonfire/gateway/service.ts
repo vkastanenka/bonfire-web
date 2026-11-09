@@ -1,6 +1,6 @@
 import { AppError } from "@/errs/app";
 import { logger as baseLogger, Logger } from "@/logger";
-import { apiErrorCodes } from "@/http";
+import { apiErrorCodes } from "../http";
 import { bonfireClient } from "../client";
 import { gatewayClient, type GatewayClient } from "./client";
 import { type Presence } from "@/presence";

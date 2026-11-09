@@ -1,4 +1,4 @@
-import { type ClientRequestOptions } from "@/http";
+import { type ClientRequestOptions } from "../http";
 import { userClient } from "./client";
 import {
   type DisableRequest,

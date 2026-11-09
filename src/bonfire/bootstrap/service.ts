@@ -1,6 +1,6 @@
 import { bootstrapClient } from "./client";
 import { useAuthStore } from "../auth";
-import type { ClientRequestOptions } from "@/http";
+import type { ClientRequestOptions } from "../http";
 
 export class BootstrapService {
   public async bootstrap(options?: ClientRequestOptions) {

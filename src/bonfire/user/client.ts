@@ -1,4 +1,4 @@
-import { Client, type ClientRequestOptions } from "@/http";
+import { Client, type ClientRequestOptions } from "../http";
 import { bonfireClient } from "../client";
 import {
   meSchema,

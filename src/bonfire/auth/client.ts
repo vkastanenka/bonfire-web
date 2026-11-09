@@ -1,5 +1,5 @@
-import { Client, type ClientRequestOptions } from "@/http";
 import { bonfireClient } from "../client";
+import { Client, type ClientRequestOptions } from "../http";
 import {
   type RegisterRequest,
   type AccessTokenResponse,

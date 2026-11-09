@@ -1,4 +1,4 @@
-import { type ClientRequestOptions } from "@/http";
+import { type ClientRequestOptions } from "../http";
 import { type Presence, presences } from "@/presence";
 import { authClient } from "./client";
 import { useAuthStore } from "./store";

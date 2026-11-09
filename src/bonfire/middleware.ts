@@ -1,12 +1,12 @@
 import { AipError, AppError, STATUS_CODES } from "@/errs";
+import { accessTokenResponseSchema, useAuthStore } from "./auth";
 import {
   apiErrorCodes,
   requestErrors,
   request,
   type BeforeRequestFn,
   type ResponseErrorFn,
-} from "@/http";
-import { accessTokenResponseSchema, useAuthStore } from "./auth";
+} from "./http";
 import { defaultConfig } from "./client";
 
 export const setAuthHeader: BeforeRequestFn = (options) => {
