@@ -1,7 +1,7 @@
 import { dispatcher, useGatewayStore } from "../gateway";
 import { useAuthStore } from "../auth";
 import { useEffect } from "react";
-import { usePresenceStore, type Presence } from "@/presence";
+import { presences, usePresenceStore, type Presence } from "@/presence";
 
 export const userMessageTypes = {
   emailUpdates: "user.email_updated",
@@ -28,6 +28,7 @@ export interface UsernameUpdatedPayload {
 export interface PreferredPresenceUpdatedPayload {
   userId: string;
   presence?: "IDLE" | "DND" | "INVISIBLE";
+  until?: Date;
   updatedAt: Date;
 }
 
@@ -85,9 +86,13 @@ const handlePreferredPresenceUpdated = (
   const currentMe = useAuthStore.getState().me;
 
   if (currentMe && currentMe.id === payload.userId) {
+    if (!payload.presence) {
+      usePresenceStore.setState({ presence: presences.online });
+    }
     useAuthStore.getState().setMe({
       ...currentMe,
       preferredPresence: payload.presence,
+      preferredPresenceUntil: payload.until,
       updatedAt: payload.updatedAt,
     });
   }
@@ -97,7 +102,6 @@ const handleProfileUpdated = (payload: ProfileUpdatedPayload) => {
   const currentMe = useAuthStore.getState().me;
 
   if (currentMe && currentMe.id === payload.userId) {
-    console.log("Set profile from handleProfileUpdated");
     useAuthStore.getState().setMe({
       ...currentMe,
       displayName: payload.displayName,
@@ -124,8 +128,6 @@ const handlePresenceUpdated = (payload: PresenceUpdatedPayload) => {
   const currentMe = useAuthStore.getState().me;
 
   if (currentMe && currentMe.id === payload.userId) {
-    console.log("Set received presence from handlePresenceUpdated");
-    // Sync the local echo blocker so incoming presence updates don't trigger outbound network echoes
     useGatewayStore.getState().setLastSentPresence(payload.presence);
     usePresenceStore.setState({ presence: payload.presence });
   }

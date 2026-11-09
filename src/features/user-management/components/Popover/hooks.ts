@@ -1,6 +1,11 @@
 import { useUpdatePreferredPresence } from "@/bonfire";
 import { useMenu } from "@/hooks";
-import { presences, type Presence, type PresenceDuration } from "@/presence";
+import {
+  presences,
+  usePresenceStore,
+  type Presence,
+  type PresenceDuration,
+} from "@/presence";
 import { useState } from "react";
 
 export const usePresenceMenu = () => {
@@ -19,6 +24,7 @@ export const usePresenceMenu = () => {
   ) => {
     if (presence === presences.online) {
       setSelectedPresence(undefined);
+      usePresenceStore.setState({ presence: presences.online });
       mutate({
         presence: undefined,
         duration: undefined,
