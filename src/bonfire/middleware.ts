@@ -1,8 +1,7 @@
 import { AipError, AppError, STATUS_CODES } from "@/errs";
 import {
-  API_ERROR_CODES,
-  REQUEST_ERROR_CODES,
-  REQUEST_ERROR_MESSAGES,
+  apiErrorCodes,
+  requestErrors,
   request,
   type BeforeRequestFn,
   type ResponseErrorFn,
@@ -38,7 +37,7 @@ export const handleAuthError: ResponseErrorFn = async (
     return;
   }
 
-  if (error.getErrorInfoReason() !== API_ERROR_CODES.TOKEN_EXPIRED) {
+  if (error.getErrorInfoReason() !== apiErrorCodes.tokenExpired) {
     return;
   }
 
@@ -75,9 +74,8 @@ export const handleAuthError: ResponseErrorFn = async (
 
     if (!newToken) {
       throw new AppError({
-        code: REQUEST_ERROR_CODES.TOKEN_REFRESH_FAILED,
-        message:
-          REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.TOKEN_REFRESH_FAILED],
+        code: requestErrors.tokenRefreshFailed.code,
+        message: requestErrors.tokenRefreshFailed.message,
       });
     }
 

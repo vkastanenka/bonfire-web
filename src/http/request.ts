@@ -1,16 +1,13 @@
 import { AipError, AppError, mapFetchToUnknownAipErrorData } from "@/errs";
 import { z } from "@/validation";
+import { logger as defaultLogger, type Logger } from "./logger";
 import {
   appendQueryParams,
   buildHeaders,
   parseJSON,
   resolveRequestBody,
 } from "./utils";
-import {
-  REQUEST_ERROR_CODES,
-  REQUEST_ERROR_MESSAGES,
-  RESPONSE_ERROR_CODES,
-} from "./errors";
+import { clientErrors, requestErrors, responseErrors } from "./errors";
 
 export type QueryParamValue = string | number | boolean | null | undefined;
 export type QueryParams = Record<string, QueryParamValue | QueryParamValue[]>;
@@ -20,7 +17,7 @@ export type CustomFetch = (
   init?: RequestInit,
 ) => Promise<Response>;
 
-export interface RequestOptions<T extends z.ZodTypeAny = z.ZodTypeAny> {
+export interface RequestOptions<T extends z.ZodType = z.ZodType> {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   url: string;
   schema?: T;
@@ -34,6 +31,7 @@ export interface RequestOptions<T extends z.ZodTypeAny = z.ZodTypeAny> {
   protected?: boolean;
   maxAttempts?: number;
   fetch?: CustomFetch;
+  logger?: Logger;
 }
 
 export const defaultRequestOptions = {
@@ -44,13 +42,15 @@ export const defaultRequestOptions = {
   maxAttempts: 1,
 } as const satisfies Partial<RequestOptions>;
 
-export type ResolvedRequestOptions<T extends z.ZodTypeAny = z.ZodTypeAny> =
-  Required<Pick<RequestOptions<T>, "timeout" | "fetch" | "maxAttempts">> &
-    Omit<RequestOptions<T>, "headers"> & {
-      headers: Headers;
-    };
+export type ResolvedRequestOptions<T extends z.ZodType = z.ZodType> = Required<
+  Pick<RequestOptions<T>, "timeout" | "fetch" | "maxAttempts">
+> &
+  Omit<RequestOptions<T>, "headers"> & {
+    headers: Headers;
+    logger: Logger;
+  };
 
-export const request = async <T extends z.ZodTypeAny = z.ZodTypeAny>(
+export const request = async <T extends z.ZodType = z.ZodType>(
   options: RequestOptions<T>,
 ): Promise<z.infer<T>> => {
   const resolvedOptions = resolveRequestOptions(options);
@@ -78,8 +78,8 @@ export const request = async <T extends z.ZodTypeAny = z.ZodTypeAny>(
   } catch (cause) {
     if (resolvedOptions.signal?.aborted) {
       throw new AppError({
-        code: REQUEST_ERROR_CODES.REQUEST_ABORTED,
-        message: REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.REQUEST_ABORTED],
+        code: requestErrors.requestAborted.code,
+        message: requestErrors.requestAborted.message,
         cause,
         context: { url: fullUrl.toString() },
       });
@@ -90,19 +90,19 @@ export const request = async <T extends z.ZodTypeAny = z.ZodTypeAny>(
       timeoutSignal.aborted
     ) {
       throw new AppError({
-        code: REQUEST_ERROR_CODES.REQUEST_TIMEOUT,
-        message: REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.REQUEST_TIMEOUT],
+        code: requestErrors.requestTimeout.code,
+        message: requestErrors.requestTimeout.message,
         cause,
         context: { url: fullUrl.toString() },
       });
     }
 
     throw new AppError({
-      code: REQUEST_ERROR_CODES.FETCH_FAILED,
+      code: requestErrors.fetchFailed.code,
       message:
         cause instanceof Error && cause.message
           ? cause.message
-          : REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.FETCH_FAILED],
+          : requestErrors.fetchFailed.message,
       cause,
       context: { url: fullUrl.toString() },
     });
@@ -130,8 +130,8 @@ export const request = async <T extends z.ZodTypeAny = z.ZodTypeAny>(
 
     if (error) {
       throw new AppError({
-        code: RESPONSE_ERROR_CODES.PARSE_ERROR,
-        message: RESPONSE_ERROR_CODES.PARSE_ERROR,
+        code: responseErrors.parseError.code,
+        message: responseErrors.parseError.message,
         cause: error,
         context: {
           status: response.status,
@@ -151,8 +151,8 @@ export const request = async <T extends z.ZodTypeAny = z.ZodTypeAny>(
 
   if (!parsed.success) {
     throw new AppError({
-      code: RESPONSE_ERROR_CODES.VALIDATION_ERROR,
-      message: RESPONSE_ERROR_CODES.VALIDATION_ERROR,
+      code: responseErrors.validationError.code,
+      message: responseErrors.validationError.message,
       cause: parsed.error,
       context: {
         method: resolvedOptions.method,
@@ -166,16 +166,15 @@ export const request = async <T extends z.ZodTypeAny = z.ZodTypeAny>(
   return parsed.data;
 };
 
-export const resolveRequestOptions = <T extends z.ZodTypeAny = z.ZodTypeAny>(
+export const resolveRequestOptions = <T extends z.ZodType = z.ZodType>(
   options: RequestOptions<T>,
 ): ResolvedRequestOptions<T> => {
   const fetchImpl = options.fetch ?? globalThis.fetch?.bind(globalThis);
 
   if (!fetchImpl || typeof fetchImpl !== "function") {
     throw new AppError({
-      code: "MISSING_FETCH",
-      message:
-        "Global fetch is not available and no custom fetch was provided.",
+      code: clientErrors.missingFetch.code,
+      message: clientErrors.missingFetch.message,
       context: {
         hasCustomFetch: Boolean(options.fetch),
         hasGlobalFetch: typeof globalThis.fetch !== "undefined",
@@ -193,5 +192,6 @@ export const resolveRequestOptions = <T extends z.ZodTypeAny = z.ZodTypeAny>(
     timeout: options.timeout ?? defaultRequestOptions.timeout,
     maxAttempts: options.maxAttempts ?? defaultRequestOptions.maxAttempts,
     fetch: fetchImpl,
+    logger: options.logger ?? defaultLogger,
   };
 };

@@ -1,67 +1,72 @@
-export const API_ERROR_CODES = {
-  TOKEN_EXPIRED: "TOKEN_EXPIRED",
-  RATE_LIMIT_EXCEEDED: "RATE_LIMIT_EXCEEDED",
+export const apiErrorCodes = {
+  tokenExpired: "TOKEN_EXPIRED",
+  rateLimitExceeded: "RATE_LIMIT_EXCEEDED",
 } as const;
 
-export type ApiErrorCode =
-  (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES];
+export type ApiErrorCode = (typeof apiErrorCodes)[keyof typeof apiErrorCodes];
 
-export const CLIENT_ERROR_CODES = {
-  MISSING_FETCH: "MISSING_FETCH",
-  INVALID_BASE_URL: "INVALID_BASE_URL",
-  INVALID_TIMEOUT: "INVALID_TIMEOUT",
-  INVALID_MAX_ATTEMPTS: "INVALID_MAX_ATTEMPTS",
+export const clientErrors = {
+  missingFetch: {
+    code: "MISSING_FETCH",
+    message:
+      "No fetch implementation found in environment, and none provided in config.",
+  },
+  invalidBaseUrl: {
+    code: "INVALID_BASE_URL",
+    message: "A valid, non-empty baseUrl must be provided in client config.",
+  },
+  invalidTimeout: {
+    code: "INVALID_TIMEOUT",
+    message: "Client timeout must be a positive number greater than 0ms.",
+  },
+  invalidMaxAttempts: {
+    code: "INVALID_MAX_ATTEMPTS",
+    message:
+      "Client maxAttempts must be an integer greater than or equal to 1.",
+  },
 } as const;
 
 export type ClientErrorCode =
-  (typeof CLIENT_ERROR_CODES)[keyof typeof CLIENT_ERROR_CODES];
+  (typeof clientErrors)[keyof typeof clientErrors]["code"];
 
-export const CLIENT_ERROR_MESSAGES: Record<ClientErrorCode, string> = {
-  [CLIENT_ERROR_CODES.MISSING_FETCH]:
-    "No fetch implementation found in environment, and none provided in config.",
-  [CLIENT_ERROR_CODES.INVALID_BASE_URL]:
-    "A valid, non-empty baseUrl must be provided in client config.",
-  [CLIENT_ERROR_CODES.INVALID_TIMEOUT]:
-    "Client timeout must be a positive number greater than 0ms.",
-  [CLIENT_ERROR_CODES.INVALID_MAX_ATTEMPTS]:
-    "Client maxAttempts must be an integer greater than or equal to 1.",
-};
-
-export const REQUEST_ERROR_CODES = {
-  REQUEST_ABORTED: "REQUEST_ABORTED",
-  REQUEST_TIMEOUT: "REQUEST_TIMEOUT",
-  MAX_RETRIES_EXCEEDED: "MAX_RETRIES_EXCEEDED",
-  FETCH_FAILED: "FETCH_FAILED",
-  TOKEN_REFRESH_FAILED: "TOKEN_REFRESH_FAILED",
+export const requestErrors = {
+  requestAborted: {
+    code: "REQUEST_ABORTED",
+    message: "The request was explicitly aborted by an AbortController.",
+  },
+  requestTimeout: {
+    code: "REQUEST_TIMEOUT",
+    message: "The request timed out before receiving a response.",
+  },
+  maxRetriesExceeded: {
+    code: "MAX_RETRIES_EXCEEDED",
+    message: "Maximum retry attempts reached without a successful response.",
+  },
+  fetchFailed: {
+    code: "FETCH_FAILED",
+    message: "The network request failed before reaching the server.",
+  },
+  tokenRefreshFailed: {
+    code: "TOKEN_REFRESH_FAILED",
+    message: "Failed to refresh authentication token.",
+  },
 } as const;
 
 export type RequestErrorCode =
-  (typeof REQUEST_ERROR_CODES)[keyof typeof REQUEST_ERROR_CODES];
+  (typeof requestErrors)[keyof typeof requestErrors]["code"];
 
-export const REQUEST_ERROR_MESSAGES: Record<RequestErrorCode, string> = {
-  [REQUEST_ERROR_CODES.REQUEST_ABORTED]:
-    "The request was explicitly aborted by an AbortController.",
-  [REQUEST_ERROR_CODES.REQUEST_TIMEOUT]:
-    "The request timed out before receiving a response.",
-  [REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED]:
-    "Maximum retry attempts reached without a successful response.",
-  [REQUEST_ERROR_CODES.FETCH_FAILED]:
-    "The network request failed before reaching the server.",
-  [REQUEST_ERROR_CODES.TOKEN_REFRESH_FAILED]:
-    "Failed to refresh authentication token.",
-};
-
-export const RESPONSE_ERROR_CODES = {
-  PARSE_ERROR: "PARSE_ERROR",
-  VALIDATION_ERROR: "VALIDATION_ERROR",
+export const responseErrors = {
+  parseError: {
+    code: "PARSE_ERROR",
+    message:
+      "The server returned a success status code, but the body content was malformed or non-JSON.",
+  },
+  validationError: {
+    code: "VALIDATION_ERROR",
+    message:
+      "The server response body did not match the expected API schema contract.",
+  },
 } as const;
 
-export type ValidationErrorCode =
-  (typeof RESPONSE_ERROR_CODES)[keyof typeof RESPONSE_ERROR_CODES];
-
-export const VALIDATION_ERROR_MESSAGES: Record<ValidationErrorCode, string> = {
-  [RESPONSE_ERROR_CODES.PARSE_ERROR]:
-    "The server returned a success status code, but the body content was malformed or non-JSON.",
-  [RESPONSE_ERROR_CODES.VALIDATION_ERROR]:
-    "The server response body did not match the expected API schema contract.",
-};
+export type ResponseErrorCode =
+  (typeof responseErrors)[keyof typeof responseErrors]["code"];

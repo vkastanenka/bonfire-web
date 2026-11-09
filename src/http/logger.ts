@@ -1,3 +1,14 @@
+export const logMessages = {
+  initiated: "HTTP request initiated.",
+  succeeded: "HTTP request succeeded.",
+  failed: "HTTP request failed.",
+  retrying: "Retrying HTTP request.",
+  responseValidationFailed: "Response contract validation failed.",
+  authTokenExpired: "Access token expired. Attempting token refresh.",
+  authRefreshSucceeded: "Token refresh succeeded. Retrying request.",
+  authSessionCleared: "Authentication failed. Clearing session tokens.",
+} as const;
+
 export type LogContext = Record<string, unknown>;
 
 export interface Logger {
@@ -5,15 +16,13 @@ export interface Logger {
   info(message: string, context?: LogContext): void;
   warn(message: string, context?: LogContext): void;
   error(message: string, context?: LogContext): void;
+  child?(context: LogContext): Logger;
 }
 
-export const REQUEST_LOGS = {
-  INITIATED: "HTTP request initiated.",
-  SUCCEEDED: "HTTP request succeeded.",
-  FAILED: "HTTP request failed.",
-  RETRYING: "Retrying HTTP request.",
-  RESPONSE_VALIDATION_FAILED: "Response contract validation failed.",
-  AUTH_TOKEN_EXPIRED: "Access token expired. Attempting token refresh.",
-  AUTH_REFRESH_SUCCEEDED: "Token refresh succeeded. Retrying request.",
-  AUTH_SESSION_CLEARED: "Authentication failed. Clearing session tokens.",
-} as const;
+export const logger: Logger = {
+  debug: () => {},
+  info: () => {},
+  warn: () => {},
+  error: () => {},
+  child: () => logger,
+};

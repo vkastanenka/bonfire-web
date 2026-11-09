@@ -1,6 +1,6 @@
 import { AppError } from "@/errs/app";
 import { logger as baseLogger, Logger } from "@/logger";
-import { API_ERROR_CODES } from "@/http";
+import { apiErrorCodes } from "@/http";
 import { bonfireClient } from "../client";
 import { gatewayClient, type GatewayClient } from "./client";
 import { type Presence } from "@/presence";
@@ -325,7 +325,7 @@ export class GatewayService {
     const isRateLimit =
       !!error &&
       error instanceof AppError &&
-      error.code === API_ERROR_CODES.RATE_LIMIT_EXCEEDED;
+      error.code === apiErrorCodes.rateLimitExceeded;
 
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       // this.logger.warn(

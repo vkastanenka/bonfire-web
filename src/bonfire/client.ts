@@ -1,3 +1,4 @@
+import { logger } from "@/logger";
 import { Client, type ClientConfig } from "@/http";
 import { handleAuthError, setAuthHeader } from "./middleware";
 
@@ -11,6 +12,7 @@ export const defaultConfig: ClientConfig = {
   maxAttempts: Number(process.env.BONFIRE_API_MAX_ATTEMPTS) || 3,
   timeout: Number(process.env.BONFIRE_API_TIMEOUT) || 10000,
   protected: true,
+  logger,
 };
 
 export const bonfireClient = new Client({

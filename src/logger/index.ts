@@ -47,6 +47,22 @@ export class Logger {
     this.defaultContext = defaultContext;
   }
 
+  public debug(message: string, context?: LogContext) {
+    this.emit(LOG_LEVELS.DEBUG, message, context);
+  }
+
+  public info(message: string, context?: LogContext) {
+    this.emit(LOG_LEVELS.INFO, message, context);
+  }
+
+  public warn(message: string, context?: LogContext) {
+    this.emit(LOG_LEVELS.WARN, message, context);
+  }
+
+  public error(message: string, context?: LogContext) {
+    this.emit(LOG_LEVELS.ERROR, message, context);
+  }
+
   public child(context: LogContext): Logger {
     return new Logger(this.minLevel, {
       ...this.defaultContext,
@@ -105,22 +121,6 @@ export class Logger {
         console.error(...consoleArgs);
         break;
     }
-  }
-
-  debug(message: string, context?: LogContext) {
-    this.emit(LOG_LEVELS.DEBUG, message, context);
-  }
-
-  info(message: string, context?: LogContext) {
-    this.emit(LOG_LEVELS.INFO, message, context);
-  }
-
-  warn(message: string, context?: LogContext) {
-    this.emit(LOG_LEVELS.WARN, message, context);
-  }
-
-  error(message: string, context?: LogContext) {
-    this.emit(LOG_LEVELS.ERROR, message, context);
   }
 }
 

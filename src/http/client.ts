@@ -1,5 +1,5 @@
 import { z } from "@/validation";
-import { AppError } from "@/errs/app";
+import { AppError } from "@/errs";
 import {
   type CustomFetch,
   type QueryParams,
@@ -9,14 +9,8 @@ import {
   resolveRequestOptions,
 } from "./request";
 import { buildHeaders } from "./utils";
-import {
-  CLIENT_ERROR_CODES,
-  CLIENT_ERROR_MESSAGES,
-  REQUEST_ERROR_CODES,
-  REQUEST_ERROR_MESSAGES,
-} from "./errors";
-import { logger as baseLogger, type Logger } from "@/logger";
-import { REQUEST_LOGS } from "./logger";
+import { clientErrors, requestErrors } from "./errors";
+import { logger as defaultLogger, type Logger, logMessages } from "./logger";
 import { AipError, RETRYABLE_STATUS_CODES } from "@/errs";
 
 export interface ClientConfig {
@@ -29,17 +23,19 @@ export interface ClientConfig {
   timeout?: number;
   protected?: boolean;
   fetch?: CustomFetch;
+  logger?: Logger;
   beforeRequest?: BeforeRequestFn[];
   onResponseSuccess?: ResponseSuccessFn[];
   onResponseError?: ResponseErrorFn[];
 }
 
-export type ClientRequestOptions<T extends z.ZodTypeAny = z.ZodTypeAny> = Omit<
+export type ClientRequestOptions<T extends z.ZodType = z.ZodType> = Omit<
   RequestOptions<T>,
   "url"
 > & {
   urlPath: string;
   schema?: T;
+  logger?: Logger;
 };
 
 export interface RequestContext {
@@ -55,13 +51,13 @@ export type BeforeRequestFn = (
   context: RequestContext,
 ) => Promise<void> | void;
 
-export type ResponseSuccessFn<T extends z.ZodTypeAny = z.ZodTypeAny> = (
+export type ResponseSuccessFn<T extends z.ZodType = z.ZodType> = (
   options: ResolvedRequestOptions<T>,
   context: RequestContext,
   result: z.infer<T>,
 ) => Promise<void> | void;
 
-export type ResponseErrorFn<T extends z.ZodTypeAny = z.ZodTypeAny> = (
+export type ResponseErrorFn<T extends z.ZodType = z.ZodType> = (
   options: ResolvedRequestOptions<T>,
   context: RequestContext,
   error: AppError,
@@ -77,12 +73,14 @@ export const defaultClientConfig = {
   timeout: 10_000,
   protected: true,
   queryParams: {},
+  logger: defaultLogger,
 } as const satisfies Partial<ClientConfig>;
 
 export type ResolvedClientConfig = Readonly<
-  Omit<Required<ClientConfig>, "headers" | "cache"> & {
+  Omit<Required<ClientConfig>, "headers" | "cache" | "logger"> & {
     headers: Headers;
     cache?: RequestCache;
+    logger: Logger;
   }
 >;
 
@@ -93,37 +91,37 @@ export class Client {
     this.config = resolveClientConfig(config);
   }
 
-  public async get<T extends z.ZodTypeAny = z.ZodTypeAny>(
+  public async get<T extends z.ZodType = z.ZodType>(
     options: Omit<ClientRequestOptions<T>, "method">,
   ): Promise<z.infer<T>> {
     return this.request({ ...options, method: "GET" });
   }
 
-  public async post<T extends z.ZodTypeAny = z.ZodTypeAny>(
+  public async post<T extends z.ZodType = z.ZodType>(
     options: Omit<ClientRequestOptions<T>, "method">,
   ): Promise<z.infer<T>> {
     return this.request({ ...options, method: "POST" });
   }
 
-  public async put<T extends z.ZodTypeAny = z.ZodTypeAny>(
+  public async put<T extends z.ZodType = z.ZodType>(
     options: Omit<ClientRequestOptions<T>, "method">,
   ): Promise<z.infer<T>> {
     return this.request({ ...options, method: "PUT" });
   }
 
-  public async patch<T extends z.ZodTypeAny = z.ZodTypeAny>(
+  public async patch<T extends z.ZodType = z.ZodType>(
     options: Omit<ClientRequestOptions<T>, "method">,
   ): Promise<z.infer<T>> {
     return this.request({ ...options, method: "PATCH" });
   }
 
-  public async delete<T extends z.ZodTypeAny = z.ZodTypeAny>(
+  public async delete<T extends z.ZodType = z.ZodType>(
     options: Omit<ClientRequestOptions<T>, "method">,
   ): Promise<z.infer<T>> {
     return this.request({ ...options, method: "DELETE" });
   }
 
-  private async request<T extends z.ZodTypeAny = z.ZodTypeAny>(
+  private async request<T extends z.ZodType = z.ZodType>(
     options: ClientRequestOptions<T>,
   ): Promise<z.infer<T>> {
     const resolvedOptions = resolveRequestOptions(
@@ -143,9 +141,8 @@ export class Client {
 
       if (context.attemptCount > resolvedOptions.maxAttempts) {
         throw new AppError({
-          code: REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED,
-          message:
-            REQUEST_ERROR_MESSAGES[REQUEST_ERROR_CODES.MAX_RETRIES_EXCEEDED],
+          code: requestErrors.maxRetriesExceeded.code,
+          message: requestErrors.maxRetriesExceeded.message,
           context: {
             requestId: context.requestId,
             url: resolvedOptions.url,
@@ -156,14 +153,14 @@ export class Client {
         });
       }
 
-      context.logger.debug(REQUEST_LOGS.INITIATED, {
+      context.logger.debug(logMessages.initiated, {
         attemptCount: context.attemptCount,
       });
 
       try {
         const result = await request(resolvedOptions);
 
-        context.logger.debug(REQUEST_LOGS.SUCCEEDED, {
+        context.logger.debug(logMessages.succeeded, {
           durationMs: Math.round(performance.now() - context.startTime),
           result, // TODO: Remove in prod
         });
@@ -187,7 +184,7 @@ export class Client {
             ? context.logger.error
             : context.logger.debug;
 
-          logMethod.call(context.logger, REQUEST_LOGS.FAILED, {
+          logMethod.call(context.logger, logMessages.failed, {
             status,
             code: error.code,
             durationMs: Math.round(performance.now() - context.startTime),
@@ -217,7 +214,7 @@ export class Client {
             const jitter = Math.random() * 50;
             const delayMs = Math.round(backoff + jitter);
 
-            context.logger.debug(REQUEST_LOGS.RETRYING, {
+            context.logger.debug(logMessages.retrying, {
               status: error.httpCode,
               delayMs,
             });
@@ -239,8 +236,8 @@ const resolveClientConfig = (config: ClientConfig): ResolvedClientConfig => {
   const fetchImpl = config.fetch ?? globalThis.fetch?.bind(globalThis);
   if (!fetchImpl || typeof fetchImpl !== "function") {
     throw new AppError({
-      code: CLIENT_ERROR_CODES.MISSING_FETCH,
-      message: CLIENT_ERROR_MESSAGES[CLIENT_ERROR_CODES.MISSING_FETCH],
+      code: clientErrors.missingFetch.code,
+      message: clientErrors.missingFetch.message,
       context: {
         hasCustomFetch: Boolean(config.fetch),
         hasGlobalFetch: typeof globalThis.fetch !== "undefined",
@@ -251,8 +248,8 @@ const resolveClientConfig = (config: ClientConfig): ResolvedClientConfig => {
   const baseUrl = config.baseUrl;
   if (!baseUrl || typeof baseUrl !== "string" || baseUrl.trim().length === 0) {
     throw new AppError({
-      code: CLIENT_ERROR_CODES.INVALID_BASE_URL,
-      message: CLIENT_ERROR_MESSAGES[CLIENT_ERROR_CODES.INVALID_BASE_URL],
+      code: clientErrors.invalidBaseUrl.code,
+      message: clientErrors.invalidBaseUrl.message,
       context: { providedBaseUrl: baseUrl },
     });
   }
@@ -261,8 +258,8 @@ const resolveClientConfig = (config: ClientConfig): ResolvedClientConfig => {
     new URL(baseUrl, "https://placeholder.local");
   } catch (cause) {
     throw new AppError({
-      code: CLIENT_ERROR_CODES.INVALID_BASE_URL,
-      message: CLIENT_ERROR_MESSAGES[CLIENT_ERROR_CODES.INVALID_BASE_URL],
+      code: clientErrors.invalidBaseUrl.code,
+      message: clientErrors.invalidBaseUrl.message,
       context: { providedBaseUrl: baseUrl },
       cause,
     });
@@ -275,8 +272,8 @@ const resolveClientConfig = (config: ClientConfig): ResolvedClientConfig => {
     !Number.isFinite(timeout)
   ) {
     throw new AppError({
-      code: CLIENT_ERROR_CODES.INVALID_TIMEOUT,
-      message: CLIENT_ERROR_MESSAGES[CLIENT_ERROR_CODES.INVALID_TIMEOUT],
+      code: clientErrors.invalidTimeout.code,
+      message: clientErrors.invalidTimeout.message,
       context: { timeout: config.timeout },
     });
   }
@@ -288,8 +285,8 @@ const resolveClientConfig = (config: ClientConfig): ResolvedClientConfig => {
     !Number.isInteger(maxAttempts)
   ) {
     throw new AppError({
-      code: CLIENT_ERROR_CODES.INVALID_MAX_ATTEMPTS,
-      message: CLIENT_ERROR_MESSAGES[CLIENT_ERROR_CODES.INVALID_MAX_ATTEMPTS],
+      code: clientErrors.invalidMaxAttempts.code,
+      message: clientErrors.invalidMaxAttempts.message,
       context: { maxAttempts: config.maxAttempts },
     });
   }
@@ -303,6 +300,7 @@ const resolveClientConfig = (config: ClientConfig): ResolvedClientConfig => {
     maxAttempts,
     timeout,
     fetch: fetchImpl,
+    logger: config.logger ?? defaultClientConfig.logger,
     protected: config.protected ?? defaultClientConfig.protected,
     beforeRequest: config.beforeRequest ?? [],
     onResponseSuccess: config.onResponseSuccess ?? [],
@@ -310,7 +308,7 @@ const resolveClientConfig = (config: ClientConfig): ResolvedClientConfig => {
   });
 };
 
-const createFallbackOptions = <T extends z.ZodTypeAny = z.ZodTypeAny>(
+const createFallbackOptions = <T extends z.ZodType = z.ZodType>(
   config: ResolvedClientConfig,
   options: ClientRequestOptions<T>,
 ): RequestOptions<T> => {
@@ -325,6 +323,7 @@ const createFallbackOptions = <T extends z.ZodTypeAny = z.ZodTypeAny>(
     protected: options.protected ?? config.protected,
     maxAttempts: options.maxAttempts ?? config.maxAttempts,
     fetch: options.fetch ?? config.fetch,
+    logger: options.logger ?? config.logger,
   };
 };
 
@@ -333,16 +332,20 @@ const createContext = (
 ): RequestContext => {
   const requestId = crypto.randomUUID();
   const startTime = performance.now();
+  const reqLogger = resolvedOptions.logger.child
+    ? resolvedOptions.logger.child({
+        requestId,
+        url: resolvedOptions.url,
+        method: resolvedOptions.method,
+        data: resolvedOptions?.data,
+      })
+    : resolvedOptions.logger;
+
   return {
     requestId,
     startTime,
     attemptCount: 0,
     meta: {},
-    logger: baseLogger.child({
-      requestId,
-      url: resolvedOptions.url,
-      method: resolvedOptions.method,
-      data: resolvedOptions?.data,
-    }),
+    logger: reqLogger,
   };
 };
