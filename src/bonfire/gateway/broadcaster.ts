@@ -6,6 +6,7 @@ export const broadcastTypes = {
   message: "MESSAGE",
   presence: "PRESENCE",
   status: "STATUS",
+  logout: "LOGOUT",
 } as const;
 
 export type BroadcastType =
@@ -37,7 +38,7 @@ export class Broadcaster {
       this.channel = new BroadcastChannel(CHANNEL_NAME);
       // this.logger.info("Set broadcast channel.");
     } else {
-      this.logger.debug("BroadcastChannel not supported.");
+      // this.logger.debug("BroadcastChannel not supported.");
     }
   }
 
@@ -46,7 +47,7 @@ export class Broadcaster {
     source?: string,
   ): () => void {
     if (!this.channel) {
-      this.logger.debug("No channel to subscribe to.", { source });
+      // this.logger.debug("No channel to subscribe to.", { source });
       return () => {};
     }
 
@@ -54,18 +55,21 @@ export class Broadcaster {
       if (event.data && event.data.type) {
         try {
           callback(event.data.type, event.data.payload);
-          this.logger.debug("Received broadcasted message from channel.", {
-            senderId: event.data.senderId,
-            type: event.data.type,
-            source,
-          });
+          if (event.data.type === broadcastTypes.message) {
+            this.logger.debug("Received broadcasted message from channel.", {
+              senderId: event.data.senderId,
+              type: event.data.type,
+              payload: event.data.payload,
+              source,
+            });
+          }
         } catch (error) {
-          this.logger.error("Broadcast listener execution error.", {
-            type: event.data.type,
-            senderId: event.data.senderId,
-            source,
-            error,
-          });
+          // this.logger.error("Broadcast listener execution error.", {
+          //   type: event.data.type,
+          //   senderId: event.data.senderId,
+          //   source,
+          //   error,
+          // });
         }
       }
     };
@@ -82,10 +86,10 @@ export class Broadcaster {
       this.channel?.removeEventListener("message", listener);
       this.listeners.delete(listener);
 
-      this.logger.info("Unsubscribed from broadcast channel messages.", {
-        source,
-        listenerCount: this.listeners.size,
-      });
+      // this.logger.info("Unsubscribed from broadcast channel messages.", {
+      //   source,
+      //   listenerCount: this.listeners.size,
+      // });
     };
   }
 
@@ -99,7 +103,9 @@ export class Broadcaster {
     }
 
     this.channel.postMessage({ senderId: this.id, type, payload });
-    this.logger.debug("Posted message to channel.", { type, source });
+    if (type === broadcastTypes.message) {
+      this.logger.debug("Posted message to channel.", { type, source });
+    }
   }
 }
 

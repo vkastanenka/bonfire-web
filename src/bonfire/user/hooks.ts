@@ -13,6 +13,7 @@ import { usePresenceStore, type Presence } from "@/presence";
 import { useAuthStore } from "../auth";
 import { paths } from "@/constants";
 import { useNavigate } from "@tanstack/react-router";
+import { broadcaster, broadcastTypes } from "../gateway/broadcaster";
 
 export const userKeys = {
   all: ["user"] as const,
@@ -93,6 +94,7 @@ export const useDisableAccount = (
     mutationKey: userKeys.disable(),
     mutationFn: (data: DisableRequest) => userService.disable(data),
     onSuccess: async (data, variables, context, mutation) => {
+      broadcaster.post(broadcastTypes.logout, null, "useDisableAccount");
       navigate({ to: paths.login });
       await onSuccess?.(data, variables, context, mutation);
     },
@@ -110,6 +112,7 @@ export const useScheduleDeleteAccount = (
     mutationKey: userKeys.scheduleDelete(),
     mutationFn: (data: DisableRequest) => userService.scheduleDelete(data),
     onSuccess: async (data, variables, context, mutation) => {
+      broadcaster.post(broadcastTypes.logout, null, "useScheduleDeleteAccount");
       navigate({ to: paths.login });
       await onSuccess?.(data, variables, context, mutation);
     },

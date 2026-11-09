@@ -2,12 +2,14 @@ import {
   bootstrapKeys,
   bootstrapService,
   useAuthStore,
+  useBroadcaster,
   useGateway,
 } from "@/bonfire";
 import { queryClient, requireAuth } from "@/app";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { usePresence } from "@/presence";
 import { useUserGatewayEvents } from "@/bonfire/user/gateway";
+import { useAuthGatewayEvents } from "@/bonfire/auth/gateway";
 
 export const authLoader = async () => {
   const data = await queryClient.ensureQueryData({
@@ -23,9 +25,11 @@ export const authLoader = async () => {
 };
 
 function AuthLayout() {
+  useBroadcaster();
   usePresence();
   useGateway();
   useUserGatewayEvents();
+  useAuthGatewayEvents();
 
   const me = useAuthStore((state) => state.me);
 

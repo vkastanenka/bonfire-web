@@ -1,6 +1,13 @@
 import { useEffect } from "react";
 import { useGatewayStore } from "./store";
 import { logger as baseLogger } from "@/logger";
+import { broadcaster, broadcastTypes } from "./broadcaster";
+import type { GatewayMessage, GatewayStatus } from "./service";
+import { usePresenceStore, type Presence } from "@/presence";
+import { dispatcher } from "./dispatcher";
+import { useAuthStore } from "../auth";
+import { paths } from "@/constants";
+import { useNavigate } from "@tanstack/react-router";
 
 const logger = baseLogger.child({
   package: "Gateway",
@@ -97,3 +104,31 @@ export function useGateway() {
     };
   }, [init, close]);
 }
+
+export const useBroadcaster = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    return broadcaster.subscribe((type, payload) => {
+      switch (type) {
+        case broadcastTypes.message: {
+          const message = payload as GatewayMessage;
+          dispatcher.dispatch(message.t, message.d);
+          break;
+        }
+
+        case broadcastTypes.presence:
+          usePresenceStore.setState({ presence: payload as Presence });
+          break;
+
+        case broadcastTypes.status:
+          useGatewayStore.setState({ status: payload as GatewayStatus });
+          break;
+
+        case broadcastTypes.logout:
+          useAuthStore.getState().clearSession();
+          navigate({ to: paths.login });
+      }
+    });
+  }, [navigate]);
+};

@@ -5,7 +5,6 @@ import { gatewayService, GatewayStatus, type GatewayMessage } from "./service";
 import { getEffectivePresence } from "../user";
 import { userMessageTypes } from "../user/gateway";
 import { broadcaster, broadcastTypes } from "./broadcaster";
-import { dispatcher } from "./dispatcher";
 
 interface State {
   status: GatewayStatus;
@@ -62,24 +61,6 @@ export const useGatewayStore = create<State>((set, get) => ({
     lastSentPresence = presence;
   },
 }));
-
-broadcaster.subscribe((type, payload) => {
-  switch (type) {
-    case broadcastTypes.message: {
-      const message = payload as GatewayMessage;
-      dispatcher.dispatch(message.t, message.d);
-      break;
-    }
-
-    case broadcastTypes.presence:
-      usePresenceStore.setState({ presence: payload as Presence });
-      break;
-
-    case broadcastTypes.status:
-      useGatewayStore.setState({ status: payload as GatewayStatus });
-      break;
-  }
-});
 
 let previousToken = useAuthStore.getState().accessToken;
 

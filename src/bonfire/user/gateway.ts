@@ -57,6 +57,7 @@ const handleEmailUpdated = (payload: EmailUpdatedPayload) => {
   const currentMe = useAuthStore.getState().me;
 
   if (currentMe && currentMe.id === payload.userId) {
+    console.log("handleEmailUpdated");
     useAuthStore.getState().setMe({
       ...currentMe,
       email: payload.email,

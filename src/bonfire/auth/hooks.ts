@@ -21,6 +21,7 @@ import { useAuthStore } from "./store";
 import { useNavigate } from "@tanstack/react-router";
 import { paths } from "@/constants";
 import { bootstrapService } from "../bootstrap";
+import { broadcaster, broadcastTypes } from "../gateway/broadcaster";
 
 export const authKeys = {
   all: ["auth"] as const,
@@ -119,6 +120,7 @@ export const useLogout = (
     mutationKey: authKeys.logout(),
     mutationFn: () => authService.logout(),
     onSuccess: async (data, variables, context, mutation) => {
+      broadcaster.post(broadcastTypes.logout, null, "useLogout");
       navigate({ to: paths.login });
       await onSuccess?.(data, variables, context, mutation);
     },
@@ -197,6 +199,7 @@ export const useRevokeAllSessions = (
     mutationKey: authKeys.revokeAllSessions(),
     mutationFn: () => authService.revokeAllSessions(),
     onSuccess: async (data, variables, context, mutation) => {
+      broadcaster.post(broadcastTypes.logout, null, "useRevokeAllSessions");
       navigate({ to: paths.login });
       await onSuccess?.(data, variables, context, mutation);
     },
