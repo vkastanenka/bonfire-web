@@ -1,3 +1,5 @@
+export * from "./form-handler";
+
 export const isMobileOS = (os: string): boolean => {
   const normalized = os.toLowerCase();
   return (

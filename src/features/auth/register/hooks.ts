@@ -6,7 +6,7 @@ import {
   registerRequestSchema,
   type RegisterRequest,
 } from "@/bonfire";
-import { handleAipFieldViolations } from "@/errs";
+import { handleAipFieldViolations } from "@/utils";
 
 export const useRegisterForm = () => {
   const navigate = useNavigate();

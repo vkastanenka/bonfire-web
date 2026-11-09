@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "@tanstack/react-router";
 import { type LoginRequest, loginRequestSchema, useLogin } from "@/bonfire";
-import { handleAipFieldViolations } from "@/errs";
+import { handleAipFieldViolations } from "@/utils";
 
 export const useLoginForm = () => {
   const navigate = useNavigate();

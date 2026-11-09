@@ -11,7 +11,7 @@ import {
 } from "@/bonfire";
 import { paths } from "@/constants";
 import { DialogHeader, Form } from "@/components";
-import { handleAipFieldViolations } from "@/errs";
+import { handleAipFieldViolations } from "@/utils";
 
 const labels = {
   title: "Disable your account",

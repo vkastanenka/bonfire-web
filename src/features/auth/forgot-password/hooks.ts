@@ -6,7 +6,7 @@ import {
   type ForgotPasswordRequest,
   useForgotPassword,
 } from "@/bonfire";
-import { handleAipFieldViolations } from "@/errs";
+import { handleAipFieldViolations } from "@/utils";
 
 export const useForgotPasswordForm = () => {
   const [email, setEmail] = useState<string | null>(null);

@@ -11,7 +11,7 @@ import {
 import { queryClient } from "@/app";
 import { paths } from "@/constants";
 import { DialogHeader, Form } from "@/components";
-import { handleAipFieldViolations } from "@/errs";
+import { handleAipFieldViolations } from "@/utils";
 
 const labels = {
   title: "Delete your account",

@@ -7,7 +7,7 @@ import {
   useMe,
   useUpdateUsername,
 } from "@/bonfire";
-import { handleAipFieldViolations } from "@/errs";
+import { handleAipFieldViolations } from "@/utils";
 import { DialogHeader, Form } from "@/components";
 
 const labels = {
