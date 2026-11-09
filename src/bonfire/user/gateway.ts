@@ -2,6 +2,8 @@ import { dispatcher, useGatewayStore } from "../gateway";
 import { useAuthStore } from "../auth";
 import { useEffect } from "react";
 import { presences, usePresenceStore, type Presence } from "@/presence";
+import { useNavigate, type UseNavigateResult } from "@tanstack/react-router";
+import { paths } from "@/constants";
 
 export const userMessageTypes = {
   emailUpdates: "user.email_updated",
@@ -75,9 +77,9 @@ const handleUsernameUpdated = (payload: UsernameUpdatedPayload) => {
   }
 };
 
-const handlePasswordUpdated = (_payload: unknown) => {
-  // Password updates usually don't send payload data or require state mutations,
-  // but you can log out sessions or trigger security notices here if needed.
+const handlePasswordUpdated = (navigate: UseNavigateResult<string>) => {
+  useAuthStore.getState().clearSession();
+  navigate({ to: paths.login });
 };
 
 const handlePreferredPresenceUpdated = (
@@ -113,15 +115,15 @@ const handleProfileUpdated = (payload: ProfileUpdatedPayload) => {
   }
 };
 
-const handleDisabled = (payload: DisabledPayload) => {
-  //   const currentMe = useAuthStore.getState().me;
-  //   if (currentMe && currentMe.id === payload.userId) {
-  //     useAuthStore.getState().setMe({
-  //       ...currentMe,
-  //       isDisabled: true,
-  //       updatedAt: payload.updatedAt,
-  //     });
-  //   }
+const handleDisabled = (
+  payload: DisabledPayload,
+  navigate: UseNavigateResult<string>,
+) => {
+  const currentMe = useAuthStore.getState().me;
+  if (currentMe && currentMe.id === payload.userId) {
+    useAuthStore.getState().clearSession();
+    navigate({ to: paths.login });
+  }
 };
 
 const handlePresenceUpdated = (payload: PresenceUpdatedPayload) => {
@@ -134,6 +136,7 @@ const handlePresenceUpdated = (payload: PresenceUpdatedPayload) => {
 };
 
 export const useUserGatewayEvents = () => {
+  const navigate = useNavigate();
   useEffect(() => {
     const unregisterEmailUpdated = dispatcher.register<EmailUpdatedPayload>(
       userMessageTypes.emailUpdates,
@@ -148,7 +151,7 @@ export const useUserGatewayEvents = () => {
 
     const unregisterPasswordUpdated = dispatcher.register(
       userMessageTypes.passwordUpdated,
-      handlePasswordUpdated,
+      () => handlePasswordUpdated(navigate),
     );
 
     const unregisterPreferredPresenceUpdated =
@@ -164,7 +167,7 @@ export const useUserGatewayEvents = () => {
 
     const unregisterDisabled = dispatcher.register<DisabledPayload>(
       userMessageTypes.disabled,
-      handleDisabled,
+      (payload) => handleDisabled(payload, navigate),
     );
 
     const unregisterPresenceUpdated =
@@ -182,5 +185,5 @@ export const useUserGatewayEvents = () => {
       unregisterDisabled();
       unregisterPresenceUpdated();
     };
-  }, []);
+  }, [navigate]);
 };
