@@ -1,4 +1,4 @@
-import { AipError, AppError, STATUS_CODES } from "@/errs";
+import { AipError, AppError, statusCodes } from "@/errs";
 import { accessTokenResponseSchema, useAuthStore } from "./auth";
 import {
   apiErrorCodes,
@@ -32,7 +32,7 @@ export const handleAuthError: ResponseErrorFn = async (
 
   if (
     !(error instanceof AipError) ||
-    error.httpCode !== STATUS_CODES.UNAUTHORIZED
+    error.httpCode !== statusCodes.unauthorized
   ) {
     return;
   }

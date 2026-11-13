@@ -1,68 +1,67 @@
-export const STATUS_CODES = {
-  NETWORK_ERROR: 0,
-  BAD_REQUEST: 400,
-  UNAUTHORIZED: 401,
-  FORBIDDEN: 403,
-  NOT_FOUND: 404,
-  CONFLICT: 409,
-  PRECONDITION_FAILED: 412,
-  TOO_MANY_REQUESTS: 429,
-  CLIENT_CLOSED_REQUEST: 499,
-  INTERNAL_SERVER_ERROR: 500,
-  NOT_IMPLEMENTED: 501,
-  BAD_GATEWAY: 502,
-  SERVICE_UNAVAILABLE: 503,
-  GATEWAY_TIMEOUT: 504,
+export const statusCodes = {
+  networkError: 0,
+  badRequest: 400,
+  unauthorized: 401,
+  forbidden: 403,
+  notFound: 404,
+  conflict: 409,
+  preconditionFailed: 412,
+  tooManyRequests: 429,
+  clientClosedRequest: 499,
+  internalServerError: 500,
+  notImplemented: 501,
+  badGateway: 502,
+  serviceUnavailable: 503,
+  gatewayTimeout: 504,
 } as const;
 
-export type StatusCode = (typeof STATUS_CODES)[keyof typeof STATUS_CODES];
+export type StatusCode = (typeof statusCodes)[keyof typeof statusCodes];
 
-export const STATUS_NAMES: Record<StatusCode, string> = {
-  [STATUS_CODES.NETWORK_ERROR]: "UNAVAILABLE",
-  [STATUS_CODES.BAD_REQUEST]: "INVALID_ARGUMENT",
-  [STATUS_CODES.UNAUTHORIZED]: "UNAUTHENTICATED",
-  [STATUS_CODES.FORBIDDEN]: "PERMISSION_DENIED",
-  [STATUS_CODES.NOT_FOUND]: "NOT_FOUND",
-  [STATUS_CODES.CONFLICT]: "ALREADY_EXISTS",
-  [STATUS_CODES.PRECONDITION_FAILED]: "FAILED_PRECONDITION",
-  [STATUS_CODES.TOO_MANY_REQUESTS]: "RESOURCE_EXHAUSTED",
-  [STATUS_CODES.CLIENT_CLOSED_REQUEST]: "CANCELLED",
-  [STATUS_CODES.INTERNAL_SERVER_ERROR]: "INTERNAL",
-  [STATUS_CODES.NOT_IMPLEMENTED]: "UNIMPLEMENTED",
-  [STATUS_CODES.BAD_GATEWAY]: "UNAVAILABLE",
-  [STATUS_CODES.SERVICE_UNAVAILABLE]: "UNAVAILABLE",
-  [STATUS_CODES.GATEWAY_TIMEOUT]: "DEADLINE_EXCEEDED",
+export const statusNames: Record<StatusCode, string> = {
+  [statusCodes.networkError]: "UNAVAILABLE",
+  [statusCodes.badRequest]: "INVALID_ARGUMENT",
+  [statusCodes.unauthorized]: "UNAUTHENTICATED",
+  [statusCodes.forbidden]: "PERMISSION_DENIED",
+  [statusCodes.notFound]: "NOT_FOUND",
+  [statusCodes.conflict]: "ALREADY_EXISTS",
+  [statusCodes.preconditionFailed]: "FAILED_PRECONDITION",
+  [statusCodes.tooManyRequests]: "RESOURCE_EXHAUSTED",
+  [statusCodes.clientClosedRequest]: "CANCELLED",
+  [statusCodes.internalServerError]: "INTERNAL",
+  [statusCodes.notImplemented]: "UNIMPLEMENTED",
+  [statusCodes.badGateway]: "UNAVAILABLE",
+  [statusCodes.serviceUnavailable]: "UNAVAILABLE",
+  [statusCodes.gatewayTimeout]: "DEADLINE_EXCEEDED",
 };
 
-export const STATUS_MESSAGES: Record<StatusCode, string> = {
-  [STATUS_CODES.NETWORK_ERROR]:
+export const statusMessages: Record<StatusCode, string> = {
+  [statusCodes.networkError]:
     "The service is currently unavailable. Please check your network connection.",
-  [STATUS_CODES.BAD_REQUEST]: "The client specified an invalid argument.",
-  [STATUS_CODES.UNAUTHORIZED]:
+  [statusCodes.badRequest]: "The client specified an invalid argument.",
+  [statusCodes.unauthorized]:
     "The request does not have valid authentication credentials for the operation.",
-  [STATUS_CODES.FORBIDDEN]:
+  [statusCodes.forbidden]:
     "The caller does not have permission to execute the specified operation.",
-  [STATUS_CODES.NOT_FOUND]: "The requested resource was not found.",
-  [STATUS_CODES.CONFLICT]:
+  [statusCodes.notFound]: "The requested resource was not found.",
+  [statusCodes.conflict]:
     "The resource that the client attempted to create already exists.",
-  [STATUS_CODES.PRECONDITION_FAILED]:
+  [statusCodes.preconditionFailed]:
     "The operation was rejected because the system is not in a state required for execution.",
-  [STATUS_CODES.TOO_MANY_REQUESTS]:
-    "A resource limit or quota has been exceeded.",
-  [STATUS_CODES.CLIENT_CLOSED_REQUEST]: "The operation was cancelled.",
-  [STATUS_CODES.INTERNAL_SERVER_ERROR]: "An internal error occurred.",
-  [STATUS_CODES.NOT_IMPLEMENTED]:
+  [statusCodes.tooManyRequests]: "A resource limit or quota has been exceeded.",
+  [statusCodes.clientClosedRequest]: "The operation was cancelled.",
+  [statusCodes.internalServerError]: "An internal error occurred.",
+  [statusCodes.notImplemented]:
     "The operation is not implemented or supported in this service.",
-  [STATUS_CODES.BAD_GATEWAY]:
+  [statusCodes.badGateway]:
     "The service is currently unavailable. Upstream gateway failed.",
-  [STATUS_CODES.SERVICE_UNAVAILABLE]:
+  [statusCodes.serviceUnavailable]:
     "The service is currently unavailable. Please try again later.",
-  [STATUS_CODES.GATEWAY_TIMEOUT]:
+  [statusCodes.gatewayTimeout]:
     "The deadline expired before the operation could complete.",
 };
 
-export const RETRYABLE_STATUS_CODES: ReadonlySet<number> = new Set([
-  STATUS_CODES.BAD_GATEWAY,
-  STATUS_CODES.SERVICE_UNAVAILABLE,
-  STATUS_CODES.GATEWAY_TIMEOUT,
+export const retryableStatusCodes: ReadonlySet<number> = new Set([
+  statusCodes.badGateway,
+  statusCodes.serviceUnavailable,
+  statusCodes.gatewayTimeout,
 ]);

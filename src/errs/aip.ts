@@ -1,5 +1,5 @@
 import { AppError } from "./app";
-import { STATUS_MESSAGES, STATUS_NAMES, type StatusCode } from "./status";
+import { statusMessages, statusNames, type StatusCode } from "./status";
 
 export class AipError extends AppError {
   public readonly httpCode: number;
@@ -27,7 +27,7 @@ export class AipError extends AppError {
   }
 
   public getErrorInfo(): AipErrorInfoDetail | undefined {
-    return this.getDetail(AIP_DETAIL_TYPES.ERROR_INFO);
+    return this.getDetail(aipDetailTypes.errorInfo);
   }
 
   public getErrorInfoReason(): string | undefined {
@@ -35,23 +35,23 @@ export class AipError extends AppError {
   }
 
   public getRetryInfo(): AipRetryInfoDetail | undefined {
-    return this.getDetail(AIP_DETAIL_TYPES.RETRY_INFO);
+    return this.getDetail(aipDetailTypes.retryInfo);
   }
 
   public getDebugInfo(): AipDebugInfoDetail | undefined {
-    return this.getDetail(AIP_DETAIL_TYPES.DEBUG_INFO);
+    return this.getDetail(aipDetailTypes.debugInfo);
   }
 
   public getBadRequest(): AipBadRequestDetail | undefined {
-    return this.getDetail(AIP_DETAIL_TYPES.BAD_REQUEST);
+    return this.getDetail(aipDetailTypes.badRequest);
   }
 
   public getRequestInfo(): AipRequestInfoDetail | undefined {
-    return this.getDetail(AIP_DETAIL_TYPES.REQUEST_INFO);
+    return this.getDetail(aipDetailTypes.requestInfo);
   }
 
   public getResourceInfo(): AipResourceInfoDetail | undefined {
-    return this.getDetail(AIP_DETAIL_TYPES.RESOURCE_INFO);
+    return this.getDetail(aipDetailTypes.resourceInfo);
   }
 
   public getFieldViolations(): AipFieldViolation[] {
@@ -151,32 +151,32 @@ export class AipError extends AppError {
   }
 }
 
-export const AIP_DETAIL_TYPES = {
-  ERROR_INFO: "type.googleapis.com/google.rpc.ErrorInfo",
-  RETRY_INFO: "type.googleapis.com/google.rpc.RetryInfo",
-  DEBUG_INFO: "type.googleapis.com/google.rpc.DebugInfo",
-  BAD_REQUEST: "type.googleapis.com/google.rpc.BadRequest",
-  REQUEST_INFO: "type.googleapis.com/google.rpc.RequestInfo",
-  RESOURCE_INFO: "type.googleapis.com/google.rpc.ResourceInfo",
+export const aipDetailTypes = {
+  errorInfo: "type.googleapis.com/google.rpc.ErrorInfo",
+  retryInfo: "type.googleapis.com/google.rpc.RetryInfo",
+  debugInfo: "type.googleapis.com/google.rpc.DebugInfo",
+  badRequest: "type.googleapis.com/google.rpc.BadRequest",
+  requestInfo: "type.googleapis.com/google.rpc.RequestInfo",
+  resourceInfo: "type.googleapis.com/google.rpc.ResourceInfo",
 } as const;
 
 export type AipDetailType =
-  (typeof AIP_DETAIL_TYPES)[keyof typeof AIP_DETAIL_TYPES];
+  (typeof aipDetailTypes)[keyof typeof aipDetailTypes];
 
 export interface AipErrorInfoDetail {
-  "@type": typeof AIP_DETAIL_TYPES.ERROR_INFO;
+  "@type": typeof aipDetailTypes.errorInfo;
   reason: string;
   domain: string;
   metadata?: Record<string, string>;
 }
 
 export interface AipRetryInfoDetail {
-  "@type": typeof AIP_DETAIL_TYPES.RETRY_INFO;
+  "@type": typeof aipDetailTypes.retryInfo;
   retryDelay?: string;
 }
 
 export interface AipDebugInfoDetail {
-  "@type": typeof AIP_DETAIL_TYPES.DEBUG_INFO;
+  "@type": typeof aipDetailTypes.debugInfo;
   detail?: string;
   stackEntries?: string[];
 }
@@ -188,18 +188,18 @@ export interface AipFieldViolation {
 }
 
 export interface AipBadRequestDetail {
-  "@type": typeof AIP_DETAIL_TYPES.BAD_REQUEST;
+  "@type": typeof aipDetailTypes.badRequest;
   fieldViolations?: AipFieldViolation[];
 }
 
 export interface AipRequestInfoDetail {
-  "@type": typeof AIP_DETAIL_TYPES.REQUEST_INFO;
+  "@type": typeof aipDetailTypes.requestInfo;
   requestId: string;
   servingData?: string;
 }
 
 export interface AipResourceInfoDetail {
-  "@type": typeof AIP_DETAIL_TYPES.RESOURCE_INFO;
+  "@type": typeof aipDetailTypes.resourceInfo;
   resourceType: string;
   resourceName: string;
   owner?: string;
@@ -253,10 +253,10 @@ export interface UnknownAipErrorOptions {
   timestamp?: string | Date | number;
 }
 
-export const UNKNOWN_AIP_ERROR_DATA = {
-  STATUS: "UNKNOWN",
-  DOMAIN: "http-client",
-  MESSAGE: "The server responded with an unhandled HTTP status code.",
+export const unknownAipErrorData = {
+  status: "UNKNOWN",
+  domain: "http-client",
+  message: "The server responded with an unhandled HTTP status code.",
 } as const;
 
 export const createUnknownAipErrorData = (
@@ -265,8 +265,8 @@ export const createUnknownAipErrorData = (
   options?: UnknownAipErrorOptions,
 ): AipErrorData => {
   const code = statusCode as StatusCode;
-  const statusName = STATUS_NAMES[code] ?? UNKNOWN_AIP_ERROR_DATA.STATUS;
-  const message = STATUS_MESSAGES[code] ?? UNKNOWN_AIP_ERROR_DATA.MESSAGE;
+  const statusName = statusNames[code] ?? unknownAipErrorData.status;
+  const message = statusMessages[code] ?? unknownAipErrorData.message;
 
   let formattedTimestamp: string;
   try {
@@ -277,10 +277,10 @@ export const createUnknownAipErrorData = (
     formattedTimestamp = new Date().toISOString();
   }
 
-  const domain = options?.domain ?? UNKNOWN_AIP_ERROR_DATA.DOMAIN;
+  const domain = options?.domain ?? unknownAipErrorData.domain;
 
   const errorInfoDetail: AipErrorInfoDetail = {
-    "@type": AIP_DETAIL_TYPES.ERROR_INFO,
+    "@type": aipDetailTypes.errorInfo,
     reason: statusName,
     domain,
     metadata: {

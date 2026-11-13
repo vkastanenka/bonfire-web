@@ -1,4 +1,4 @@
-import { AppError, AipError, RETRYABLE_STATUS_CODES } from "@/errs";
+import { AppError, AipError, retryableStatusCodes } from "@/errs";
 import { clientErrors, requestErrors } from "./errors";
 import { logger as defaultLogger, type Logger, logMessages } from "./logger";
 import {
@@ -42,7 +42,7 @@ export interface HttpRequestContext {
   readonly startTime: number;
   attemptCount: number;
   meta: Record<string, unknown>;
-  logger: Logger;
+  logger?: Logger;
 }
 
 export type BeforeRequestFn = (
@@ -120,6 +120,23 @@ export class HttpClient {
     return this.request({ ...options, method: "DELETE" });
   }
 
+  public addBeforeRequest(hooks: BeforeRequestFn | BeforeRequestFn[]): void {
+    const list = Array.isArray(hooks) ? hooks : [hooks];
+    this.config.beforeRequest.unshift(...list);
+  }
+
+  public addResponseSuccess(
+    hooks: ResponseSuccessFn | ResponseSuccessFn[],
+  ): void {
+    const list = Array.isArray(hooks) ? hooks : [hooks];
+    this.config.onResponseSuccess.unshift(...list);
+  }
+
+  public addResponseError(hooks: ResponseErrorFn | ResponseErrorFn[]): void {
+    const list = Array.isArray(hooks) ? hooks : [hooks];
+    this.config.onResponseError.unshift(...list);
+  }
+
   private async request<T = unknown>(
     options: HttpClientRequestOptions<T>,
   ): Promise<T> {
@@ -152,14 +169,14 @@ export class HttpClient {
         });
       }
 
-      context.logger.debug(logMessages.initiated, {
+      context.logger?.debug(logMessages.initiated, {
         attemptCount: context.attemptCount,
       });
 
       try {
         const result = await httpRequest(resolvedOptions);
 
-        context.logger.debug(logMessages.succeeded, {
+        context.logger?.debug(logMessages.succeeded, {
           durationMs: Math.round(performance.now() - context.startTime),
           result, // TODO: Remove in prod
         });
@@ -179,16 +196,19 @@ export class HttpClient {
           const status = error instanceof AipError ? error.httpCode : 0;
           const isFinalAttempt =
             context.attemptCount >= resolvedOptions.maxAttempts;
-          const logMethod = isFinalAttempt
-            ? context.logger.error
-            : context.logger.debug;
 
-          logMethod.call(context.logger, logMessages.failed, {
-            status,
-            code: error.code,
-            durationMs: Math.round(performance.now() - context.startTime),
-            error: error instanceof AipError ? error.toAip() : undefined, // TODO: Remove in prod
-          });
+          if (context.logger) {
+            const logMethod = isFinalAttempt
+              ? context.logger.error
+              : context.logger.debug;
+
+            logMethod.call(context.logger, logMessages.failed, {
+              status,
+              code: error.code,
+              durationMs: Math.round(performance.now() - context.startTime),
+              error: error instanceof AipError ? error.toAip() : undefined, // TODO: Remove in prod
+            });
+          }
 
           if (this.config.onResponseError) {
             for (const hook of this.config.onResponseError) {
@@ -207,13 +227,13 @@ export class HttpClient {
           if (
             error instanceof AipError &&
             context.attemptCount < resolvedOptions.maxAttempts &&
-            RETRYABLE_STATUS_CODES.has(error.httpCode)
+            retryableStatusCodes.has(error.httpCode)
           ) {
             const backoff = Math.pow(2, context.attemptCount - 1) * 100;
             const jitter = Math.random() * 50;
             const delayMs = Math.round(backoff + jitter);
 
-            context.logger.debug(logMessages.retrying, {
+            context.logger?.debug(logMessages.retrying, {
               status: error.httpCode,
               delayMs,
             });
