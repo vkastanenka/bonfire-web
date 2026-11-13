@@ -1,9 +1,5 @@
 import { AipError, AppError, mapFetchToUnknownAipErrorData } from "@/errs";
-import {
-  clientErrors,
-  requestErrors,
-  responseErrors,
-} from "./errors";
+import { clientErrors, requestErrors, responseErrors } from "./errors";
 import { logger as defaultLogger, type Logger } from "./logger";
 import {
   appendQueryParams,
@@ -21,7 +17,7 @@ export type CustomFetch = (
   init?: RequestInit,
 ) => Promise<Response>;
 
-export interface RequestOptions<T = unknown> {
+export interface HttpRequestOptions<T = unknown> {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   url: string;
   schema?: Validator<T>;
@@ -44,18 +40,18 @@ export const defaultRequestOptions = {
   },
   timeout: 10_000,
   maxAttempts: 1,
-} as const satisfies Partial<RequestOptions>;
+} as const satisfies Partial<HttpRequestOptions>;
 
-export type ResolvedRequestOptions<T = unknown> = Required<
-  Pick<RequestOptions<T>, "timeout" | "fetch" | "maxAttempts">
+export type ResolvedHttpRequestOptions<T = unknown> = Required<
+  Pick<HttpRequestOptions<T>, "timeout" | "fetch" | "maxAttempts">
 > &
-  Omit<RequestOptions<T>, "headers"> & {
+  Omit<HttpRequestOptions<T>, "headers"> & {
     headers: Headers;
     logger: Logger;
   };
 
-export const request = async <T = unknown>(
-  options: RequestOptions<T>,
+export const httpRequest = async <T = unknown>(
+  options: HttpRequestOptions<T>,
 ): Promise<T> => {
   const resolvedOptions = resolveRequestOptions(options);
 
@@ -171,8 +167,8 @@ export const request = async <T = unknown>(
 };
 
 export const resolveRequestOptions = <T = unknown>(
-  options: RequestOptions<T>,
-): ResolvedRequestOptions<T> => {
+  options: HttpRequestOptions<T>,
+): ResolvedHttpRequestOptions<T> => {
   const fetchImpl = options.fetch ?? globalThis.fetch?.bind(globalThis);
 
   if (!fetchImpl || typeof fetchImpl !== "function") {

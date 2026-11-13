@@ -1,6 +1,6 @@
 import { emailSchema, hexColorSchema, urlSchema, z } from "@/validation";
 
-export const VALIDATION_ERRORS = {
+export const validationErrors = {
   username:
     "Must start and end with a letter or number. May contain only letters, numbers, and non-consecutive underscores or periods.",
 };
@@ -11,7 +11,7 @@ export const usernameSchema = z
   .string()
   .min(3)
   .max(32)
-  .regex(usernameRegex, VALIDATION_ERRORS.username);
+  .regex(usernameRegex, validationErrors.username);
 
 export const passwordSchema = z.string().min(12).max(64);
 export const displayNameSchema = z.string().min(1).max(32);

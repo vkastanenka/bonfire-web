@@ -4,15 +4,15 @@ import { logger as defaultLogger, type Logger, logMessages } from "./logger";
 import {
   type CustomFetch,
   type QueryParams,
-  type RequestOptions,
-  type ResolvedRequestOptions,
-  request,
+  type HttpRequestOptions,
+  type ResolvedHttpRequestOptions,
+  httpRequest,
   resolveRequestOptions,
 } from "./request";
 import { buildHeaders } from "./utils";
 import { type Validator } from "./validator";
 
-export interface ClientConfig {
+export interface HttpClientConfig {
   baseUrl: string;
   headers?: HeadersInit;
   credentials?: RequestCredentials;
@@ -28,8 +28,8 @@ export interface ClientConfig {
   onResponseError?: ResponseErrorFn[];
 }
 
-export type ClientRequestOptions<T = unknown> = Omit<
-  RequestOptions<T>,
+export type HttpClientRequestOptions<T = unknown> = Omit<
+  HttpRequestOptions<T>,
   "url"
 > & {
   urlPath: string;
@@ -37,7 +37,7 @@ export type ClientRequestOptions<T = unknown> = Omit<
   logger?: Logger;
 };
 
-export interface RequestContext {
+export interface HttpRequestContext {
   readonly requestId: string;
   readonly startTime: number;
   attemptCount: number;
@@ -46,19 +46,19 @@ export interface RequestContext {
 }
 
 export type BeforeRequestFn = (
-  options: ResolvedRequestOptions,
-  context: RequestContext,
+  options: ResolvedHttpRequestOptions,
+  context: HttpRequestContext,
 ) => Promise<void> | void;
 
 export type ResponseSuccessFn<T = unknown> = (
-  options: ResolvedRequestOptions<T>,
-  context: RequestContext,
+  options: ResolvedHttpRequestOptions<T>,
+  context: HttpRequestContext,
   result: T,
 ) => Promise<void> | void;
 
 export type ResponseErrorFn<T = unknown> = (
-  options: ResolvedRequestOptions<T>,
-  context: RequestContext,
+  options: ResolvedHttpRequestOptions<T>,
+  context: HttpRequestContext,
   error: AppError,
   retry: () => Promise<T>,
 ) => Promise<T | void> | T | void;
@@ -73,55 +73,55 @@ export const defaultClientConfig = {
   protected: true,
   queryParams: {},
   logger: defaultLogger,
-} as const satisfies Partial<ClientConfig>;
+} as const satisfies Partial<HttpClientConfig>;
 
 export type ResolvedClientConfig = Readonly<
-  Omit<Required<ClientConfig>, "headers" | "cache" | "logger"> & {
+  Omit<Required<HttpClientConfig>, "headers" | "cache" | "logger"> & {
     headers: Headers;
     cache?: RequestCache;
     logger: Logger;
   }
 >;
 
-export class Client {
+export class HttpClient {
   public readonly config: ResolvedClientConfig;
 
-  constructor(config: ClientConfig) {
+  constructor(config: HttpClientConfig) {
     this.config = resolveClientConfig(config);
   }
 
   public async get<T = unknown>(
-    options: Omit<ClientRequestOptions<T>, "method">,
+    options: Omit<HttpClientRequestOptions<T>, "method">,
   ): Promise<T> {
     return this.request({ ...options, method: "GET" });
   }
 
   public async post<T = unknown>(
-    options: Omit<ClientRequestOptions<T>, "method">,
+    options: Omit<HttpClientRequestOptions<T>, "method">,
   ): Promise<T> {
     return this.request({ ...options, method: "POST" });
   }
 
   public async put<T = unknown>(
-    options: Omit<ClientRequestOptions<T>, "method">,
+    options: Omit<HttpClientRequestOptions<T>, "method">,
   ): Promise<T> {
     return this.request({ ...options, method: "PUT" });
   }
 
   public async patch<T = unknown>(
-    options: Omit<ClientRequestOptions<T>, "method">,
+    options: Omit<HttpClientRequestOptions<T>, "method">,
   ): Promise<T> {
     return this.request({ ...options, method: "PATCH" });
   }
 
   public async delete<T = unknown>(
-    options: Omit<ClientRequestOptions<T>, "method">,
+    options: Omit<HttpClientRequestOptions<T>, "method">,
   ): Promise<T> {
     return this.request({ ...options, method: "DELETE" });
   }
 
   private async request<T = unknown>(
-    options: ClientRequestOptions<T>,
+    options: HttpClientRequestOptions<T>,
   ): Promise<T> {
     const resolvedOptions = resolveRequestOptions(
       createFallbackOptions(this.config, options),
@@ -157,7 +157,7 @@ export class Client {
       });
 
       try {
-        const result = await request(resolvedOptions);
+        const result = await httpRequest(resolvedOptions);
 
         context.logger.debug(logMessages.succeeded, {
           durationMs: Math.round(performance.now() - context.startTime),
@@ -231,7 +231,9 @@ export class Client {
   }
 }
 
-const resolveClientConfig = (config: ClientConfig): ResolvedClientConfig => {
+const resolveClientConfig = (
+  config: HttpClientConfig,
+): ResolvedClientConfig => {
   const fetchImpl = config.fetch ?? globalThis.fetch?.bind(globalThis);
   if (!fetchImpl || typeof fetchImpl !== "function") {
     throw new AppError({
@@ -309,8 +311,8 @@ const resolveClientConfig = (config: ClientConfig): ResolvedClientConfig => {
 
 const createFallbackOptions = <T = unknown>(
   config: ResolvedClientConfig,
-  options: ClientRequestOptions<T>,
-): RequestOptions<T> => {
+  options: HttpClientRequestOptions<T>,
+): HttpRequestOptions<T> => {
   return {
     ...options,
     url: `${config.baseUrl}${options.urlPath}`,
@@ -327,8 +329,8 @@ const createFallbackOptions = <T = unknown>(
 };
 
 const createContext = (
-  resolvedOptions: ResolvedRequestOptions,
-): RequestContext => {
+  resolvedOptions: ResolvedHttpRequestOptions,
+): HttpRequestContext => {
   const requestId = crypto.randomUUID();
   const startTime = performance.now();
   const reqLogger = resolvedOptions.logger.child
