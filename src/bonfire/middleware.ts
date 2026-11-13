@@ -52,6 +52,7 @@ export const handleAuthError: ResponseErrorFn = async (
     } else {
       refreshPromise = (async () => {
         try {
+          // TODO: Change to http request?
           const data = await request({
             method: "POST",
             url: `${defaultConfig.baseUrl}/auth/refresh`,
