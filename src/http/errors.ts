@@ -1,3 +1,10 @@
+export const httpErrorTypes = {
+  http: "HttpError",
+  httpClient: "HttpClientError",
+  network: "NetworkError",
+  timeout: "TimeoutError",
+};
+
 export const apiErrorCodes = {
   tokenExpired: "TOKEN_EXPIRED",
   rateLimitExceeded: "RATE_LIMIT_EXCEEDED",
@@ -70,3 +77,48 @@ export const responseErrors = {
 
 export type ResponseErrorCode =
   (typeof responseErrors)[keyof typeof responseErrors]["code"];
+
+export class HttpClientError extends Error {
+  public readonly code: string;
+
+  constructor(code: string, message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = httpErrorTypes.httpClient;
+    this.code = code;
+  }
+}
+
+export class NetworkError extends HttpClientError {
+  constructor(message: string, cause?: unknown) {
+    super(requestErrors.fetchFailed.code, message, { cause });
+    this.name = httpErrorTypes.network;
+  }
+}
+
+export class TimeoutError extends HttpClientError {
+  constructor(message: string, cause?: unknown) {
+    super(requestErrors.requestTimeout.code, message, { cause });
+    this.name = httpErrorTypes.timeout;
+  }
+}
+
+export class HttpError extends HttpClientError {
+  public readonly status: number;
+  public readonly statusText: string;
+  public readonly rawBody: string;
+  public readonly jsonBody: unknown;
+
+  constructor(
+    status: number,
+    statusText: string,
+    rawBody: string,
+    jsonBody: unknown,
+  ) {
+    super("HTTP_ERROR", `HTTP error status: ${status} ${statusText}`);
+    this.name = httpErrorTypes.http;
+    this.status = status;
+    this.statusText = statusText;
+    this.rawBody = rawBody;
+    this.jsonBody = jsonBody;
+  }
+}

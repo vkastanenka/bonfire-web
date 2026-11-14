@@ -1,5 +1,13 @@
-import { AipError, AppError, mapFetchToUnknownAipErrorData } from "@/errs";
-import { clientErrors, requestErrors, responseErrors } from "./errors";
+import {
+  clientErrors,
+  HttpClientError,
+  HttpError,
+  httpErrorTypes,
+  NetworkError,
+  requestErrors,
+  responseErrors,
+  TimeoutError,
+} from "./errors";
 import { logger as defaultLogger, type Logger } from "./logger";
 import {
   appendQueryParams,
@@ -77,70 +85,41 @@ export const httpRequest = async <T = unknown>(
     });
   } catch (cause) {
     if (resolvedOptions.signal?.aborted) {
-      throw new AppError({
-        code: requestErrors.requestAborted.code,
-        message: requestErrors.requestAborted.message,
-        cause,
-        context: { url: fullUrl.toString() },
-      });
+      throw new NetworkError(requestErrors.requestAborted.message, cause);
     }
 
     if (
-      (cause instanceof Error && cause.name === "TimeoutError") ||
+      (cause instanceof Error && cause.name === httpErrorTypes.timeout) ||
       timeoutSignal.aborted
     ) {
-      throw new AppError({
-        code: requestErrors.requestTimeout.code,
-        message: requestErrors.requestTimeout.message,
-        cause,
-        context: { url: fullUrl.toString() },
-      });
+      throw new TimeoutError(requestErrors.requestTimeout.message, cause);
     }
 
-    throw new AppError({
-      code: requestErrors.fetchFailed.code,
-      message:
-        cause instanceof Error && cause.message
-          ? cause.message
-          : requestErrors.fetchFailed.message,
+    throw new NetworkError(
+      cause instanceof Error && cause.message
+        ? cause.message
+        : requestErrors.fetchFailed.message,
       cause,
-      context: { url: fullUrl.toString() },
-    });
+    );
   }
+
+  const { data: responseBody, error: parseError } = await parseJSON(response);
 
   if (!response.ok) {
-    const { data: bodyData, error: parseError } = await parseJSON(response);
-
-    const aipErrorData = mapFetchToUnknownAipErrorData(
-      response,
-      bodyData,
-      resolvedOptions.url,
-      parseError ? { cause: parseError } : {},
+    throw new HttpError(
+      response.status,
+      response.statusText,
+      parseError ? "Failed to parse error body as JSON" : "",
+      responseBody,
     );
-
-    throw new AipError(aipErrorData);
   }
 
-  let responseBody: unknown = null;
-
-  if (
-    !(response.status === 204 || response.headers.get("content-length") === "0")
-  ) {
-    const { data, error } = await parseJSON(response);
-
-    if (error) {
-      throw new AppError({
-        code: responseErrors.parseError.code,
-        message: responseErrors.parseError.message,
-        cause: error,
-        context: {
-          status: response.status,
-          url: fullUrl.toString(),
-        },
-      });
-    }
-
-    responseBody = data;
+  if (parseError) {
+    throw new HttpClientError(
+      responseErrors.parseError.code,
+      `${responseErrors.parseError.message}: ${parseError.message}`,
+      { cause: parseError },
+    );
   }
 
   if (!resolvedOptions.schema) {
@@ -150,17 +129,15 @@ export const httpRequest = async <T = unknown>(
   const parsed = resolvedOptions.schema.safeParse(responseBody);
 
   if (!parsed.success) {
-    throw new AppError({
-      code: responseErrors.validationError.code,
-      message: responseErrors.validationError.message,
-      cause: parsed.error,
-      context: {
-        method: resolvedOptions.method,
-        urlPath: fullUrl.toString(),
-        issues: parsed.error.issues,
-        responseBody,
-      },
-    });
+    const issueSummary = parsed.error.issues
+      .map((issue) => `${issue.path.join(".") || "root"}: ${issue.message}`)
+      .join("; ");
+
+    throw new HttpClientError(
+      responseErrors.validationError.code,
+      `${responseErrors.validationError.message} ${issueSummary}`,
+      { cause: parsed.error },
+    );
   }
 
   return parsed.data;
@@ -172,14 +149,16 @@ export const resolveRequestOptions = <T = unknown>(
   const fetchImpl = options.fetch ?? globalThis.fetch?.bind(globalThis);
 
   if (!fetchImpl || typeof fetchImpl !== "function") {
-    throw new AppError({
-      code: clientErrors.missingFetch.code,
-      message: clientErrors.missingFetch.message,
-      context: {
-        hasCustomFetch: Boolean(options.fetch),
-        hasGlobalFetch: typeof globalThis.fetch !== "undefined",
+    throw new HttpClientError(
+      clientErrors.missingFetch.code,
+      clientErrors.missingFetch.message,
+      {
+        cause: {
+          hasCustomFetch: Boolean(options.fetch),
+          hasGlobalFetch: typeof globalThis.fetch !== "undefined",
+        },
       },
-    });
+    );
   }
 
   return {

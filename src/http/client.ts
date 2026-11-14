@@ -1,5 +1,9 @@
-import { AppError, AipError, retryableStatusCodes } from "@/errs";
-import { clientErrors, requestErrors } from "./errors";
+import {
+  clientErrors,
+  HttpClientError,
+  HttpError,
+  requestErrors,
+} from "./errors";
 import { logger as defaultLogger, type Logger, logMessages } from "./logger";
 import {
   type CustomFetch,
@@ -23,6 +27,7 @@ export interface HttpClientConfig {
   protected?: boolean;
   fetch?: CustomFetch;
   logger?: Logger;
+  isRetryableStatus?: (status: number) => boolean;
   beforeRequest?: BeforeRequestFn[];
   onResponseSuccess?: ResponseSuccessFn[];
   onResponseError?: ResponseErrorFn[];
@@ -59,7 +64,7 @@ export type ResponseSuccessFn<T = unknown> = (
 export type ResponseErrorFn<T = unknown> = (
   options: ResolvedHttpRequestOptions<T>,
   context: HttpRequestContext,
-  error: AppError,
+  error: unknown,
   retry: () => Promise<T>,
 ) => Promise<T | void> | T | void;
 
@@ -73,6 +78,7 @@ export const defaultClientConfig = {
   protected: true,
   queryParams: {},
   logger: defaultLogger,
+  isRetryableStatus: (status: number) => status === 429 || status >= 500,
 } as const satisfies Partial<HttpClientConfig>;
 
 export type ResolvedClientConfig = Readonly<
@@ -156,17 +162,19 @@ export class HttpClient {
       context.attemptCount++;
 
       if (context.attemptCount > resolvedOptions.maxAttempts) {
-        throw new AppError({
-          code: requestErrors.maxRetriesExceeded.code,
-          message: requestErrors.maxRetriesExceeded.message,
-          context: {
-            requestId: context.requestId,
-            url: resolvedOptions.url,
-            method: resolvedOptions.method,
-            attemptCount: context.attemptCount - 1,
-            maxAttempts: resolvedOptions.maxAttempts,
+        throw new HttpClientError(
+          requestErrors.maxRetriesExceeded.code,
+          requestErrors.maxRetriesExceeded.message,
+          {
+            cause: {
+              requestId: context.requestId,
+              url: resolvedOptions.url,
+              method: resolvedOptions.method,
+              attemptCount: context.attemptCount - 1,
+              maxAttempts: resolvedOptions.maxAttempts,
+            },
           },
-        });
+        );
       }
 
       context.logger?.debug(logMessages.initiated, {
@@ -178,7 +186,7 @@ export class HttpClient {
 
         context.logger?.debug(logMessages.succeeded, {
           durationMs: Math.round(performance.now() - context.startTime),
-          result, // TODO: Remove in prod
+          result,
         });
 
         if (this.config.onResponseSuccess) {
@@ -189,58 +197,54 @@ export class HttpClient {
 
         return result;
       } catch (error) {
-        const isOperationalError =
-          error instanceof AipError || error instanceof AppError;
+        const isHttpError = error instanceof HttpError;
+        const status = isHttpError ? error.status : 0;
+        const isFinalAttempt =
+          context.attemptCount >= resolvedOptions.maxAttempts;
 
-        if (isOperationalError) {
-          const status = error instanceof AipError ? error.httpCode : 0;
-          const isFinalAttempt =
-            context.attemptCount >= resolvedOptions.maxAttempts;
+        if (context.logger) {
+          const logMethod = isFinalAttempt
+            ? context.logger.error
+            : context.logger.debug;
 
-          if (context.logger) {
-            const logMethod = isFinalAttempt
-              ? context.logger.error
-              : context.logger.debug;
+          logMethod.call(context.logger, logMessages.failed, {
+            status,
+            code: isHttpError ? error.name : (error as Error)?.name,
+            durationMs: Math.round(performance.now() - context.startTime),
+            error: isHttpError ? error.jsonBody : undefined,
+          });
+        }
 
-            logMethod.call(context.logger, logMessages.failed, {
-              status,
-              code: error.code,
-              durationMs: Math.round(performance.now() - context.startTime),
-              error: error instanceof AipError ? error.toAip() : undefined, // TODO: Remove in prod
-            });
-          }
-
-          if (this.config.onResponseError) {
-            for (const hook of this.config.onResponseError) {
-              const shortCircuit = await hook(
-                resolvedOptions,
-                context,
-                error,
-                executeCall,
-              );
-              if (shortCircuit !== undefined) {
-                return shortCircuit as T;
-              }
+        if (this.config.onResponseError) {
+          for (const hook of this.config.onResponseError) {
+            const shortCircuit = await hook(
+              resolvedOptions,
+              context,
+              error,
+              executeCall,
+            );
+            if (shortCircuit !== undefined) {
+              return shortCircuit as T;
             }
           }
+        }
 
-          if (
-            error instanceof AipError &&
-            context.attemptCount < resolvedOptions.maxAttempts &&
-            retryableStatusCodes.has(error.httpCode)
-          ) {
-            const backoff = Math.pow(2, context.attemptCount - 1) * 100;
-            const jitter = Math.random() * 50;
-            const delayMs = Math.round(backoff + jitter);
+        if (
+          isHttpError &&
+          context.attemptCount < resolvedOptions.maxAttempts &&
+          this.config.isRetryableStatus(error.status)
+        ) {
+          const backoff = Math.pow(2, context.attemptCount - 1) * 100;
+          const jitter = Math.random() * 50;
+          const delayMs = Math.round(backoff + jitter);
 
-            context.logger?.debug(logMessages.retrying, {
-              status: error.httpCode,
-              delayMs,
-            });
+          context.logger?.debug(logMessages.retrying, {
+            status: error.status,
+            delayMs,
+          });
 
-            await new Promise((res) => setTimeout(res, delayMs));
-            return await executeCall();
-          }
+          await new Promise((res) => setTimeout(res, delayMs));
+          return await executeCall();
         }
 
         throw error;
@@ -256,34 +260,37 @@ const resolveClientConfig = (
 ): ResolvedClientConfig => {
   const fetchImpl = config.fetch ?? globalThis.fetch?.bind(globalThis);
   if (!fetchImpl || typeof fetchImpl !== "function") {
-    throw new AppError({
-      code: clientErrors.missingFetch.code,
-      message: clientErrors.missingFetch.message,
-      context: {
-        hasCustomFetch: Boolean(config.fetch),
-        hasGlobalFetch: typeof globalThis.fetch !== "undefined",
+    throw new HttpClientError(
+      clientErrors.missingFetch.code,
+      clientErrors.missingFetch.message,
+      {
+        cause: {
+          hasCustomFetch: Boolean(config.fetch),
+          hasGlobalFetch: typeof globalThis.fetch !== "undefined",
+        },
       },
-    });
+    );
   }
 
   const baseUrl = config.baseUrl;
   if (!baseUrl || typeof baseUrl !== "string" || baseUrl.trim().length === 0) {
-    throw new AppError({
-      code: clientErrors.invalidBaseUrl.code,
-      message: clientErrors.invalidBaseUrl.message,
-      context: { providedBaseUrl: baseUrl },
-    });
+    throw new HttpClientError(
+      clientErrors.invalidBaseUrl.code,
+      clientErrors.invalidBaseUrl.message,
+      {
+        cause: { providedBaseUrl: baseUrl },
+      },
+    );
   }
 
   try {
     new URL(baseUrl, "https://placeholder.local");
   } catch (cause) {
-    throw new AppError({
-      code: clientErrors.invalidBaseUrl.code,
-      message: clientErrors.invalidBaseUrl.message,
-      context: { providedBaseUrl: baseUrl },
-      cause,
-    });
+    throw new HttpClientError(
+      clientErrors.invalidBaseUrl.code,
+      clientErrors.invalidBaseUrl.message,
+      { cause },
+    );
   }
 
   const timeout = config.timeout ?? defaultClientConfig.timeout;
@@ -292,11 +299,13 @@ const resolveClientConfig = (
     timeout <= 0 ||
     !Number.isFinite(timeout)
   ) {
-    throw new AppError({
-      code: clientErrors.invalidTimeout.code,
-      message: clientErrors.invalidTimeout.message,
-      context: { timeout: config.timeout },
-    });
+    throw new HttpClientError(
+      clientErrors.invalidTimeout.code,
+      clientErrors.invalidTimeout.message,
+      {
+        cause: { timeout: config.timeout },
+      },
+    );
   }
 
   const maxAttempts = config.maxAttempts ?? defaultClientConfig.maxAttempts;
@@ -305,11 +314,13 @@ const resolveClientConfig = (
     maxAttempts < 1 ||
     !Number.isInteger(maxAttempts)
   ) {
-    throw new AppError({
-      code: clientErrors.invalidMaxAttempts.code,
-      message: clientErrors.invalidMaxAttempts.message,
-      context: { maxAttempts: config.maxAttempts },
-    });
+    throw new HttpClientError(
+      clientErrors.invalidMaxAttempts.code,
+      clientErrors.invalidMaxAttempts.message,
+      {
+        cause: { maxAttempts: config.maxAttempts },
+      },
+    );
   }
 
   return Object.freeze({
@@ -323,6 +334,8 @@ const resolveClientConfig = (
     fetch: fetchImpl,
     logger: config.logger ?? defaultClientConfig.logger,
     protected: config.protected ?? defaultClientConfig.protected,
+    isRetryableStatus:
+      config.isRetryableStatus ?? defaultClientConfig.isRetryableStatus,
     beforeRequest: config.beforeRequest ?? [],
     onResponseSuccess: config.onResponseSuccess ?? [],
     onResponseError: config.onResponseError ?? [],
@@ -344,7 +357,7 @@ const createFallbackOptions = <T = unknown>(
     protected: options.protected ?? config.protected,
     maxAttempts: options.maxAttempts ?? config.maxAttempts,
     fetch: options.fetch ?? config.fetch,
-    logger: options.logger ?? config.logger,
+    logger: options.logger ?? defaultLogger,
   };
 };
 
