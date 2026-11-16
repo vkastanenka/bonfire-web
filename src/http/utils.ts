@@ -1,4 +1,33 @@
-import { type QueryParams } from "./request";
+import { clientErrors, HttpClientError } from "./errors";
+import type { CustomFetch, QueryParams } from "./types";
+
+export const joinUrl = (baseUrl: string, path: string): string => {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${baseUrl}${normalizedPath}`;
+};
+
+export const parseUrl = (rawUrl: string): URL => {
+  if (rawUrl.trim().length === 0) {
+    throw new HttpClientError(
+      clientErrors.invalidUrl.code,
+      clientErrors.invalidUrl.message(rawUrl),
+      { cause: { providedUrl: rawUrl } },
+    );
+  }
+
+  try {
+    return new URL(rawUrl);
+  } catch (cause) {
+    throw new HttpClientError(
+      clientErrors.invalidUrl.code,
+      clientErrors.invalidUrl.message(rawUrl),
+      { cause },
+    );
+  }
+};
 
 export const appendQueryParams = (url: URL, queryParams?: QueryParams): URL => {
   if (!queryParams) return url;
@@ -18,6 +47,15 @@ export const appendQueryParams = (url: URL, queryParams?: QueryParams): URL => {
   return url;
 };
 
+export const isNativeRequestBody = (data: unknown): boolean =>
+  typeof data === "string" ||
+  data instanceof FormData ||
+  data instanceof URLSearchParams ||
+  data instanceof Blob ||
+  data instanceof ArrayBuffer ||
+  ArrayBuffer.isView(data) ||
+  data instanceof ReadableStream;
+
 export const buildHeaders = (
   defaultHeaders?: HeadersInit,
   requestHeaders?: HeadersInit,
@@ -31,75 +69,87 @@ export const buildHeaders = (
     });
   }
 
-  if (data !== undefined && data !== null) {
-    if (isNativeRequestBody(data)) {
-      if (typeof FormData !== "undefined" && data instanceof FormData) {
-        headers.delete("Content-Type");
-      }
-    } else if (!headers.has("Content-Type")) {
-      headers.set("Content-Type", "application/json");
-    }
+  if (data instanceof FormData) {
+    headers.delete("Content-Type");
+  } else if (
+    data != null &&
+    !isNativeRequestBody(data) &&
+    !headers.has("Content-Type")
+  ) {
+    headers.set("Content-Type", "application/json");
   }
 
   return headers;
 };
 
-export const isNativeRequestBody = (data: unknown): boolean => {
-  if (data === null || data === undefined) return false;
-
-  if (
-    (typeof FormData !== "undefined" && data instanceof FormData) ||
-    (typeof URLSearchParams !== "undefined" &&
-      data instanceof URLSearchParams) ||
-    (typeof Blob !== "undefined" && data instanceof Blob) ||
-    (typeof ArrayBuffer !== "undefined" &&
-      (data instanceof ArrayBuffer || ArrayBuffer.isView(data))) ||
-    (typeof ReadableStream !== "undefined" && data instanceof ReadableStream)
-  ) {
-    return true;
-  }
-
-  const tag = Object.prototype.toString.call(data);
-  return (
-    tag === "[object FormData]" ||
-    tag === "[object URLSearchParams]" ||
-    tag === "[object Blob]" ||
-    tag === "[object File]" ||
-    tag === "[object ArrayBuffer]" ||
-    tag === "[object ReadableStream]"
-  );
-};
-
 export const resolveRequestBody = (data: unknown): BodyInit | undefined => {
-  if (data === undefined || data === null) {
-    return undefined;
-  }
-
-  if (isNativeRequestBody(data)) {
-    return data as BodyInit;
-  }
-
-  return JSON.stringify(data);
+  if (data === undefined || data === null) return undefined;
+  return isNativeRequestBody(data) ? (data as BodyInit) : JSON.stringify(data);
 };
 
-export const parseJSON = async (
+export interface ParsedResponse {
+  data?: unknown;
+  rawData?: string;
+  error?: Error;
+}
+
+export const parseResponse = async (
   response: Response,
-): Promise<{ data: unknown; error?: Error }> => {
+): Promise<ParsedResponse> => {
   if (response.status === 204 || response.status === 205) {
-    return { data: undefined };
+    return {};
   }
 
-  const rawText = await response.text();
-  if (!rawText || rawText.trim() === "") {
-    return { data: undefined };
+  const rawData = await response.text();
+  if (rawData.trim() === "") {
+    return { rawData };
+  }
+
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  const isJson =
+    contentType === "" ||
+    contentType.includes("application/json") ||
+    contentType.includes("+json");
+
+  if (!isJson) {
+    return { rawData, data: rawData };
   }
 
   try {
-    return { data: JSON.parse(rawText) };
+    return {
+      rawData,
+      data: JSON.parse(rawData),
+    };
   } catch (err) {
     return {
-      data: undefined,
+      rawData,
       error: err instanceof Error ? err : new Error(String(err)),
     };
   }
+};
+
+export const resolveFetch = (customFetch?: CustomFetch): CustomFetch => {
+  const fetchImpl = customFetch ?? globalThis.fetch?.bind(globalThis);
+  if (!fetchImpl) {
+    throw new HttpClientError(
+      clientErrors.missingFetch.code,
+      clientErrors.missingFetch.message,
+    );
+  }
+  return fetchImpl;
+};
+
+export const resolveTimeout = (
+  timeout: number | undefined,
+  fallback: number,
+): number => {
+  const resolved = timeout ?? fallback;
+  if (!Number.isFinite(resolved) || resolved <= 0) {
+    throw new HttpClientError(
+      clientErrors.invalidTimeout.code,
+      clientErrors.invalidTimeout.message,
+      { cause: { timeout } },
+    );
+  }
+  return resolved;
 };

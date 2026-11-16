@@ -7,169 +7,240 @@ import {
   responseErrors,
   TimeoutError,
 } from "./errors";
-import { logger as defaultLogger, type Logger } from "./logger";
+import type {
+  BaseHttpOptions,
+  HttpRequestContext,
+  HttpRequestOptions,
+  ResolvedHttpRequestOptions,
+  ResolvedRetryConfig,
+  ResolveOptions,
+  RetryConfig,
+} from "./types";
 import {
   appendQueryParams,
   buildHeaders,
-  parseJSON,
+  parseResponse,
+  parseUrl,
+  resolveFetch,
   resolveRequestBody,
+  resolveTimeout,
+  type ParsedResponse,
 } from "./utils";
-import { type Validator } from "./validator";
-
-export type QueryParamValue = string | number | boolean | null | undefined;
-export type QueryParams = Record<string, QueryParamValue | QueryParamValue[]>;
-
-export type CustomFetch = (
-  input: RequestInfo | URL,
-  init?: RequestInit,
-) => Promise<Response>;
-
-export interface HttpRequestOptions<T = unknown> {
-  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  url: string;
-  schema?: Validator<T>;
-  data?: unknown;
-  signal?: AbortSignal;
-  headers?: HeadersInit;
-  credentials?: RequestCredentials;
-  cache?: RequestCache;
-  queryParams?: QueryParams;
-  timeout?: number;
-  protected?: boolean;
-  maxAttempts?: number;
-  fetch?: CustomFetch;
-  logger?: Logger;
-}
 
 export const defaultRequestOptions = {
   headers: {
     Accept: "application/json",
   },
   timeout: 10_000,
-  maxAttempts: 1,
+  retry: {
+    maxAttempts: 1,
+    statusCodes: [408, 429, 500, 502, 503, 504],
+    methods: ["GET", "HEAD", "OPTIONS", "PUT", "DELETE"],
+  },
 } as const satisfies Partial<HttpRequestOptions>;
 
-export type ResolvedHttpRequestOptions<T = unknown> = Required<
-  Pick<HttpRequestOptions<T>, "timeout" | "fetch" | "maxAttempts">
-> &
-  Omit<HttpRequestOptions<T>, "headers"> & {
-    headers: Headers;
-    logger: Logger;
+export const httpRequest = async (
+  rawOptions: HttpRequestOptions,
+): Promise<unknown> => {
+  const options = resolveRequestOptions(rawOptions);
+  const context = createContext();
+
+  for (const hook of options.beforeRequest) {
+    await hook({ options, context });
+  }
+
+  const executeCall = async (): Promise<unknown> => {
+    context.attemptCount++;
+
+    if (context.attemptCount > options.retry.maxAttempts) {
+      throw new HttpClientError(
+        requestErrors.maxRetriesExceeded.code,
+        requestErrors.maxRetriesExceeded.message,
+        {
+          cause: {
+            requestId: context.requestId,
+            url: options.url,
+            method: options.method,
+            attemptCount: context.attemptCount - 1,
+            maxAttempts: options.retry.maxAttempts,
+          },
+        },
+      );
+    }
+
+    try {
+      const result = await fetchAttempt(options);
+
+      for (const hook of options.onResponseSuccess) {
+        await hook({ options, context, result });
+      }
+
+      return result;
+    } catch (error) {
+      for (const hook of options.onResponseError) {
+        const shortCircuit = await hook({
+          options,
+          context,
+          error,
+          retry: executeCall,
+        });
+
+        if (shortCircuit !== undefined) {
+          return shortCircuit;
+        }
+      }
+
+      if (isRetryable(error, context.attemptCount, options)) {
+        const backoff = Math.pow(2, context.attemptCount - 1) * 100;
+        const jitter = Math.random() * 50;
+        const delayMs = Math.round(backoff + jitter);
+
+        await new Promise((res) => setTimeout(res, delayMs));
+        return executeCall();
+      }
+
+      throw error;
+    }
   };
 
-export const httpRequest = async <T = unknown>(
-  options: HttpRequestOptions<T>,
-): Promise<T> => {
-  const resolvedOptions = resolveRequestOptions(options);
+  return executeCall();
+};
 
-  const timeoutSignal = AbortSignal.timeout(resolvedOptions.timeout);
+const fetchAttempt = async (
+  options: ResolvedHttpRequestOptions,
+): Promise<unknown> => {
+  if (options.signal?.aborted) {
+    throw new HttpClientError(
+      requestErrors.requestAborted.code,
+      requestErrors.requestAborted.message,
+      { cause: options.signal.reason },
+    );
+  }
+
+  const url = parseUrl(options.url);
+  const fullUrl = appendQueryParams(url, options.queryParams);
+  const body = resolveRequestBody(options.data);
+
+  const timeoutSignal = AbortSignal.timeout(options.timeout);
   const signal = options.signal
     ? AbortSignal.any([options.signal, timeoutSignal])
     : timeoutSignal;
 
-  const url = new URL(resolvedOptions.url);
-  const fullUrl = appendQueryParams(url, resolvedOptions.queryParams);
-  const body = resolveRequestBody(resolvedOptions.data);
-
-  let response: Response;
+  let parsedResponse: ParsedResponse;
 
   try {
-    response = await resolvedOptions.fetch(fullUrl.toString(), {
-      method: resolvedOptions.method,
-      signal,
-      cache: resolvedOptions.cache,
-      headers: resolvedOptions.headers,
-      credentials: resolvedOptions.credentials,
+    const response = await options.fetch(fullUrl.toString(), {
+      method: options.method,
+      headers: options.headers,
       body,
+      signal,
+      cache: options.cache,
+      credentials: options.credentials,
     });
+
+    parsedResponse = await parseResponse(response);
+
+    if (!response.ok) {
+      throw new HttpError(
+        response.status,
+        response.statusText,
+        parsedResponse.rawData,
+        parsedResponse.data,
+        parsedResponse.error ? { cause: parsedResponse.error } : undefined,
+      );
+    }
   } catch (cause) {
-    if (resolvedOptions.signal?.aborted) {
-      throw new NetworkError(requestErrors.requestAborted.message, cause);
+    if (cause instanceof HttpError) {
+      throw cause;
     }
 
-    if (
-      (cause instanceof Error && cause.name === httpErrorTypes.timeout) ||
-      timeoutSignal.aborted
-    ) {
-      throw new TimeoutError(requestErrors.requestTimeout.message, cause);
+    if (options.signal?.aborted) {
+      throw new HttpClientError(
+        requestErrors.requestAborted.code,
+        requestErrors.requestAborted.message,
+        { cause },
+      );
     }
 
-    throw new NetworkError(
-      cause instanceof Error && cause.message
-        ? cause.message
-        : requestErrors.fetchFailed.message,
-      cause,
-    );
+    if (timeoutSignal.aborted) {
+      throw new TimeoutError({ cause });
+    }
+
+    throw new NetworkError({ cause });
   }
 
-  const { data: responseBody, error: parseError } = await parseJSON(response);
-
-  if (!response.ok) {
-    throw new HttpError(
-      response.status,
-      response.statusText,
-      parseError ? "Failed to parse error body as JSON" : "",
-      responseBody,
-    );
-  }
-
-  if (parseError) {
+  if (parsedResponse.error) {
     throw new HttpClientError(
       responseErrors.parseError.code,
-      `${responseErrors.parseError.message}: ${parseError.message}`,
-      { cause: parseError },
+      responseErrors.parseError.message,
+      { cause: parsedResponse.error },
     );
   }
 
-  if (!resolvedOptions.schema) {
-    return responseBody as T;
-  }
-
-  const parsed = resolvedOptions.schema.safeParse(responseBody);
-
-  if (!parsed.success) {
-    const issueSummary = parsed.error.issues
-      .map((issue) => `${issue.path.join(".") || "root"}: ${issue.message}`)
-      .join("; ");
-
-    throw new HttpClientError(
-      responseErrors.validationError.code,
-      `${responseErrors.validationError.message} ${issueSummary}`,
-      { cause: parsed.error },
-    );
-  }
-
-  return parsed.data;
+  return parsedResponse.data;
 };
 
-export const resolveRequestOptions = <T = unknown>(
-  options: HttpRequestOptions<T>,
-): ResolvedHttpRequestOptions<T> => {
-  const fetchImpl = options.fetch ?? globalThis.fetch?.bind(globalThis);
+export const resolveRetryConfig = (
+  retry?: RetryConfig,
+): ResolvedRetryConfig => {
+  const maxAttempts =
+    retry?.maxAttempts ?? defaultRequestOptions.retry.maxAttempts;
 
-  if (!fetchImpl || typeof fetchImpl !== "function") {
+  if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
     throw new HttpClientError(
-      clientErrors.missingFetch.code,
-      clientErrors.missingFetch.message,
-      {
-        cause: {
-          hasCustomFetch: Boolean(options.fetch),
-          hasGlobalFetch: typeof globalThis.fetch !== "undefined",
-        },
-      },
+      clientErrors.invalidMaxAttempts.code,
+      clientErrors.invalidMaxAttempts.message,
+      { cause: { maxAttempts: retry?.maxAttempts } },
     );
   }
 
   return {
-    ...options,
-    headers: buildHeaders(
-      options.headers ?? defaultRequestOptions.headers,
-      undefined,
-      options.data,
-    ),
-    timeout: options.timeout ?? defaultRequestOptions.timeout,
-    maxAttempts: options.maxAttempts ?? defaultRequestOptions.maxAttempts,
-    fetch: fetchImpl,
-    logger: options.logger ?? defaultLogger,
+    maxAttempts,
+    statusCodes: retry?.statusCodes ?? [
+      ...defaultRequestOptions.retry.statusCodes,
+    ],
+    methods: retry?.methods ?? [...defaultRequestOptions.retry.methods],
+    shouldRetry: retry?.shouldRetry,
   };
+};
+
+export const resolveBaseOptions = <T extends BaseHttpOptions>(
+  options: T,
+  data?: unknown,
+): ResolveOptions<T> => ({
+  ...options,
+  headers: buildHeaders(defaultRequestOptions.headers, options.headers, data),
+  timeout: resolveTimeout(options.timeout, defaultRequestOptions.timeout),
+  fetch: resolveFetch(options.fetch),
+  retry: resolveRetryConfig(options.retry),
+  beforeRequest: [...(options.beforeRequest ?? [])],
+  onResponseSuccess: [...(options.onResponseSuccess ?? [])],
+  onResponseError: [...(options.onResponseError ?? [])],
+});
+
+export const resolveRequestOptions = (
+  options: HttpRequestOptions,
+): ResolvedHttpRequestOptions => resolveBaseOptions(options, options.data);
+
+const createContext = (): HttpRequestContext => ({
+  requestId: crypto.randomUUID(),
+  startTime: performance.now(),
+  attemptCount: 0,
+  meta: {},
+});
+
+const isRetryable = (
+  error: unknown,
+  attempt: number,
+  options: ResolvedHttpRequestOptions,
+): boolean => {
+  if (attempt >= options.retry.maxAttempts) return false;
+  if (options.retry.shouldRetry) {
+    return options.retry.shouldRetry(error, attempt);
+  }
+  if (!options.retry.methods.includes(options.method)) return false;
+  if (error instanceof HttpError) {
+    return options.retry.statusCodes.includes(error.status);
+  }
+  return error instanceof TimeoutError || error instanceof NetworkError;
 };

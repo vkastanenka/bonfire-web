@@ -4,18 +4,17 @@ export const clientErrors = {
     message:
       "No fetch implementation found in environment, and none provided in config.",
   },
-  invalidBaseUrl: {
-    code: "INVALID_BASE_URL",
-    message: "A valid, non-empty baseUrl must be provided in client config.",
+  invalidUrl: {
+    code: "INVALID_URL",
+    message: (url: string) => `Invalid URL provided: "${url}".`,
   },
   invalidTimeout: {
     code: "INVALID_TIMEOUT",
-    message: "Client timeout must be a positive number greater than 0ms.",
+    message: "Timeout must be a positive number greater than 0ms.",
   },
   invalidMaxAttempts: {
     code: "INVALID_MAX_ATTEMPTS",
-    message:
-      "Client maxAttempts must be an integer greater than or equal to 1.",
+    message: "Retry maxAttempts must be an integer greater than or equal to 1.",
   },
 } as const;
 
@@ -39,10 +38,6 @@ export const requestErrors = {
     code: "FETCH_FAILED",
     message: "The network request failed before reaching the server.",
   },
-  tokenRefreshFailed: {
-    code: "TOKEN_REFRESH_FAILED",
-    message: "Failed to refresh authentication token.",
-  },
 } as const;
 
 export type RequestErrorCode =
@@ -58,11 +53,6 @@ export const responseErrors = {
     code: "PARSE_ERROR",
     message:
       "The server returned a success status code, but the body content was malformed or non-JSON.",
-  },
-  validationError: {
-    code: "VALIDATION_ERROR",
-    message:
-      "The server response body did not match the expected API schema contract.",
   },
 } as const;
 
@@ -87,21 +77,23 @@ export class HttpClientError extends Error {
 }
 
 export class NetworkError extends HttpClientError {
-  constructor(
-    message: string = requestErrors.fetchFailed.message,
-    options?: ErrorOptions,
-  ) {
-    super(requestErrors.fetchFailed.code, message, options);
+  constructor(options?: ErrorOptions) {
+    super(
+      requestErrors.fetchFailed.code,
+      requestErrors.fetchFailed.message,
+      options,
+    );
     this.name = httpErrorTypes.network;
   }
 }
 
 export class TimeoutError extends HttpClientError {
-  constructor(
-    message: string = requestErrors.requestTimeout.message,
-    options?: ErrorOptions,
-  ) {
-    super(requestErrors.requestTimeout.code, message, options);
+  constructor(options?: ErrorOptions) {
+    super(
+      requestErrors.requestTimeout.code,
+      requestErrors.requestTimeout.message,
+      options,
+    );
     this.name = httpErrorTypes.timeout;
   }
 }
@@ -109,14 +101,14 @@ export class TimeoutError extends HttpClientError {
 export class HttpError extends HttpClientError {
   public readonly status: number;
   public readonly statusText: string;
-  public readonly rawBody?: string;
-  public readonly jsonBody?: unknown;
+  public readonly rawData?: string;
+  public readonly data?: unknown;
 
   constructor(
     status: number,
     statusText: string,
-    rawBody?: string,
-    jsonBody?: unknown,
+    rawData?: string,
+    data?: unknown,
     options?: ErrorOptions,
   ) {
     super(
@@ -127,7 +119,7 @@ export class HttpError extends HttpClientError {
     this.name = httpErrorTypes.base;
     this.status = status;
     this.statusText = statusText;
-    this.rawBody = rawBody;
-    this.jsonBody = jsonBody;
+    this.rawData = rawData;
+    this.data = data;
   }
 }
