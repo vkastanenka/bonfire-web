@@ -1,17 +1,3 @@
-export const httpErrorTypes = {
-  http: "HttpError",
-  httpClient: "HttpClientError",
-  network: "NetworkError",
-  timeout: "TimeoutError",
-};
-
-export const apiErrorCodes = {
-  tokenExpired: "TOKEN_EXPIRED",
-  rateLimitExceeded: "RATE_LIMIT_EXCEEDED",
-} as const;
-
-export type ApiErrorCode = (typeof apiErrorCodes)[keyof typeof apiErrorCodes];
-
 export const clientErrors = {
   missingFetch: {
     code: "MISSING_FETCH",
@@ -63,6 +49,11 @@ export type RequestErrorCode =
   (typeof requestErrors)[keyof typeof requestErrors]["code"];
 
 export const responseErrors = {
+  httpError: {
+    code: "HTTP_ERROR",
+    message: (status: number, statusText: string) =>
+      `HTTP error status: ${status}${statusText ? ` ${statusText}` : ""}`,
+  },
   parseError: {
     code: "PARSE_ERROR",
     message:
@@ -78,26 +69,39 @@ export const responseErrors = {
 export type ResponseErrorCode =
   (typeof responseErrors)[keyof typeof responseErrors]["code"];
 
+export const httpErrorTypes = {
+  base: "HttpError",
+  client: "HttpClientError",
+  network: "NetworkError",
+  timeout: "TimeoutError",
+} as const;
+
 export class HttpClientError extends Error {
   public readonly code: string;
 
-  constructor(code: string, message: string, options?: { cause?: unknown }) {
+  constructor(code: string, message: string, options?: ErrorOptions) {
     super(message, options);
-    this.name = httpErrorTypes.httpClient;
+    this.name = httpErrorTypes.client;
     this.code = code;
   }
 }
 
 export class NetworkError extends HttpClientError {
-  constructor(message: string, cause?: unknown) {
-    super(requestErrors.fetchFailed.code, message, { cause });
+  constructor(
+    message: string = requestErrors.fetchFailed.message,
+    options?: ErrorOptions,
+  ) {
+    super(requestErrors.fetchFailed.code, message, options);
     this.name = httpErrorTypes.network;
   }
 }
 
 export class TimeoutError extends HttpClientError {
-  constructor(message: string, cause?: unknown) {
-    super(requestErrors.requestTimeout.code, message, { cause });
+  constructor(
+    message: string = requestErrors.requestTimeout.message,
+    options?: ErrorOptions,
+  ) {
+    super(requestErrors.requestTimeout.code, message, options);
     this.name = httpErrorTypes.timeout;
   }
 }
@@ -105,17 +109,22 @@ export class TimeoutError extends HttpClientError {
 export class HttpError extends HttpClientError {
   public readonly status: number;
   public readonly statusText: string;
-  public readonly rawBody: string;
-  public readonly jsonBody: unknown;
+  public readonly rawBody?: string;
+  public readonly jsonBody?: unknown;
 
   constructor(
     status: number,
     statusText: string,
-    rawBody: string,
-    jsonBody: unknown,
+    rawBody?: string,
+    jsonBody?: unknown,
+    options?: ErrorOptions,
   ) {
-    super("HTTP_ERROR", `HTTP error status: ${status} ${statusText}`);
-    this.name = httpErrorTypes.http;
+    super(
+      responseErrors.httpError.code,
+      responseErrors.httpError.message(status, statusText),
+      options,
+    );
+    this.name = httpErrorTypes.base;
     this.status = status;
     this.statusText = statusText;
     this.rawBody = rawBody;

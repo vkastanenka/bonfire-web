@@ -2,7 +2,6 @@ import {
   clientErrors,
   HttpClientError,
   HttpError,
-  httpErrorTypes,
   NetworkError,
   requestErrors,
   responseErrors,
