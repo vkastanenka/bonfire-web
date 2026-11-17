@@ -1,11 +1,11 @@
+import { useEffect, useRef, useState } from "react";
 import { Link, Text } from "@/components";
 import Alert from "@mui/material/Alert";
 import { paths } from "@/constants";
-import { AuthLayout } from "../AuthLayout";
+import { AuthLayout } from "../components";
 import { LABELS } from "./verify.constants";
 import { getRouteApi } from "@tanstack/react-router";
-import { useVerifyEmail } from "@/bonfire";
-import { useEffect, useRef, useState } from "react";
+import { useVerifyEmail } from "../hooks";
 
 const routeApi = getRouteApi("/verify");
 

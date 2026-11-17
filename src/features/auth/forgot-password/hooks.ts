@@ -4,9 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   forgotPasswordRequestSchema,
   type ForgotPasswordRequest,
-  useForgotPassword,
-} from "@/bonfire";
+} from "@/bonfire-sdk";
 import { handleAipFieldViolations } from "@/utils";
+import { useForgotPassword } from "../hooks";
 
 export const useForgotPasswordForm = () => {
   const [email, setEmail] = useState<string | null>(null);

@@ -10,7 +10,7 @@ const messages = {
 };
 
 export interface AuthInterceptorOptions {
-  getToken?: () => string | Promise<string | null>;
+  getToken?: () => string | Promise<string | null> | null;
   onTokenRefreshed?: (newToken: string) => void;
   onRefreshFailed?: () => void;
   refreshToken?: () => Promise<AccessTokenResponse>;

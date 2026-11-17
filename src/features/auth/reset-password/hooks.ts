@@ -1,9 +1,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "@tanstack/react-router";
-import { useResetPassword, passwordSchema } from "@/bonfire";
+import { passwordSchema, z } from "@/bonfire-sdk";
 import { handleAipFieldViolations } from "@/utils";
-import { z } from "@/validation";
+import { useResetPassword } from "../hooks";
 
 export const resetPasswordFormSchema = z.object({
   password: passwordSchema,

@@ -1,6 +1,6 @@
 import { Link, Text, Form } from "@/components";
 import { paths } from "@/constants";
-import { AuthLayout } from "../AuthLayout";
+import { AuthLayout } from "../components";
 import { FORM_FIELDS, LABELS } from "./constants";
 import { useForgotPasswordForm } from "./hooks";
 

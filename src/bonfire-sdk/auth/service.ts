@@ -64,7 +64,7 @@ export class AuthService extends BaseService {
     });
   }
 
-  public verify(
+  public verifyEmail(
     data: VerifyEmailRequest,
     options?: ServiceCallOptions,
   ): Promise<Me> {
@@ -109,7 +109,7 @@ export class AuthService extends BaseService {
     });
   }
 
-  public resendVerify(options?: ServiceCallOptions): Promise<void> {
+  public resendVerifyEmail(options?: ServiceCallOptions): Promise<void> {
     return this.post({
       ...options,
       url: endpoints.resendVerify,

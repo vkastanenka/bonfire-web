@@ -1,7 +1,7 @@
 import { getRouteApi } from "@tanstack/react-router";
 import { Link, Form } from "@/components";
 import { paths } from "@/constants";
-import { AuthLayout } from "../AuthLayout";
+import { AuthLayout } from "../components";
 import { LABELS, FORM_FIELDS } from "./constants";
 import { useResetPasswordForm } from "./hooks";
 

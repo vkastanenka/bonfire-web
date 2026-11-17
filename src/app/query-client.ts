@@ -1,5 +1,5 @@
 import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
-import { AipError, AppError } from "@/errs";
+import { AipError } from "@/bonfire-sdk";
 import { toast } from "@/toast";
 
 const handleGlobalError = (err: unknown) => {
@@ -20,7 +20,7 @@ const handleGlobalError = (err: unknown) => {
     return;
   }
 
-  if (err instanceof AppError || err instanceof Error) {
+  if (err instanceof Error) {
     toast.error(err.message);
     return;
   }

@@ -1,11 +1,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  useRegister,
-  registerRequestSchema,
-  type RegisterRequest,
-} from "@/bonfire";
+import { registerRequestSchema, type RegisterRequest } from "@/bonfire-sdk";
+import { useRegister } from "../hooks";
 import { handleAipFieldViolations } from "@/utils";
 
 export const useRegisterForm = () => {
