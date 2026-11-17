@@ -2,6 +2,7 @@ import type { ZodType } from "zod";
 import {
   HttpClient,
   HttpError,
+  type BeforeRequestFn,
   type HttpMethod,
   type HttpRequestOptions,
 } from "@/http";
@@ -17,6 +18,7 @@ export interface ServiceRequestOptions<T = unknown> extends Omit<
 > {
   method?: HttpMethod;
   schema?: ZodType<T>;
+  protected?: boolean;
 }
 
 export abstract class BaseService {
@@ -47,12 +49,22 @@ export abstract class BaseService {
   }
 
   protected async request<T>(options: ServiceRequestOptions<T>): Promise<T> {
-    const { schema, method = "GET", ...httpOptions } = options;
+    const {
+      schema,
+      method = "GET",
+      protected: isProtected = true,
+      ...httpOptions
+    } = options;
+
+    const protectMetaHook: BeforeRequestFn = ({ context }) => {
+      context.meta.protected = isProtected;
+    };
 
     try {
       const raw = await this.httpClient.request({
         ...httpOptions,
         method,
+        beforeRequest: [protectMetaHook, ...(httpOptions.beforeRequest ?? [])],
       });
 
       if (!schema) {
@@ -80,59 +92,3 @@ export abstract class BaseService {
     return error;
   }
 }
-
-// export const attachRequestLogger = (client: HttpClient, logger: Logger): void => {
-//   client.addBeforeRequest((options, context) => {
-//     logger.debug("HTTP request initiated", {
-//       requestId: context.requestId,
-//       method: options.method,
-//       url: options.url,
-//     });
-//   });
-
-//   client.addResponseSuccess((options, context) => {
-//     logger.debug("HTTP request succeeded", {
-//       requestId: context.requestId,
-//       method: options.method,
-//       url: options.url,
-//       attemptCount: context.attemptCount,
-//       durationMs: Math.round(performance.now() - context.startTime),
-//     });
-//   });
-
-//   client.addResponseError((options, context, error) => {
-//     const isHttpError = error instanceof HttpError;
-//     const isFinalAttempt = context.attemptCount >= options.retry.maxAttempts;
-//     const log = isFinalAttempt ? logger.error.bind(logger) : logger.debug.bind(logger);
-
-//     log("HTTP request failed", {
-//       requestId: context.requestId,
-//       method: options.method,
-//       url: options.url,
-//       attemptCount: context.attemptCount,
-//       durationMs: Math.round(performance.now() - context.startTime),
-//       status: isHttpError ? error.status : 0,
-//       errorName: error instanceof Error ? error.name : "UnknownError",
-//     });
-//   });
-// };
-
-// context.logger?.debug("Request initiated", {
-//   requestId: context.requestId,
-//   attemptCount: context.attemptCount,
-// });
-
-// context.logger?.debug("Request succeeded", {
-//   requestId: context.requestId,
-//   durationMs: Math.round(performance.now() - context.startTime),
-// });
-
-// context.logger?.debug("Retrying request", {
-//   requestId: context.requestId,
-//   delayMs,
-// });
-
-// tokenRefreshFailed: {
-//   code: "TOKEN_REFRESH_FAILED",
-//   message: "Failed to refresh authentication token.",
-// },

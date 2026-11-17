@@ -8,7 +8,9 @@ import { BootstrapService } from "./bootstrap";
 import { UserService } from "./user";
 import {
   createAuthInterceptors,
+  createLogInterceptors,
   type AuthInterceptorOptions,
+  type Logger,
 } from "./interceptors";
 
 export const defaultSdkConfig = {
@@ -17,14 +19,17 @@ export const defaultSdkConfig = {
   },
   credentials: "include",
   retry: {
-    maxAttempts: 1,
+    maxAttempts: 3,
   },
 } as const satisfies Partial<HttpRequestOptions>;
 
 export interface SdkConfig
   extends
     HttpClientConfig,
-    Partial<Omit<AuthInterceptorOptions, "refreshToken">> {}
+    Partial<Omit<AuthInterceptorOptions, "refreshToken">> {
+  logger?: Logger;
+  logging?: boolean;
+}
 
 export class BonfireSdk {
   public readonly httpClient: HttpClient;
@@ -39,16 +44,34 @@ export class BonfireSdk {
     this.bootstrap = new BootstrapService(this.httpClient);
     this.user = new UserService(this.httpClient);
 
+    const logInterceptors = config.logger
+      ? createLogInterceptors({
+          logger: config.logger,
+          logging: config.logging ?? true,
+        })
+      : undefined;
+
     if (config.getToken) {
       const { setAuthHeader, handleAuthError } = createAuthInterceptors({
         getToken: config.getToken,
         onTokenRefreshed: config.onTokenRefreshed,
         onRefreshFailed: config.onRefreshFailed,
         refreshToken: () => this.auth.refresh(),
+        logger: config.logger,
       });
 
+      // 1. Mutate/prepare outbound headers first
       this.httpClient.addBeforeRequest(setAuthHeader);
+      // 2. Recover auth errors before generic error logging/retries
       this.httpClient.addResponseError(handleAuthError);
+    }
+
+    if (logInterceptors) {
+      // Log after auth headers are attached
+      this.httpClient.addBeforeRequest(logInterceptors.beforeRequest);
+      this.httpClient.addResponseSuccess(logInterceptors.onResponseSuccess);
+      // Log failures that auth did not recover/short-circuit
+      this.httpClient.addResponseError(logInterceptors.onResponseError);
     }
   }
 }

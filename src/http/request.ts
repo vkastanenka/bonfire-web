@@ -238,7 +238,9 @@ const isRetryable = (
   if (options.retry.shouldRetry) {
     return options.retry.shouldRetry(error, attempt);
   }
-  if (!options.retry.methods.includes(options.method)) return false;
+  if (options.method && !options.retry.methods.includes(options.method)) {
+    return false;
+  }
   if (error instanceof HttpError) {
     return options.retry.statusCodes.includes(error.status);
   }

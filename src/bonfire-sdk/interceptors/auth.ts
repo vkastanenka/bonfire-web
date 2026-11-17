@@ -1,11 +1,13 @@
-import { AipError, AppError, statusCodes } from "@/errs";
-import {
-  apiErrorCodes,
-  requestErrors,
-  type BeforeRequestFn,
-  type ResponseErrorFn,
-} from "@/http";
+import { HttpError, type BeforeRequestFn, type ResponseErrorFn } from "@/http";
 import type { AccessTokenResponse } from "../auth";
+import { apiErrorCodes, AipError, isAipErrorResponse } from "../errors";
+import type { Logger, LogInterceptorOptions } from "./logger";
+
+const messages = {
+  tokenExpired: "Access token expired. Attempting token refresh.",
+  refreshFailed: "Failed to refresh authentication token.",
+  refreshSucceeded: "Token refresh succeeded. Retrying request.",
+};
 
 export interface AuthInterceptorOptions {
   getToken?: () => string | Promise<string | null>;
@@ -17,8 +19,9 @@ export interface AuthInterceptorOptions {
 export const setAuthHeader = (
   getToken?: AuthInterceptorOptions["getToken"],
 ): BeforeRequestFn => {
-  return async (options) => {
-    if (options.protected === false || !getToken) return;
+  return async ({ options, context }) => {
+    if (context.meta.protected === false || !getToken) return;
+    if (options.headers.has("Authorization")) return;
 
     const token = await getToken();
     if (token) {
@@ -31,27 +34,36 @@ export const handleAuthError = ({
   refreshToken,
   onTokenRefreshed,
   onRefreshFailed,
-}: Omit<AuthInterceptorOptions, "getToken">): ResponseErrorFn => {
+  logger,
+  logging,
+}: Omit<AuthInterceptorOptions, "getToken"> &
+  LogInterceptorOptions): ResponseErrorFn => {
+  let log: Logger | undefined;
+
+  if (logging) {
+    log = logger?.child
+      ? logger.child({ component: "bonfire-sdk.auth" })
+      : logger;
+  }
+
   let refreshPromise: Promise<string | null> | null = null;
 
-  return async (options, context, error, retry) => {
+  return async ({ options, context, error, retry }) => {
     if (
-      options.protected === false ||
+      context.meta.protected === false ||
       context.meta.hasRetriedAuth ||
-      !refreshToken
+      !refreshToken ||
+      !isTokenExpiredError(error)
     ) {
       return;
     }
 
-    if (
-      !(error instanceof AipError) ||
-      error.httpCode !== statusCodes.unauthorized ||
-      error.getErrorInfoReason() !== apiErrorCodes.tokenExpired
-    ) {
-      return;
-    }
+    log?.debug(messages.tokenExpired, {
+      requestId: context.requestId,
+      method: options.method ?? "GET",
+      url: options.url,
+    });
 
-    context.logger?.debug("Access token expired. Attempting token refresh.");
     context.meta.hasRetriedAuth = true;
 
     try {
@@ -76,32 +88,64 @@ export const handleAuthError = ({
       }
 
       if (!newToken) {
-        throw new AppError({
-          code: requestErrors.tokenRefreshFailed.code,
-          message: requestErrors.tokenRefreshFailed.message,
-        });
+        throw new Error(messages.refreshFailed);
       }
 
-      context.logger?.debug("Token refresh succeeded. Retrying request.");
-      options.headers.set("Authorization", `Bearer ${newToken}`);
+      log?.debug(messages.refreshSucceeded, {
+        requestId: context.requestId,
+        method: options.method ?? "GET",
+        url: options.url,
+      });
 
+      options.headers.set("Authorization", `Bearer ${newToken}`);
       return await retry();
     } catch (refreshError) {
-      context.logger?.error("Authentication failed. Clearing session tokens.", {
-        error: refreshError,
+      log?.error(messages.refreshFailed, {
+        requestId: context.requestId,
+        method: options.method ?? "GET",
+        url: options.url,
+        name:
+          refreshError instanceof Error ? refreshError.name : "UnknownError",
+        message:
+          refreshError instanceof Error
+            ? refreshError.message
+            : String(refreshError),
       });
       throw refreshError;
     }
   };
 };
 
-export const createAuthInterceptors = (config: AuthInterceptorOptions) => {
+export const createAuthInterceptors = (
+  config: AuthInterceptorOptions & LogInterceptorOptions,
+) => {
   return {
     setAuthHeader: setAuthHeader(config.getToken),
     handleAuthError: handleAuthError({
       refreshToken: config.refreshToken,
       onTokenRefreshed: config.onTokenRefreshed,
       onRefreshFailed: config.onRefreshFailed,
+      logger: config.logger,
+      logging: config.logging,
     }),
   };
+};
+
+const isTokenExpiredError = (error: unknown): boolean => {
+  if (error instanceof AipError) {
+    return (
+      error.code === 401 &&
+      error.getErrorInfoReason() === apiErrorCodes.tokenExpired
+    );
+  }
+
+  if (error instanceof HttpError && isAipErrorResponse(error.data)) {
+    const aipError = new AipError(error.data.error);
+    return (
+      aipError.code === 401 &&
+      aipError.getErrorInfoReason() === apiErrorCodes.tokenExpired
+    );
+  }
+
+  return false;
 };
