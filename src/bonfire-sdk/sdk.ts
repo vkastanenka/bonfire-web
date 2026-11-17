@@ -32,7 +32,7 @@ export interface SdkConfig
 }
 
 export class BonfireSdk {
-  public readonly httpClient: HttpClient;
+  private readonly httpClient: HttpClient;
   public readonly auth: AuthService;
   public readonly bootstrap: BootstrapService;
   public readonly user: UserService;
@@ -58,6 +58,7 @@ export class BonfireSdk {
         onRefreshFailed: config.onRefreshFailed,
         refreshToken: () => this.auth.refresh(),
         logger: config.logger,
+        logging: config.logging ?? true,
       });
 
       this.httpClient.addBeforeRequest(setAuthHeader);
