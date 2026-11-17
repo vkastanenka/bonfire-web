@@ -1,12 +1,19 @@
-import {
-  z,
-  emailSchema,
-  jwtString,
-  sessionSchema,
-  displayNameSchema,
-  usernameSchema,
-  passwordSchema,
-} from "../validation";
+import { z, emailSchema, jwtString } from "../validation";
+import { displayNameSchema, usernameSchema, passwordSchema } from "../user";
+
+export const sessionSchema = z.object({
+  id: z.uuid(),
+  isCurrent: z.boolean(),
+  clientIp: z.string(),
+  userAgent: z.string(),
+  os: z.string(),
+  client: z.string(),
+  expiresAt: z.coerce.date(),
+  lastSeenAt: z.coerce.date(),
+  createdAt: z.coerce.date(),
+});
+
+export type Session = z.infer<typeof sessionSchema>;
 
 export const accessTokenResponseSchema = z.object({
   accessToken: jwtString,
