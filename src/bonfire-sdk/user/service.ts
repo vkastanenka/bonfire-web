@@ -1,5 +1,4 @@
-import { type HttpClientRequestOptions } from "@/http";
-import { BaseService } from "../shared";
+import { BaseService, type ServiceCallOptions } from "../shared";
 import { meSchema, type Me } from "../validation";
 import {
   type DisableRequest,
@@ -23,11 +22,11 @@ const endpoints = {
 export class UserService extends BaseService {
   public updateEmail(
     data: UpdateEmailRequest,
-    options?: HttpClientRequestOptions<Me>,
+    options?: ServiceCallOptions,
   ): Promise<Me> {
-    return this.httpClient.patch<Me>({
+    return this.patch({
       ...options,
-      urlPath: endpoints.email,
+      url: endpoints.email,
       data,
       schema: meSchema,
     });
@@ -35,11 +34,11 @@ export class UserService extends BaseService {
 
   public updateUsername(
     data: UpdateUsernameRequest,
-    options?: HttpClientRequestOptions<Me>,
+    options?: ServiceCallOptions,
   ): Promise<Me> {
-    return this.httpClient.patch<Me>({
+    return this.patch({
       ...options,
-      urlPath: endpoints.username,
+      url: endpoints.username,
       data,
       schema: meSchema,
     });
@@ -47,11 +46,11 @@ export class UserService extends BaseService {
 
   public updatePreferredPresence(
     data: UpdatePreferredPresenceRequest,
-    options?: HttpClientRequestOptions<Me>,
+    options?: ServiceCallOptions,
   ): Promise<Me> {
-    return this.httpClient.patch<Me>({
+    return this.patch({
       ...options,
-      urlPath: endpoints.presence,
+      url: endpoints.presence,
       data,
       schema: meSchema,
     });
@@ -59,11 +58,11 @@ export class UserService extends BaseService {
 
   public updateProfile(
     data: UpdateProfileRequest,
-    options?: HttpClientRequestOptions<Me>,
+    options?: ServiceCallOptions,
   ): Promise<Me> {
-    return this.httpClient.patch<Me>({
+    return this.patch({
       ...options,
-      urlPath: endpoints.profile,
+      url: endpoints.profile,
       data,
       schema: meSchema,
     });
@@ -71,33 +70,33 @@ export class UserService extends BaseService {
 
   public updatePassword(
     data: UpdatePasswordRequest,
-    options?: HttpClientRequestOptions<void>,
+    options?: ServiceCallOptions,
   ): Promise<void> {
-    return this.httpClient.post<void>({
+    return this.post({
       ...options,
-      urlPath: endpoints.password,
+      url: endpoints.password,
       data,
     });
   }
 
   public disable(
     data: DisableRequest,
-    options?: HttpClientRequestOptions<void>,
+    options?: ServiceCallOptions,
   ): Promise<void> {
-    return this.httpClient.post<void>({
+    return this.post({
       ...options,
-      urlPath: endpoints.disable,
+      url: endpoints.disable,
       data,
     });
   }
 
   public scheduleDelete(
     data: DisableRequest,
-    options?: HttpClientRequestOptions<void>,
+    options?: ServiceCallOptions,
   ): Promise<void> {
-    return this.httpClient.delete<void>({
+    return this.delete({
       ...options,
-      urlPath: endpoints.me,
+      url: endpoints.me,
       data,
     });
   }

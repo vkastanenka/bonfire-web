@@ -1,17 +1,16 @@
-import { type HttpClientRequestOptions } from "@/http";
+import { BaseService, type ServiceCallOptions } from "../shared";
+import { type Me, meSchema } from "../validation";
 import {
-  type RegisterRequest,
-  type AccessTokenResponse,
   accessTokenResponseSchema,
-  type LoginRequest,
+  listValidSessionsResponseSchema,
+  type AccessTokenResponse,
   type ForgotPasswordRequest,
+  type ListValidSessionsResponse,
+  type LoginRequest,
+  type RegisterRequest,
   type ResetPasswordRequest,
   type VerifyEmailRequest,
-  type ListValidSessionsResponse,
-  listValidSessionsResponseSchema,
 } from "./validation";
-import { BaseService } from "../shared";
-import { type Me, meSchema } from "../validation";
 
 const endpoints = {
   register: "/auth/register",
@@ -28,11 +27,11 @@ const endpoints = {
 export class AuthService extends BaseService {
   public register(
     data: RegisterRequest,
-    options?: HttpClientRequestOptions<AccessTokenResponse>,
+    options?: ServiceCallOptions,
   ): Promise<AccessTokenResponse> {
-    return this.httpClient.post<AccessTokenResponse>({
+    return this.post({
       ...options,
-      urlPath: endpoints.register,
+      url: endpoints.register,
       data,
       schema: accessTokenResponseSchema,
       protected: false,
@@ -41,35 +40,37 @@ export class AuthService extends BaseService {
 
   public login(
     data: LoginRequest,
-    options?: HttpClientRequestOptions<AccessTokenResponse>,
+    options?: ServiceCallOptions,
   ): Promise<AccessTokenResponse> {
-    return this.httpClient.post<AccessTokenResponse>({
+    return this.post({
       ...options,
-      urlPath: endpoints.login,
+      url: endpoints.login,
       data,
       schema: accessTokenResponseSchema,
       protected: false,
     });
   }
 
-  public refresh(
-    options?: HttpClientRequestOptions<AccessTokenResponse>,
-  ): Promise<AccessTokenResponse> {
-    return this.httpClient.post<AccessTokenResponse>({
+  public refresh(options?: ServiceCallOptions): Promise<AccessTokenResponse> {
+    return this.post({
       ...options,
-      urlPath: endpoints.refresh,
+      url: endpoints.refresh,
       schema: accessTokenResponseSchema,
       protected: false,
+      retry: {
+        ...options?.retry,
+        maxAttempts: 1,
+      },
     });
   }
 
   public verify(
     data: VerifyEmailRequest,
-    options?: HttpClientRequestOptions<Me>,
+    options?: ServiceCallOptions,
   ): Promise<Me> {
-    return this.httpClient.post<Me>({
+    return this.post({
       ...options,
-      urlPath: endpoints.verify,
+      url: endpoints.verify,
       data,
       schema: meSchema,
       protected: false,
@@ -78,11 +79,11 @@ export class AuthService extends BaseService {
 
   public forgotPassword(
     data: ForgotPasswordRequest,
-    options?: HttpClientRequestOptions<void>,
+    options?: ServiceCallOptions,
   ): Promise<void> {
-    return this.httpClient.post<void>({
+    return this.post({
       ...options,
-      urlPath: endpoints.forgotPassword,
+      url: endpoints.forgotPassword,
       data,
       protected: false,
     });
@@ -90,58 +91,55 @@ export class AuthService extends BaseService {
 
   public resetPassword(
     data: ResetPasswordRequest,
-    options?: HttpClientRequestOptions<AccessTokenResponse>,
+    options?: ServiceCallOptions,
   ): Promise<AccessTokenResponse> {
-    return this.httpClient.post<AccessTokenResponse>({
+    return this.post({
       ...options,
-      urlPath: endpoints.resetPassword,
+      url: endpoints.resetPassword,
       data,
       schema: accessTokenResponseSchema,
       protected: false,
     });
   }
 
-  public logout(options?: HttpClientRequestOptions<void>): Promise<void> {
-    return this.httpClient.post<void>({
+  public logout(options?: ServiceCallOptions): Promise<void> {
+    return this.post({
       ...options,
-      urlPath: endpoints.logout,
+      url: endpoints.logout,
     });
   }
 
-  public resendVerify(options?: HttpClientRequestOptions<void>): Promise<void> {
-    return this.httpClient.post<void>({
+  public resendVerify(options?: ServiceCallOptions): Promise<void> {
+    return this.post({
       ...options,
-      urlPath: endpoints.resendVerify,
+      url: endpoints.resendVerify,
     });
   }
 
   public listValidSessions(
-    options?: HttpClientRequestOptions<ListValidSessionsResponse>,
+    options?: ServiceCallOptions,
   ): Promise<ListValidSessionsResponse> {
-    return this.httpClient.get<ListValidSessionsResponse>({
+    return this.get({
       ...options,
-      urlPath: endpoints.sessions,
+      url: endpoints.sessions,
       schema: listValidSessionsResponseSchema,
     });
   }
 
-  public revokeAllSessions(
-    options?: HttpClientRequestOptions<void>,
-  ): Promise<void> {
-    return this.httpClient.delete<void>({
+  public revokeAllSessions(options?: ServiceCallOptions): Promise<void> {
+    return this.delete({
       ...options,
-      urlPath: endpoints.sessions,
+      url: endpoints.sessions,
     });
   }
 
   public revokeSession(
-    id: string,
-    options?: HttpClientRequestOptions<void>,
+    sessionId: string,
+    options?: ServiceCallOptions,
   ): Promise<void> {
-    const encodedId = encodeURIComponent(id);
-    return this.httpClient.delete<void>({
+    return this.delete({
       ...options,
-      urlPath: `${endpoints.sessions}/${encodedId}`,
+      url: `${endpoints.sessions}/${encodeURIComponent(sessionId)}`,
     });
   }
 }

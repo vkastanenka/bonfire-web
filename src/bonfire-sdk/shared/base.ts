@@ -12,6 +12,11 @@ const errors = {
   invalidResponse: "Response payload failed schema validation.",
 } as const;
 
+export type ServiceCallOptions = Omit<
+  HttpRequestOptions,
+  "method" | "url" | "data"
+>;
+
 export interface ServiceRequestOptions<T = unknown> extends Omit<
   HttpRequestOptions,
   "method"
@@ -22,7 +27,7 @@ export interface ServiceRequestOptions<T = unknown> extends Omit<
 }
 
 export abstract class BaseService {
-  private readonly httpClient: HttpClient;
+  protected readonly httpClient: HttpClient;
 
   constructor(httpClient: HttpClient) {
     this.httpClient = httpClient;
@@ -53,6 +58,7 @@ export abstract class BaseService {
       schema,
       method = "GET",
       protected: isProtected = true,
+      beforeRequest,
       ...httpOptions
     } = options;
 
@@ -64,7 +70,7 @@ export abstract class BaseService {
       const raw = await this.httpClient.request({
         ...httpOptions,
         method,
-        beforeRequest: [protectMetaHook, ...(httpOptions.beforeRequest ?? [])],
+        beforeRequest: [protectMetaHook, ...(beforeRequest ?? [])],
       });
 
       if (!schema) {

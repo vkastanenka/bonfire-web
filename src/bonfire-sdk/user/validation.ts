@@ -1,5 +1,6 @@
-import { z, emailSchema } from "@/validation";
 import {
+  z,
+  emailSchema,
   passwordSchema,
   usernameSchema,
   preferredPresenceSchema,

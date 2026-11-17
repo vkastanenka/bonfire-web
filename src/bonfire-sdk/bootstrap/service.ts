@@ -1,18 +1,15 @@
-import { type HttpClientRequestOptions } from "@/http";
-import { BaseService } from "../shared";
-import { type BootstrapResponse, bootstrapResponseSchema } from "./validation";
+import { BaseService, type ServiceCallOptions } from "../shared";
+import { bootstrapResponseSchema, type BootstrapResponse } from "./validation";
 
 const endpoints = {
   me: "/users/@me",
 } as const;
 
 export class BootstrapService extends BaseService {
-  public bootstrap(
-    options?: HttpClientRequestOptions<BootstrapResponse>,
-  ): Promise<BootstrapResponse> {
-    return this.httpClient.get<BootstrapResponse>({
+  public bootstrap(options?: ServiceCallOptions): Promise<BootstrapResponse> {
+    return this.get({
       ...options,
-      urlPath: endpoints.me,
+      url: endpoints.me,
       schema: bootstrapResponseSchema,
     });
   }

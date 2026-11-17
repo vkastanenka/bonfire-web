@@ -1,4 +1,4 @@
-import { z } from "@/validation";
+import { z } from "./base";
 
 export const sessionSchema = z.object({
   id: z.uuid(),

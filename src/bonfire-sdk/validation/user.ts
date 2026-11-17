@@ -1,4 +1,4 @@
-import { z, emailSchema, hexColorSchema, urlSchema } from "@/validation";
+import { z, emailSchema, hexColorSchema, urlSchema } from "./base";
 
 export const validationErrors = {
   username:

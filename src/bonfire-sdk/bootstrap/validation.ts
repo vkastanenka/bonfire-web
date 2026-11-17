@@ -1,5 +1,4 @@
-import { z } from "@/validation";
-import { meSchema } from "../validation";
+import { z, meSchema } from "../validation";
 
 export const bootstrapResponseSchema = z.object({
   me: meSchema,
