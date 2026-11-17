@@ -71,15 +71,6 @@ export const useLogout = (options?: UseMutationOptions<void, Error, void>) =>
     options,
   );
 
-export const useRevokeAllSessions = (
-  options?: UseMutationOptions<void, Error, void>,
-) =>
-  useCreateSessionResetMutation(
-    authKeys.revokeAllSessions(),
-    () => bonfireSdk.auth.revokeAllSessions(),
-    options,
-  );
-
 export const useVerifyEmail = (
   options?: UseMutationOptions<Me, Error, VerifyEmailRequest>,
 ) => {
@@ -121,13 +112,16 @@ export const useListValidSessions = (
     UseQueryOptions<ListValidSessionsResponse, Error>,
     "queryKey" | "queryFn"
   >,
-) =>
-  useQuery({
+) => {
+  const accessToken = useAuthStore((state) => state.accessToken);
+  return useQuery({
     staleTime: 1000 * 30,
     ...options,
     queryKey: authKeys.listValidSessions(),
     queryFn: () => bonfireSdk.auth.listValidSessions(),
+    enabled: Boolean(accessToken),
   });
+};
 
 export const useRevokeSession = (
   options?: UseMutationOptions<void, Error, string>,
@@ -149,6 +143,15 @@ export const useRevokeSession = (
     },
   });
 };
+
+export const useRevokeAllSessions = (
+  options?: UseMutationOptions<void, Error, void>,
+) =>
+  useCreateSessionResetMutation(
+    authKeys.revokeAllSessions(),
+    () => bonfireSdk.auth.revokeAllSessions(),
+    options,
+  );
 
 const useCreateSessionMutation = <TVariables>(
   mutationKey: readonly unknown[],
