@@ -56,10 +56,6 @@ export class GatewayService extends BaseService {
     return this.status;
   }
 
-  /**
-   * TODO: Ensure subs still needed, otherwise use registration
-   */
-
   public subscribeStatus(listener: StatusListener): () => void {
     this.statusListeners.add(listener);
     return () => {
@@ -97,6 +93,15 @@ export class GatewayService extends BaseService {
         }
       }
     };
+  }
+
+  public handleMessage(message: GatewayMessage): void {
+    if (!message || typeof message.t !== "string") return;
+
+    const handlers = this.messageHandlers.get(message.t);
+    if (handlers) {
+      handlers.forEach((handler) => handler(message.d));
+    }
   }
 
   public async connect(presence: Presence): Promise<void> {
@@ -213,11 +218,7 @@ export class GatewayService extends BaseService {
       try {
         const message: GatewayMessage = JSON.parse(event.data);
         if (message && typeof message.t === "string") {
-          const handlers = this.messageHandlers.get(message.t);
-          if (handlers) {
-            handlers.forEach((handler) => handler(message.d));
-          }
-
+          this.handleMessage(message);
           this.messageListeners.forEach((listener) => listener(message));
         }
       } catch {
