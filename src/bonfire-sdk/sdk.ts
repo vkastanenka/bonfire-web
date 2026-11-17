@@ -1,4 +1,8 @@
-import { HttpClient, type HttpClientConfig } from "@/http";
+import {
+  HttpClient,
+  type HttpClientConfig,
+  type HttpRequestOptions,
+} from "@/http";
 import { AuthService } from "./auth";
 import { BootstrapService } from "./bootstrap";
 import { UserService } from "./user";
@@ -7,20 +11,20 @@ import {
   type AuthInterceptorOptions,
 } from "./interceptors";
 
-export interface SdkConfig
-  extends
-    HttpClientConfig,
-    Partial<Omit<AuthInterceptorOptions, "refreshToken">> {}
-
 export const defaultSdkConfig = {
   headers: {
     Accept: "application/json",
   },
   credentials: "include",
-  maxAttempts: 3,
-  timeout: 10_000,
-  protected: true,
-} as const;
+  retry: {
+    maxAttempts: 1,
+  },
+} as const satisfies Partial<HttpRequestOptions>;
+
+export interface SdkConfig
+  extends
+    HttpClientConfig,
+    Partial<Omit<AuthInterceptorOptions, "refreshToken">> {}
 
 export class BonfireSdk {
   public readonly httpClient: HttpClient;

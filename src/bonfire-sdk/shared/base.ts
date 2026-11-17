@@ -1,81 +1,85 @@
-import { HttpClient } from "@/http";
+import type { ZodType } from "zod";
+import {
+  HttpClient,
+  HttpError,
+  type HttpMethod,
+  type HttpRequestOptions,
+} from "@/http";
+import { AipError, isAipErrorResponse } from "../errors";
+
+const errors = {
+  invalidResponse: "Response payload failed schema validation.",
+} as const;
+
+export interface ServiceRequestOptions<T = unknown> extends Omit<
+  HttpRequestOptions,
+  "method"
+> {
+  method?: HttpMethod;
+  schema?: ZodType<T>;
+}
 
 export abstract class BaseService {
-  protected readonly httpClient: HttpClient;
+  private readonly httpClient: HttpClient;
 
   constructor(httpClient: HttpClient) {
     this.httpClient = httpClient;
   }
 
-  /**
-   * TODO: AIP error mapping
-   */
+  protected get<T>(options: ServiceRequestOptions<T>): Promise<T> {
+    return this.request<T>({ ...options, method: "GET" });
+  }
 
-  // protected async execute<T>(
-  //   requestFn: () => Promise<T>,
-  //   urlPath?: string,
-  // ): Promise<T> {
-  //   try {
-  //     return await requestFn();
-  //   } catch (error) {
-  //     if (error instanceof AipError || error instanceof AppError) {
-  //       throw error;
-  //     }
+  protected post<T>(options: ServiceRequestOptions<T>): Promise<T> {
+    return this.request<T>({ ...options, method: "POST" });
+  }
 
-  //     if (error instanceof HttpError) {
-  //       const fullUrl = urlPath
-  //         ? `${this.httpClient.config.baseUrl}${urlPath}`
-  //         : this.httpClient.config.baseUrl;
-  //       throw toAipError(error, fullUrl);
-  //     }
+  protected put<T>(options: ServiceRequestOptions<T>): Promise<T> {
+    return this.request<T>({ ...options, method: "PUT" });
+  }
 
-  //     throw error;
-  //   }
-  // }
+  protected patch<T>(options: ServiceRequestOptions<T>): Promise<T> {
+    return this.request<T>({ ...options, method: "PATCH" });
+  }
 
-  /**
-   * TODO: Schema validation
-   */
+  protected delete<T>(options: ServiceRequestOptions<T>): Promise<T> {
+    return this.request<T>({ ...options, method: "DELETE" });
+  }
 
-  //   if (!options.schema) {
-  //   return parsedResponse.data as T;
-  // }
+  protected async request<T>(options: ServiceRequestOptions<T>): Promise<T> {
+    const { schema, method = "GET", ...httpOptions } = options;
 
-  // const parsed = options.schema.safeParse(parsedResponse.data);
+    try {
+      const raw = await this.httpClient.request({
+        ...httpOptions,
+        method,
+      });
 
-  // if (!parsed.success) {
-  //   const issueSummary = parsed.error.issues
-  //     .map((issue) => `${issue.path.join(".") || "root"}: ${issue.message}`)
-  //     .join("; ");
+      if (!schema) {
+        return raw as T;
+      }
 
-  //   throw new HttpClientError(
-  //     responseErrors.validationError.code,
-  //     `${responseErrors.validationError.message} ${issueSummary}`,
-  //     { cause: parsed.error },
-  //   );
-  // }
+      const parsed = schema.safeParse(raw);
+      if (!parsed.success) {
+        throw new Error(errors.invalidResponse, {
+          cause: parsed.error,
+        });
+      }
+
+      return parsed.data;
+    } catch (error) {
+      throw this.normalizeError(error);
+    }
+  }
+
+  private normalizeError(error: unknown): unknown {
+    if (error instanceof HttpError && isAipErrorResponse(error.data)) {
+      return new AipError(error.data.error, { cause: error });
+    }
+
+    return error;
+  }
 }
-
-// export const responseErrors = {
-//   httpError: {
-//     code: "HTTP_ERROR",
-//     message: (status: number, statusText: string) =>
-//       `HTTP error status: ${status}${statusText ? ` ${statusText}` : ""}`,
-//   },
-//   parseError: {
-//     code: "PARSE_ERROR",
-//     message:
-//       "The server returned a success status code, but the body content was malformed or non-JSON.",
-//   },
-//   validationError: {
-//     code: "VALIDATION_ERROR",
-//     message:
-//       "The server response body did not match the expected API schema contract.",
-//   },
-// } as const;
-
-// export type ResponseErrorCode =
-//   (typeof responseErrors)[keyof typeof responseErrors]["code"];
 
 // export const attachRequestLogger = (client: HttpClient, logger: Logger): void => {
 //   client.addBeforeRequest((options, context) => {

@@ -16,30 +16,33 @@ export class HttpClient {
     this.config = resolveClientConfig(config);
   }
 
-  public async get(options: Omit<HttpRequestOptions, "method">) {
+  public get(options: Omit<HttpRequestOptions, "method">): Promise<unknown> {
     return this.request({ ...options, method: "GET" });
   }
 
-  public async post(options: Omit<HttpRequestOptions, "method">) {
+  public post(options: Omit<HttpRequestOptions, "method">): Promise<unknown> {
     return this.request({ ...options, method: "POST" });
   }
 
-  public async put(options: Omit<HttpRequestOptions, "method">) {
+  public put(options: Omit<HttpRequestOptions, "method">): Promise<unknown> {
     return this.request({ ...options, method: "PUT" });
   }
 
-  public async patch(options: Omit<HttpRequestOptions, "method">) {
+  public patch(options: Omit<HttpRequestOptions, "method">): Promise<unknown> {
     return this.request({ ...options, method: "PATCH" });
   }
 
-  public async delete(options: Omit<HttpRequestOptions, "method">) {
+  public delete(options: Omit<HttpRequestOptions, "method">): Promise<unknown> {
     return this.request({ ...options, method: "DELETE" });
   }
 
-  public async request(options: HttpRequestOptions) {
+  public async request(options: HttpRequestOptions): Promise<unknown> {
+    const { method = "GET", ...requestOptions } = options;
+
     return httpRequest({
       ...this.config,
-      ...options,
+      ...requestOptions,
+      method,
       url: joinUrl(this.config.baseUrl, options.url),
       headers: buildHeaders(this.config.headers, options.headers, options.data),
       retry: {

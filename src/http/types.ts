@@ -40,8 +40,8 @@ export interface HttpClientConfig extends BaseHttpOptions {
 }
 
 export interface HttpRequestOptions extends BaseHttpOptions {
-  method: HttpMethod;
   url: string;
+  method?: HttpMethod;
   data?: unknown;
   signal?: AbortSignal;
 }
