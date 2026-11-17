@@ -2,7 +2,7 @@ import type { Presence } from "../gateway";
 import type { PreferredPresence } from "./validation";
 
 export const userMessageTypes = {
-  emailUpdates: "user.email_updated",
+  emailUpdated: "user.email_updated",
   usernameUpdated: "user.username_updated",
   passwordUpdated: "user.password_updated",
   preferredPresenceUpdated: "user.preferred_presence_updated",
