@@ -26,6 +26,7 @@ export interface GatewayMessage<T = unknown> {
 
 type StatusListener = (status: GatewayStatus) => void;
 type MessageListener = (message: GatewayMessage) => void;
+type MessageHandler<T = unknown> = (data: T) => void;
 
 export class GatewayService extends BaseService {
   private ws: WebSocket | null = null;
@@ -35,6 +36,11 @@ export class GatewayService extends BaseService {
 
   private readonly statusListeners = new Set<StatusListener>();
   private readonly messageListeners = new Set<MessageListener>();
+
+  private readonly messageHandlers = new Map<
+    string,
+    Set<MessageHandler<unknown>>
+  >();
 
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 3;
@@ -50,6 +56,10 @@ export class GatewayService extends BaseService {
     return this.status;
   }
 
+  /**
+   * TODO: Ensure subs still needed, otherwise use registration
+   */
+
   public subscribeStatus(listener: StatusListener): () => void {
     this.statusListeners.add(listener);
     return () => {
@@ -61,6 +71,31 @@ export class GatewayService extends BaseService {
     this.messageListeners.add(listener);
     return () => {
       this.messageListeners.delete(listener);
+    };
+  }
+
+  public registerMessageHandler<T = unknown>(
+    type: string,
+    handler: MessageHandler<T>,
+  ): () => void {
+    let handlers = this.messageHandlers.get(type);
+
+    if (!handlers) {
+      handlers = new Set<MessageHandler<unknown>>();
+      this.messageHandlers.set(type, handlers);
+    }
+
+    const castHandler = handler as MessageHandler<unknown>;
+    handlers.add(castHandler);
+
+    return () => {
+      const currentHandlers = this.messageHandlers.get(type);
+      if (currentHandlers && currentHandlers.has(castHandler)) {
+        currentHandlers.delete(castHandler);
+        if (currentHandlers.size === 0) {
+          this.messageHandlers.delete(type);
+        }
+      }
     };
   }
 
@@ -128,6 +163,7 @@ export class GatewayService extends BaseService {
       this.ws = null;
     }
     this.reconnectAttempts = 0;
+    this.messageHandlers.clear();
   }
 
   public send(type: string, data: unknown): void {
@@ -177,6 +213,11 @@ export class GatewayService extends BaseService {
       try {
         const message: GatewayMessage = JSON.parse(event.data);
         if (message && typeof message.t === "string") {
+          const handlers = this.messageHandlers.get(message.t);
+          if (handlers) {
+            handlers.forEach((handler) => handler(message.d));
+          }
+
           this.messageListeners.forEach((listener) => listener(message));
         }
       } catch {
