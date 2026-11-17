@@ -60,17 +60,13 @@ export class BonfireSdk {
         logger: config.logger,
       });
 
-      // 1. Mutate/prepare outbound headers first
       this.httpClient.addBeforeRequest(setAuthHeader);
-      // 2. Recover auth errors before generic error logging/retries
       this.httpClient.addResponseError(handleAuthError);
     }
 
     if (logInterceptors) {
-      // Log after auth headers are attached
       this.httpClient.addBeforeRequest(logInterceptors.beforeRequest);
       this.httpClient.addResponseSuccess(logInterceptors.onResponseSuccess);
-      // Log failures that auth did not recover/short-circuit
       this.httpClient.addResponseError(logInterceptors.onResponseError);
     }
   }

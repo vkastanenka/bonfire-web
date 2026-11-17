@@ -8,7 +8,7 @@ import {
 } from "@/http";
 import { AipError } from "../errors";
 
-const logs = {
+const messages = {
   initiated: "HTTP request initiated.",
   succeeded: "HTTP request succeeded.",
   failed: "HTTP request failed.",
@@ -44,7 +44,7 @@ export const createLogInterceptors = ({
   }
 
   const beforeRequest: BeforeRequestFn = ({ options, context }) => {
-    log?.debug(logs.initiated, createBaseContext(options, context));
+    log?.debug(messages.initiated, createBaseContext(options, context));
   };
 
   const onResponseSuccess: ResponseSuccessFn = ({
@@ -52,7 +52,7 @@ export const createLogInterceptors = ({
     context,
     result,
   }) => {
-    log?.debug(logs.succeeded, {
+    log?.debug(messages.succeeded, {
       ...createBaseContext(options, context),
       result,
     });
@@ -69,17 +69,17 @@ export const createLogInterceptors = ({
     };
 
     if (!isFinalAttempt) {
-      log.debug(`${logs.failed} ${logs.retrying}`, ctx);
+      log.debug(`${messages.failed} ${messages.retrying}`, ctx);
       return;
     }
 
     const status = typeof ctx.status === "number" ? ctx.status : undefined;
     if (status !== undefined && status >= 400 && status < 500) {
-      log.warn(logs.rejected, ctx);
+      log.warn(messages.rejected, ctx);
       return;
     }
 
-    log.error(logs.failed, ctx);
+    log.error(messages.failed, ctx);
   };
 
   return {
@@ -102,7 +102,6 @@ const createBaseContext = (
     requestId: context.requestId,
     method: options.method ?? "GET",
     url: options.url,
-    //   protected: options.protected ?? true,
     attemptCount: context.attemptCount,
     ...(durationMs !== undefined ? { durationMs } : {}),
   };
