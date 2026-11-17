@@ -5,6 +5,7 @@ import {
 } from "@/http";
 import { AuthService } from "./auth";
 import { BootstrapService } from "./bootstrap";
+import { GatewayService } from "./gateway";
 import { UserService } from "./user";
 import {
   createAuthInterceptors,
@@ -34,6 +35,7 @@ export interface SdkConfig
 export class BonfireSdk {
   private readonly httpClient: HttpClient;
   public readonly auth: AuthService;
+  public readonly gateway: GatewayService;
   public readonly bootstrap: BootstrapService;
   public readonly user: UserService;
 
@@ -42,6 +44,7 @@ export class BonfireSdk {
     this.httpClient = new HttpClient(httpClientConfig);
     this.auth = new AuthService(this.httpClient);
     this.bootstrap = new BootstrapService(this.httpClient);
+    this.gateway = new GatewayService(this.httpClient);
     this.user = new UserService(this.httpClient);
 
     const logInterceptors = config.logger
