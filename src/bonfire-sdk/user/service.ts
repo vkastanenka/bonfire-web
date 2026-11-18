@@ -1,6 +1,7 @@
 import { BaseService, type ServiceCallOptions } from "../shared";
-import { meSchema, type Me } from "../validation";
 import {
+  meSchema,
+  type Me,
   type DisableRequest,
   type UpdateEmailRequest,
   type UpdatePasswordRequest,

@@ -1,5 +1,5 @@
 import { BaseService, type ServiceCallOptions } from "../shared";
-import { type Me, meSchema } from "../validation";
+import { type Me, meSchema } from "../user";
 import {
   accessTokenResponseSchema,
   listValidSessionsResponseSchema,
