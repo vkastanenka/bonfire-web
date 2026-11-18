@@ -1,6 +1,7 @@
 import { Stack } from "@mui/material";
+import type { ReactNode } from "react";
 
-export const Dashboard = () => {
+export const Dashboard = ({ children }: { children: ReactNode }) => {
   return (
     <Stack
       sx={{
@@ -11,7 +12,7 @@ export const Dashboard = () => {
         width: "100%",
       }}
     >
-      {/* Dashboard */}
+      {children}
     </Stack>
   );
 };

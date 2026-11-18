@@ -10,6 +10,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { usePresence } from "@/presence";
 import { useUserGatewayEvents } from "@/bonfire/user/gateway";
 import { useAuthGatewayEvents } from "@/bonfire/auth/gateway";
+import { Layout } from "@/features";
 
 export const authLoader = async () => {
   const data = await queryClient.ensureQueryData({
@@ -37,7 +38,11 @@ function AuthLayout() {
     return null;
   }
 
-  return <Outlet />;
+  return (
+    <Layout>
+      <Outlet />
+    </Layout>
+  );
 }
 
 export const Route = createFileRoute("/_auth")({
