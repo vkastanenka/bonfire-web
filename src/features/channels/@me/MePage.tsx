@@ -1,6 +1,6 @@
 import { Box, Stack } from "@mui/material";
 import { Dashboard, Nav, SideBar } from "../components";
-import { UserManagement } from "@/features/user-management/UserManagement";
+import { UserManagement } from "@/features/user";
 
 export const MePage = () => {
   return (
