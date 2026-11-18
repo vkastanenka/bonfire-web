@@ -20,6 +20,7 @@ interface GatewayState {
   presence: Presence;
   init: () => void;
   close: () => void;
+  setPresence: (presence: Presence) => void;
 }
 
 let presenceUnsubscribe: (() => void) | null = null;
@@ -60,6 +61,8 @@ export const useGatewayStore = create<GatewayState>((set, get) => ({
     set({ status: currentStatus });
     broadcaster.post(broadcastTypes.status, currentStatus);
   },
+
+  setPresence: (presence: Presence) => set({ presence }),
 }));
 
 const setupPresenceSync = (

@@ -16,6 +16,7 @@ import { bonfireSdk } from "@/app";
 import { paths } from "@/constants";
 import { useAuthStore } from "@/features/auth";
 import { usePresenceStore } from "@/features/presence";
+import { useGatewayStore } from "../gateway";
 
 export const useUserGatewayEvents = () => {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export const useUserGatewayEvents = () => {
   const setMe = useAuthStore((state) => state.setMe);
   const clearSession = useAuthStore((state) => state.clearSession);
   const setPresence = usePresenceStore((state) => state.set);
+  const setGatewayPresence = useGatewayStore((state) => state.setPresence);
 
   useEffect(() => {
     const unregisterEmailUpdated =
@@ -46,7 +48,13 @@ export const useUserGatewayEvents = () => {
       bonfireSdk.gateway.registerMessageHandler<PreferredPresenceUpdatedPayload>(
         userMessageTypes.preferredPresenceUpdated,
         (payload) =>
-          handlePreferredPresenceUpdated(payload, me, setMe, setPresence),
+          handlePreferredPresenceUpdated(
+            payload,
+            me,
+            setMe,
+            setPresence,
+            setGatewayPresence,
+          ),
       );
 
     const unregisterProfileUpdated =
@@ -64,7 +72,8 @@ export const useUserGatewayEvents = () => {
     const unregisterPresenceUpdated =
       bonfireSdk.gateway.registerMessageHandler<PresenceUpdatedPayload>(
         userMessageTypes.presenceUpdated,
-        (payload) => handlePresenceUpdated(payload, me, setPresence),
+        (payload) =>
+          handlePresenceUpdated(payload, me, setPresence, setGatewayPresence),
       );
 
     return () => {
@@ -76,7 +85,7 @@ export const useUserGatewayEvents = () => {
       unregisterDisabled();
       unregisterPresenceUpdated();
     };
-  }, [navigate, me, setMe, setPresence, clearSession]);
+  }, [navigate, me, setMe, setPresence, setGatewayPresence, clearSession]);
 };
 
 const handleEmailUpdated = (
@@ -120,17 +129,19 @@ const handlePreferredPresenceUpdated = (
   me: Me | null,
   setMe: (me: Me | null) => void,
   setPresence: (presence: Presence) => void,
+  setGatewayPresence: (presence: Presence) => void,
 ) => {
   if (me && me.id === payload.userId) {
-    if (!payload.presence) {
-      setPresence(presences.online);
-    }
     setMe({
       ...me,
       preferredPresence: payload.presence,
       preferredPresenceUntil: payload.until,
       updatedAt: payload.updatedAt,
     });
+    if (!payload.presence) {
+      setGatewayPresence(presences.online);
+      setPresence(presences.online);
+    }
   }
 };
 
@@ -167,8 +178,10 @@ const handlePresenceUpdated = (
   payload: PresenceUpdatedPayload,
   me: Me | null,
   setPresence: (presence: Presence) => void,
+  setGatewayPresence: (presence: Presence) => void,
 ) => {
   if (me && me.id === payload.userId) {
+    setGatewayPresence(payload.presence);
     setPresence(payload.presence);
   }
 };
