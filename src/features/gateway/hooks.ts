@@ -1,21 +1,19 @@
 import { useEffect } from "react";
-import { useGatewayStore } from "./store";
-import { logger as baseLogger } from "@/logger";
-import { broadcaster, broadcastTypes } from "./broadcaster";
-import type { GatewayMessage, GatewayStatus } from "./service";
-import { usePresenceStore, type Presence } from "@/presence";
-import { dispatcher } from "./dispatcher";
-import { useAuthStore } from "../auth";
-import { paths } from "@/constants";
 import { useNavigate } from "@tanstack/react-router";
 import { bonfireSdk } from "@/app";
+import type { GatewayMessage, GatewayStatus } from "@/bonfire-sdk";
+import { logger as baseLogger } from "@/logger";
+import { paths } from "@/constants";
+import { useAuthStore } from "@/features/auth";
+import { broadcaster, broadcastTypes } from "./broadcaster";
+import { useGatewayStore } from "./store";
 
 const logger = baseLogger.child({
   package: "Gateway",
   module: "useGateway",
 });
 
-const LEADER_LOCK_NAME = "bonfire_gateway_leader_lock";
+const leaderLockName = "bonfire_leader_lock";
 
 export function useGateway() {
   const init = useGatewayStore((state) => state.init);
@@ -39,7 +37,7 @@ export function useGateway() {
       while (isMounted && !abortController.signal.aborted) {
         try {
           await navigator.locks.request(
-            LEADER_LOCK_NAME,
+            leaderLockName,
             { mode: "exclusive" },
             async () => {
               if (!isMounted || abortController.signal.aborted) return;
@@ -47,31 +45,8 @@ export function useGateway() {
               logger.info("Tab elected as LEADER. Initializing WebSocket...");
               init();
 
-              return new Promise<void>((resolve) => {
-                const handleVisibilityChange = () => {
-                  if (document.visibilityState === "hidden") {
-                    logger.info("Leader tab hidden. Yielding lock...");
-                    resolve();
-                  }
-                };
-
-                document.addEventListener(
-                  "visibilitychange",
-                  handleVisibilityChange,
-                );
-
-                abortController.signal.addEventListener(
-                  "abort",
-                  () => {
-                    document.removeEventListener(
-                      "visibilitychange",
-                      handleVisibilityChange,
-                    );
-                    resolve();
-                  },
-                  { once: true },
-                );
-              });
+              await waitForVisibilityHidden(abortController.signal);
+              logger.info("Leader tab hidden or aborted. Yielding lock...");
             },
           );
         } catch (err) {
@@ -80,18 +55,12 @@ export function useGateway() {
 
         close();
 
-        if (isMounted && document.visibilityState === "visible") {
+        if (!isMounted) break;
+
+        if (document.visibilityState === "visible") {
           await new Promise((resolve) => setTimeout(resolve, 500));
-        } else if (isMounted) {
-          await new Promise<void>((resolve) => {
-            const handleFocus = () => {
-              if (document.visibilityState === "visible") {
-                document.removeEventListener("visibilitychange", handleFocus);
-                resolve();
-              }
-            };
-            document.addEventListener("visibilitychange", handleFocus);
-          });
+        } else {
+          await waitForVisibilityVisible();
         }
       }
     };
@@ -106,20 +75,49 @@ export function useGateway() {
   }, [init, close]);
 }
 
+const waitForVisibilityHidden = (signal: AbortSignal): Promise<void> => {
+  return new Promise((resolve) => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        resolve();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    signal.addEventListener(
+      "abort",
+      () => {
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange,
+        );
+        resolve();
+      },
+      { once: true },
+    );
+  });
+};
+
+const waitForVisibilityVisible = (): Promise<void> => {
+  return new Promise((resolve) => {
+    const handleFocus = () => {
+      if (document.visibilityState === "visible") {
+        document.removeEventListener("visibilitychange", handleFocus);
+        resolve();
+      }
+    };
+    document.addEventListener("visibilitychange", handleFocus);
+  });
+};
+
 export const useBroadcaster = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
     return broadcaster.subscribe((type, payload) => {
       switch (type) {
-        case broadcastTypes.message: {
-          const message = payload as GatewayMessage;
-          bonfireSdk.gateway.handleMessage(message);
-          break;
-        }
-
-        case broadcastTypes.presence:
-          usePresenceStore.setState({ presence: payload as Presence });
+        case broadcastTypes.message:
+          bonfireSdk.gateway.handleMessage(payload as GatewayMessage);
           break;
 
         case broadcastTypes.status:
@@ -129,6 +127,7 @@ export const useBroadcaster = () => {
         case broadcastTypes.logout:
           useAuthStore.getState().clearSession();
           navigate({ to: paths.login });
+          break;
       }
     });
   }, [navigate]);

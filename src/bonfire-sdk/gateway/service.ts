@@ -171,11 +171,11 @@ export class GatewayService extends BaseService {
     this.messageHandlers.clear();
   }
 
-  public send(type: string, data: unknown): void {
+  public send(message: GatewayMessage): void {
     if (!this.ws || this.status !== gatewayStatuses.connected) {
       return;
     }
-    this.ws.send(JSON.stringify({ t: type, d: data }));
+    this.ws.send(JSON.stringify(message));
   }
 
   private printTicket(

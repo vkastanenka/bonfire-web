@@ -1,4 +1,4 @@
-const channelName = "bonfire_gateway_broadcast";
+const channelName = "bonfire_broadcast";
 
 export const broadcastTypes = {
   message: "MESSAGE",
