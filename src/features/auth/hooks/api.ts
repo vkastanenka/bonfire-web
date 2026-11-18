@@ -51,6 +51,16 @@ export const useLogin = (
     options,
   );
 
+export const useForgotPassword = (
+  options?: UseMutationOptions<void, Error, ForgotPasswordRequest>,
+) =>
+  useMutation({
+    ...options,
+    mutationKey: authKeys.forgotPassword(),
+    mutationFn: (data: ForgotPasswordRequest) =>
+      bonfireSdk.auth.forgotPassword(data),
+  });
+
 export const useResetPassword = (
   options?: UseMutationOptions<
     AccessTokenResponse,
@@ -64,17 +74,11 @@ export const useResetPassword = (
     options,
   );
 
-export const useLogout = (options?: UseMutationOptions<void, Error, void>) =>
-  useCreateSessionResetMutation(
-    authKeys.logout(),
-    () => bonfireSdk.auth.logout(),
-    options,
-  );
-
 export const useVerifyEmail = (
   options?: UseMutationOptions<Me, Error, VerifyEmailRequest>,
 ) => {
   const setMe = useAuthStore((state) => state.setMe);
+  const accessToken = useAuthStore((state) => state.accessToken);
   const { onSuccess, ...restOptions } = options ?? {};
 
   return useMutation({
@@ -82,11 +86,20 @@ export const useVerifyEmail = (
     mutationKey: authKeys.verify(),
     mutationFn: (data: VerifyEmailRequest) => bonfireSdk.auth.verifyEmail(data),
     onSuccess: async (data, variables, onMutateResult, context) => {
-      setMe(data);
+      if (accessToken) {
+        setMe(data);
+      }
       await onSuccess?.(data, variables, onMutateResult, context);
     },
   });
 };
+
+export const useLogout = (options?: UseMutationOptions<void, Error, void>) =>
+  useCreateSessionResetMutation(
+    authKeys.logout(),
+    () => bonfireSdk.auth.logout(),
+    options,
+  );
 
 export const useResendVerify = (
   options?: UseMutationOptions<void, Error, void>,
@@ -95,16 +108,6 @@ export const useResendVerify = (
     ...options,
     mutationKey: authKeys.resendVerify(),
     mutationFn: () => bonfireSdk.auth.resendVerifyEmail(),
-  });
-
-export const useForgotPassword = (
-  options?: UseMutationOptions<void, Error, ForgotPasswordRequest>,
-) =>
-  useMutation({
-    ...options,
-    mutationKey: authKeys.forgotPassword(),
-    mutationFn: (data: ForgotPasswordRequest) =>
-      bonfireSdk.auth.forgotPassword(data),
   });
 
 export const useListValidSessions = (

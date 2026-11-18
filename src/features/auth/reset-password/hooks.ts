@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { passwordSchema, z } from "@/bonfire-sdk";
 import { handleAipFieldViolations } from "@/utils";
 import { useResetPassword } from "../hooks";
+import { paths } from "@/constants";
 
 export const resetPasswordFormSchema = z.object({
   password: passwordSchema,
@@ -27,7 +28,7 @@ export const useResetPasswordForm = (token: string) => {
     const req = { token, password: data.password };
     mutate(req, {
       onSuccess: () => {
-        navigate({ to: "/channels/@me" });
+        navigate({ to: paths.me });
       },
       onError: (err) => {
         handleAipFieldViolations(err, methods);
