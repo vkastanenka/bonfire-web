@@ -7,9 +7,7 @@ import {
 import { queryClient, requireAuth, bonfireSdk } from "@/app";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { usePresenceTracker } from "@/features/presence";
-import { useUserGatewayEvents } from "@/bonfire/user/gateway";
-import { useAuthGatewayEvents } from "@/bonfire/auth/gateway";
-import { Layout } from "@/features";
+import { Layout, useUserGatewayEvents, useAuthGatewayEvents } from "@/features";
 
 export const authLoader = async () => {
   const data = await queryClient.ensureQueryData({
