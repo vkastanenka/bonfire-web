@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const errors = {
+export const messages = {
   required: "This field is required.",
   whitespace: "Cannot consist entirely of whitespace.",
   email: "Must be a valid email address.",
@@ -26,36 +26,36 @@ z.config({
       issue.code === "invalid_type" &&
       (issue.input === undefined || issue.input === null)
     ) {
-      return errors.required;
+      return messages.required;
     }
 
     if (issue.code === "invalid_format" && issue.format === "email") {
-      return errors.email;
+      return messages.email;
     }
 
     if (issue.code === "too_small") {
       switch (issue.origin) {
         case "string":
-          return errors.minString(issue.minimum);
+          return messages.minString(issue.minimum);
         case "number":
         case "bigint":
-          return errors.minNumeric(issue.minimum);
+          return messages.minNumeric(issue.minimum);
         case "array":
         case "set":
-          return errors.minCollection(issue.minimum);
+          return messages.minCollection(issue.minimum);
       }
     }
 
     if (issue.code === "too_big") {
       switch (issue.origin) {
         case "string":
-          return errors.maxString(issue.maximum);
+          return messages.maxString(issue.maximum);
         case "number":
         case "bigint":
-          return errors.maxNumeric(issue.maximum);
+          return messages.maxNumeric(issue.maximum);
         case "array":
         case "set":
-          return errors.maxCollection(issue.maximum);
+          return messages.maxCollection(issue.maximum);
       }
     }
 
@@ -67,8 +67,10 @@ export const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
 export const phoneRegex = /^\+[1-9]\d{1,14}$/;
 
 export const emailSchema = z.email().min(6).max(255);
-export const hexColorSchema = z.string().regex(hexColorRegex, errors.hexColor);
-export const phoneSchema = z.string().regex(phoneRegex, errors.phone);
+export const hexColorSchema = z
+  .string()
+  .regex(hexColorRegex, messages.hexColor);
+export const phoneSchema = z.string().regex(phoneRegex, messages.phone);
 export const urlSchema = z.url().max(2048);
 export const jwtString = z.string().max(2048);
 

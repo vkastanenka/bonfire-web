@@ -1,7 +1,7 @@
 import { presences } from "../gateway";
 import { z, emailSchema, hexColorSchema, urlSchema } from "../validation";
 
-export const validationErrors = {
+export const messages = {
   username:
     "Must start and end with a letter or number. May contain only letters, numbers, and non-consecutive underscores or periods.",
 };
@@ -12,7 +12,7 @@ export const usernameSchema = z
   .string()
   .min(3)
   .max(32)
-  .regex(usernameRegex, validationErrors.username);
+  .regex(usernameRegex, messages.username);
 
 export const passwordSchema = z.string().min(12).max(64);
 

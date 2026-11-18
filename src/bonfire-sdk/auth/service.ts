@@ -57,10 +57,6 @@ export class AuthService extends BaseService {
       url: endpoints.refresh,
       schema: accessTokenResponseSchema,
       protected: false,
-      retry: {
-        ...options?.retry,
-        maxAttempts: 1,
-      },
     });
   }
 

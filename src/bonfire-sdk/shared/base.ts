@@ -8,7 +8,7 @@ import {
 } from "@/http";
 import { AipError, isAipErrorResponse } from "../errors";
 
-const errors = {
+const messages = {
   invalidResponse: "Response payload failed schema validation.",
 } as const;
 
@@ -79,7 +79,7 @@ export abstract class BaseService {
 
       const parsed = schema.safeParse(raw);
       if (!parsed.success) {
-        throw new Error(errors.invalidResponse, {
+        throw new Error(messages.invalidResponse, {
           cause: parsed.error,
         });
       }

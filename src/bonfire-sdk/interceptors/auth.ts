@@ -1,7 +1,7 @@
 import { HttpError, type BeforeRequestFn, type ResponseErrorFn } from "@/http";
 import type { AccessTokenResponse } from "../auth";
 import { apiErrorCodes, AipError, isAipErrorResponse } from "../errors";
-import type { Logger, LogInterceptorOptions } from "./logger";
+import { resolveLogger, type LogOptions } from "../shared";
 
 const messages = {
   tokenExpired: "Access token expired. Attempting token refresh.",
@@ -36,15 +36,11 @@ export const handleAuthError = ({
   onRefreshFailed,
   logger,
   logging,
-}: Omit<AuthInterceptorOptions, "getToken"> &
-  LogInterceptorOptions): ResponseErrorFn => {
-  let log: Logger | undefined;
-
-  if (logging) {
-    log = logger?.child
-      ? logger.child({ component: "bonfire-sdk.auth" })
-      : logger;
-  }
+}: Omit<AuthInterceptorOptions, "getToken"> & LogOptions): ResponseErrorFn => {
+  const log = resolveLogger(
+    { logger, logging },
+    { component: "bonfire-sdk.handleAuthError" },
+  );
 
   let refreshPromise: Promise<string | null> | null = null;
 
@@ -117,7 +113,7 @@ export const handleAuthError = ({
 };
 
 export const createAuthInterceptors = (
-  config: AuthInterceptorOptions & LogInterceptorOptions,
+  config: AuthInterceptorOptions & LogOptions,
 ) => {
   return {
     setAuthHeader: setAuthHeader(config.getToken),

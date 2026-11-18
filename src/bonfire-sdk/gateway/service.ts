@@ -1,14 +1,24 @@
-import { logger as baseLogger } from "@/logger";
-import { BaseService, type ServiceCallOptions } from "../shared";
+import type { HttpClient } from "@/http";
+import {
+  BaseService,
+  resolveLogger,
+  type Logger,
+  type LogOptions,
+  type ServiceCallOptions,
+} from "../shared";
 import type { Presence } from "./presence";
 import {
   printTicketResponseSchema,
   type PrintTicketResponse,
 } from "./validation";
 
-const logger = baseLogger.child({
-  component: "GatewayService",
-});
+const messages = {
+  connectionEstablished: "Websocket connection established.",
+  receivedMessage: "Received Websocket message.",
+  connectionClosed: "Closed Websocket connection.",
+  reEstablishingConnection:
+    "Attempting to re-establish Websocket connection...",
+};
 
 const endpoints = {
   ticket: "/gateway/ticket",
@@ -56,6 +66,15 @@ export class GatewayService extends BaseService {
 
   private watchdogTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly watchdogTimeoutMs = 35000;
+
+  private logger: Logger | undefined;
+
+  constructor(httpClient: HttpClient, options?: LogOptions) {
+    super(httpClient);
+    this.logger = resolveLogger(options, {
+      component: "bonfire-sdk.GatewayService",
+    });
+  }
 
   public getStatus(): GatewayStatus {
     return this.status;
@@ -215,7 +234,7 @@ export class GatewayService extends BaseService {
       this.reconnectAttempts = 0;
       this.updateStatus(gatewayStatuses.connected);
       this.startWatchdog();
-      logger.info("Websocket connection established.");
+      this.logger?.info(messages.connectionEstablished);
     };
 
     this.ws.onmessage = (event) => {
@@ -223,7 +242,7 @@ export class GatewayService extends BaseService {
       try {
         const message: GatewayMessage = JSON.parse(event.data);
         if (message && typeof message.t === "string") {
-          logger.info("Received Websocket message.", { message });
+          this.logger?.debug(messages.receivedMessage, { message });
           this.handleMessage(message);
           this.messageListeners.forEach((listener) => listener(message));
         }
@@ -236,10 +255,10 @@ export class GatewayService extends BaseService {
 
     this.ws.onclose = () => {
       this.cleanupSocket();
-      logger.info("Closed Websocket connection.");
+      this.logger?.info(messages.connectionClosed);
       if (!this.forcedClose) {
         this.handleReconnect(presence);
-        logger.info("Attempting to re-establish Websocket connection...");
+        this.logger?.info(messages.reEstablishingConnection);
       }
     };
   }

@@ -7,6 +7,7 @@ import {
   type ResponseSuccessFn,
 } from "@/http";
 import { AipError } from "../errors";
+import { resolveLogger, type LogContext, type LogOptions } from "../shared";
 
 const messages = {
   initiated: "HTTP request initiated.",
@@ -16,32 +17,10 @@ const messages = {
   rejected: "Rejected HTTP request.",
 } as const;
 
-export type LogContext = Record<string, unknown>;
-
-export interface Logger {
-  debug(message: string, context?: LogContext): void;
-  info(message: string, context?: LogContext): void;
-  warn(message: string, context?: LogContext): void;
-  error(message: string, context?: LogContext): void;
-  child?(context: LogContext): Logger;
-}
-
-export interface LogInterceptorOptions {
-  logger?: Logger;
-  logging?: boolean;
-}
-
-export const createLogInterceptors = ({
-  logger,
-  logging = true,
-}: LogInterceptorOptions) => {
-  let log: Logger | undefined;
-
-  if (logger && logging) {
-    log = logger.child
-      ? logger.child({ component: "bonfire-sdk.auth" })
-      : logger;
-  }
+export const createLogInterceptors = (options: LogOptions) => {
+  const log = resolveLogger(options, {
+    component: "bonfire-sdk.logInterceptors",
+  });
 
   const beforeRequest: BeforeRequestFn = ({ options, context }) => {
     log?.debug(messages.initiated, createBaseContext(options, context));

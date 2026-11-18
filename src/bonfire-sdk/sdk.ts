@@ -11,13 +11,10 @@ import {
   createAuthInterceptors,
   createLogInterceptors,
   type AuthInterceptorOptions,
-  type Logger,
 } from "./interceptors";
+import { type LogOptions } from "./shared";
 
 export const defaultSdkConfig = {
-  headers: {
-    Accept: "application/json",
-  },
   credentials: "include",
   retry: {
     maxAttempts: 3,
@@ -27,10 +24,8 @@ export const defaultSdkConfig = {
 export interface SdkConfig
   extends
     HttpClientConfig,
-    Partial<Omit<AuthInterceptorOptions, "refreshToken">> {
-  logger?: Logger;
-  logging?: boolean;
-}
+    Partial<Omit<AuthInterceptorOptions, "refreshToken">>,
+    LogOptions {}
 
 export class BonfireSdk {
   private readonly httpClient: HttpClient;
@@ -41,17 +36,20 @@ export class BonfireSdk {
 
   constructor(config: SdkConfig) {
     const httpClientConfig = resolveHttpClientConfig(config);
+
+    const logOptions: LogOptions = {
+      logger: config.logger,
+      logging: config.logging ?? true,
+    };
+
     this.httpClient = new HttpClient(httpClientConfig);
     this.auth = new AuthService(this.httpClient);
     this.bootstrap = new BootstrapService(this.httpClient);
-    this.gateway = new GatewayService(this.httpClient);
+    this.gateway = new GatewayService(this.httpClient, logOptions);
     this.user = new UserService(this.httpClient);
 
     const logInterceptors = config.logger
-      ? createLogInterceptors({
-          logger: config.logger,
-          logging: config.logging ?? true,
-        })
+      ? createLogInterceptors(logOptions)
       : undefined;
 
     if (config.getToken) {
@@ -60,8 +58,7 @@ export class BonfireSdk {
         onTokenRefreshed: config.onTokenRefreshed,
         onRefreshFailed: config.onRefreshFailed,
         refreshToken: () => this.auth.refresh(),
-        logger: config.logger,
-        logging: config.logging ?? true,
+        ...logOptions,
       });
 
       this.httpClient.addBeforeRequest(setAuthHeader);
@@ -84,7 +81,6 @@ export const resolveHttpClientConfig = (
     ...config,
     baseUrl: config.baseUrl?.replace(/\/+$/, ""),
     headers: {
-      ...defaultSdkConfig.headers,
       ...config.headers,
     },
   };
