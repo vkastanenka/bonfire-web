@@ -5,3 +5,4 @@ export * from "./register";
 export * from "./reset-password";
 export * from "./store";
 export * from "./verify";
+export * from "./utils";

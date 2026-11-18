@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Box, ButtonBase, useTheme } from "@mui/material";
-import { Avatar, type AvatarSizeKey, Overlay } from "@/components";
+import { Overlay } from "@/components";
+import { Avatar, type AvatarSizeKey } from "@/features/components";
 import { useMe } from "@/features/auth";
 import { useEffectivePresence } from "@/features/user";
 

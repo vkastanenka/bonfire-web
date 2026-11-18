@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { Avatar } from "@/components";
+import { Avatar } from "@/features/components";
 import { useMe } from "@/features/auth";
 import { presenceLabels } from "@/features/presence";
 import { useEffectivePresence } from "@/features/user";

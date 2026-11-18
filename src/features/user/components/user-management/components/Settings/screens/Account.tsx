@@ -1,5 +1,5 @@
 import { Button, Divider, Skeleton, Typography } from "@mui/material";
-import { useMe } from "@/bonfire";
+import { useMe } from "@/features/auth";
 import { Section, Setting, Edit, Censor, Navigate } from "../components";
 
 const labels = {

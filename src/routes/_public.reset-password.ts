@@ -1,4 +1,4 @@
-import { jwtString, z } from "@/validation";
+import { jwtString, z } from "@/bonfire-sdk";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { paths } from "@/constants";
 import { ResetPasswordPage } from "@/features";

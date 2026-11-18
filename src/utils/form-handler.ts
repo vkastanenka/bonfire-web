@@ -1,4 +1,4 @@
-import { AipError } from "@/errs";
+import { AipError } from "@/bonfire-sdk";
 import {
   type FieldValues,
   type Path,

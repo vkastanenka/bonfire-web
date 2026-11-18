@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { createRouter, redirect } from "@tanstack/react-router";
 import { routeTree } from "../routeTree.gen";
-import { useAuthStore } from "@/bonfire";
+import { useAuthStore } from "@/features/auth";
 import { queryClient } from "./query-client";
 import { paths } from "@/constants";
 

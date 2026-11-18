@@ -1,10 +1,6 @@
 import { Avatar as MuiAvatar, Box } from "@mui/material";
-import {
-  type Presence,
-  presences,
-  presenceIcons,
-  presenceLabels,
-} from "@/presence";
+import { presences, type Presence } from "@/bonfire-sdk";
+import { presenceIcons, presenceLabels } from "@/features/presence";
 
 export const sizes = {
   sm: 32,
