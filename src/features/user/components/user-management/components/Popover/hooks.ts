@@ -4,7 +4,7 @@ import {
   type Presence,
   type PreferredPresenceDuration,
 } from "@/bonfire-sdk";
-import { useMenu } from "@/hooks";
+import { useMenu } from "@/components";
 import { useUpdatePreferredPresence } from "@/features/user";
 import { usePresenceStore } from "@/features/presence";
 

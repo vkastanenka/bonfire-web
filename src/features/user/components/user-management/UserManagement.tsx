@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { usePopup, useDialog } from "@/hooks";
+import { usePopup, useDialog } from "@/components";
 import { Card, Popover, Settings } from "./components";
 
 export const UserManagement = () => {

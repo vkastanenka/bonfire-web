@@ -5,7 +5,7 @@ import { Banner } from "./components/Banner";
 import { durationOptions, presenceOptions } from "./constants";
 import { Actions, Menu, MenuItem, Profile } from "./components";
 import { usePresenceMenu } from "./hooks";
-import { useDialog } from "@/hooks";
+import { useDialog } from "@/components";
 
 export interface PopoverProps {
   anchorEl: HTMLElement | null;

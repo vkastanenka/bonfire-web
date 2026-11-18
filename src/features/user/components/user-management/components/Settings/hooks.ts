@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useListValidSessions } from "@/features/auth";
-import { useDialog } from "@/hooks";
+import { useDialog } from "@/components";
 import { type ScreenLabelKey } from "./constants";
 
 export const useSettings = ({
