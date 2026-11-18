@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { registerRequestSchema, type RegisterRequest } from "@/bonfire-sdk";
 import { useRegister } from "../hooks";
 import { handleAipFieldViolations } from "@/utils";
+import { paths } from "@/constants";
 
 export const useRegisterForm = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ export const useRegisterForm = () => {
   const onSubmit = (data: RegisterRequest) => {
     mutate(data, {
       onSuccess: () => {
-        navigate({ to: "/channels/@me" });
+        navigate({ to: paths.me });
       },
       onError: (err) => {
         handleAipFieldViolations(err, methods);
