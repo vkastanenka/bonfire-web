@@ -13,6 +13,8 @@ import { presenceLabels, presenceIcons } from "@/features/presence";
 import { itemStyles } from "../constants";
 import { Content } from "./Content";
 import { elIds } from "../../constants";
+import { useNavigate } from "@tanstack/react-router";
+import { paths } from "@/constants";
 
 const labels = {
   editProfile: "Edit Profile",
@@ -40,15 +42,16 @@ export const Actions = ({
   presenceOpen,
   handleOpenPresence,
 }: ActionsProps) => {
+  const navigate = useNavigate();
   const me = useMe();
   const presence = useEffectivePresence();
   const currentPresenceIcon = presenceIcons[presence];
 
-  const { mutate, isPending } = useLogout();
-
-  const logOut = () => {
-    mutate();
-  };
+  const { mutate, isPending } = useLogout({
+    onSettled: () => {
+      navigate({ to: paths.login });
+    },
+  });
 
   return (
     <Stack sx={{ pt: 1, px: 2, pb: 2, gap: 2 }}>
@@ -86,7 +89,7 @@ export const Actions = ({
         />
       </Stack>
 
-      <Button variant="contained" onClick={logOut} disabled={isPending}>
+      <Button variant="contained" onClick={() => mutate()} disabled={isPending}>
         {labels.logOut}
       </Button>
     </Stack>

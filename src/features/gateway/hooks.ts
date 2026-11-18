@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { bonfireSdk } from "@/app";
+import { bonfireSdk, queryClient } from "@/app";
 import type { GatewayMessage, GatewayStatus } from "@/bonfire-sdk";
 import { logger as baseLogger } from "@/logger";
 import { paths } from "@/constants";
@@ -124,7 +124,8 @@ export const useBroadcaster = () => {
           useGatewayStore.setState({ status: payload as GatewayStatus });
           break;
 
-        case broadcastTypes.logout:
+        case broadcastTypes.sessionRevoked:
+          queryClient.clear();
           useAuthStore.getState().clearSession();
           navigate({ to: paths.login });
           break;

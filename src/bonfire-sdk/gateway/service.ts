@@ -168,7 +168,6 @@ export class GatewayService extends BaseService {
       this.ws = null;
     }
     this.reconnectAttempts = 0;
-    this.messageHandlers.clear();
   }
 
   public send(message: GatewayMessage): void {
@@ -217,6 +216,7 @@ export class GatewayService extends BaseService {
       this.startWatchdog();
       try {
         const message: GatewayMessage = JSON.parse(event.data);
+        console.log("Received message", message);
         if (message && typeof message.t === "string") {
           this.handleMessage(message);
           this.messageListeners.forEach((listener) => listener(message));

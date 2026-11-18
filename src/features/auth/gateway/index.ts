@@ -9,7 +9,6 @@ const handleSessionRevoked = (
   clearSession: () => void,
   navigate: UseNavigateResult<string>,
 ) => {
-  console.log("handleSessionRevoked");
   clearSession();
   navigate({ to: paths.login });
 };
@@ -18,7 +17,6 @@ const handleSessionRevokedAll = (
   clearSession: () => void,
   navigate: UseNavigateResult<string>,
 ) => {
-  console.log("handleSessionRevokedAll");
   clearSession();
   navigate({ to: paths.login });
 };

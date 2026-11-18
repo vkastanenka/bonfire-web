@@ -18,6 +18,7 @@ import {
 } from "@/bonfire-sdk";
 import { bonfireSdk, queryClient } from "@/app";
 import { useAuthStore } from "../store";
+import { broadcaster, broadcastTypes } from "@/features/gateway";
 
 export const authKeys = {
   all: ["auth"] as const,
@@ -48,6 +49,13 @@ export const useLogin = (
   useCreateSessionMutation(
     authKeys.login(),
     (data) => bonfireSdk.auth.login(data),
+    options,
+  );
+
+export const useLogout = (options?: UseMutationOptions<void, Error, void>) =>
+  useCreateSessionResetMutation(
+    authKeys.logout(),
+    () => bonfireSdk.auth.logout(),
     options,
   );
 
@@ -94,14 +102,11 @@ export const useVerifyEmail = (
   });
 };
 
-export const useLogout = (options?: UseMutationOptions<void, Error, void>) =>
-  useCreateSessionResetMutation(
-    authKeys.logout(),
-    () => bonfireSdk.auth.logout(),
-    options,
-  );
+/**
+ * TODO: Figure out where to implement
+ */
 
-export const useResendVerify = (
+export const useResendVerifyEmail = (
   options?: UseMutationOptions<void, Error, void>,
 ) =>
   useMutation({
@@ -116,13 +121,11 @@ export const useListValidSessions = (
     "queryKey" | "queryFn"
   >,
 ) => {
-  const accessToken = useAuthStore((state) => state.accessToken);
   return useQuery({
     staleTime: 1000 * 30,
     ...options,
     queryKey: authKeys.listValidSessions(),
     queryFn: () => bonfireSdk.auth.listValidSessions(),
-    enabled: Boolean(accessToken),
   });
 };
 
@@ -169,7 +172,6 @@ const useCreateSessionMutation = <TVariables>(
     mutationKey,
     mutationFn,
     onSuccess: async (data, variables, onMutateResult, context) => {
-      await queryClient.cancelQueries();
       queryClient.clear();
       setAccessToken(data.accessToken);
       await onSuccess?.(data, variables, onMutateResult, context);
@@ -190,9 +192,9 @@ const useCreateSessionResetMutation = (
     mutationKey,
     mutationFn,
     onSettled: async (data, error, variables, onMutateResult, context) => {
-      await queryClient.cancelQueries();
       queryClient.clear();
       clearSession();
+      broadcaster.post(broadcastTypes.sessionRevoked, undefined);
       await onSettled?.(data, error, variables, onMutateResult, context);
     },
   });

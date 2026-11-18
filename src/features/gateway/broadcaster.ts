@@ -4,7 +4,7 @@ export const broadcastTypes = {
   message: "MESSAGE",
   presence: "PRESENCE",
   status: "STATUS",
-  logout: "LOGOUT",
+  sessionRevoked: "SESSION_REVOKED",
 } as const;
 
 export type BroadcastType =
