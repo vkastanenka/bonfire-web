@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const messages = {
+const messages = {
   required: "This field is required.",
   whitespace: "Cannot consist entirely of whitespace.",
   email: "Must be a valid email address.",

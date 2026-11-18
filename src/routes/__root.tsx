@@ -2,7 +2,7 @@ import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { Box } from "@mui/material";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { queryClient, type RouterContext } from "@/app";
+import { type RouterContext } from "@/app";
 import { theme } from "@/theme";
 import { restoreSession } from "@/features/auth";
 
@@ -34,13 +34,14 @@ export const RootLayout = () => (
   </ThemeProvider>
 );
 
+let hasRestored = false;
+
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async () => {
-    await queryClient.ensureQueryData({
-      queryKey: ["auth-restore"],
-      queryFn: () => restoreSession(),
-      staleTime: Infinity,
-    });
+    if (hasRestored) return;
+    hasRestored = true;
+    await restoreSession();
   },
+  pendingComponent: () => <div>Restoring Session...</div>,
   component: RootLayout,
 });

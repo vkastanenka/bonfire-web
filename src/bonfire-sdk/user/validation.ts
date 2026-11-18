@@ -1,7 +1,7 @@
 import { presences } from "../gateway";
 import { z, emailSchema, hexColorSchema, urlSchema } from "../validation";
 
-export const messages = {
+const messages = {
   username:
     "Must start and end with a letter or number. May contain only letters, numbers, and non-consecutive underscores or periods.",
 };
