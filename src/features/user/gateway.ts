@@ -1,19 +1,83 @@
 import { useEffect } from "react";
 import { useNavigate, type UseNavigateResult } from "@tanstack/react-router";
 import {
+  presences,
   userMessageTypes,
   type DisabledPayload,
   type EmailUpdatedPayload,
   type Me,
   type PreferredPresenceUpdatedPayload,
+  type Presence,
   type PresenceUpdatedPayload,
   type ProfileUpdatedPayload,
   type UsernameUpdatedPayload,
 } from "@/bonfire-sdk";
-import { bonfireSdk, queryClient } from "@/app";
+import { bonfireSdk } from "@/app";
 import { paths } from "@/constants";
 import { useAuthStore } from "@/features/auth";
-import type { QueryClient } from "@tanstack/react-query";
+import { usePresenceStore } from "@/features/presence";
+
+export const useUserGatewayEvents = () => {
+  const navigate = useNavigate();
+  const me = useAuthStore((state) => state.me);
+  const setMe = useAuthStore((state) => state.setMe);
+  const clearSession = useAuthStore((state) => state.clearSession);
+  const setPresence = usePresenceStore((state) => state.set);
+
+  useEffect(() => {
+    const unregisterEmailUpdated =
+      bonfireSdk.gateway.registerMessageHandler<EmailUpdatedPayload>(
+        userMessageTypes.emailUpdated,
+        (payload) => handleEmailUpdated(payload, me, setMe),
+      );
+
+    const unregisterUsernameUpdated =
+      bonfireSdk.gateway.registerMessageHandler<UsernameUpdatedPayload>(
+        userMessageTypes.usernameUpdated,
+        (payload) => handleUsernameUpdated(payload, me, setMe),
+      );
+
+    const unregisterPasswordUpdated = bonfireSdk.gateway.registerMessageHandler(
+      userMessageTypes.passwordUpdated,
+      () => handlePasswordUpdated(clearSession, navigate),
+    );
+
+    const unregisterPreferredPresenceUpdated =
+      bonfireSdk.gateway.registerMessageHandler<PreferredPresenceUpdatedPayload>(
+        userMessageTypes.preferredPresenceUpdated,
+        (payload) =>
+          handlePreferredPresenceUpdated(payload, me, setMe, setPresence),
+      );
+
+    const unregisterProfileUpdated =
+      bonfireSdk.gateway.registerMessageHandler<ProfileUpdatedPayload>(
+        userMessageTypes.profileUpdated,
+        (payload) => handleProfileUpdated(payload, me, setMe),
+      );
+
+    const unregisterDisabled =
+      bonfireSdk.gateway.registerMessageHandler<DisabledPayload>(
+        userMessageTypes.disabled,
+        (payload) => handleDisabled(payload, me, clearSession, navigate),
+      );
+
+    const unregisterPresenceUpdated =
+      bonfireSdk.gateway.registerMessageHandler<PresenceUpdatedPayload>(
+        userMessageTypes.presenceUpdated,
+        (payload) => handlePresenceUpdated(payload, me, setPresence),
+      );
+
+    return () => {
+      unregisterEmailUpdated();
+      unregisterUsernameUpdated();
+      unregisterPasswordUpdated();
+      unregisterPreferredPresenceUpdated();
+      unregisterProfileUpdated();
+      unregisterDisabled();
+      unregisterPresenceUpdated();
+    };
+  }, [navigate, me, setMe, setPresence, clearSession]);
+};
 
 const handleEmailUpdated = (
   payload: EmailUpdatedPayload,
@@ -21,7 +85,6 @@ const handleEmailUpdated = (
   setMe: (me: Me | null) => void,
 ) => {
   if (me && me.id === payload.userId) {
-    console.log("handleEmailUpdated");
     setMe({
       ...me,
       email: payload.email,
@@ -56,11 +119,12 @@ const handlePreferredPresenceUpdated = (
   payload: PreferredPresenceUpdatedPayload,
   me: Me | null,
   setMe: (me: Me | null) => void,
+  setPresence: (presence: Presence) => void,
 ) => {
   if (me && me.id === payload.userId) {
-    // if (!payload.presence) {
-    //   usePresenceStore.setState({ presence: presences.online });
-    // }
+    if (!payload.presence) {
+      setPresence(presences.online);
+    }
     setMe({
       ...me,
       preferredPresence: payload.presence,
@@ -91,13 +155,10 @@ const handleDisabled = async (
   payload: DisabledPayload,
   me: Me | null,
   clearSession: () => void,
-  queryClient: QueryClient,
   navigate: UseNavigateResult<string>,
 ) => {
   if (me && me.id === payload.userId) {
     clearSession();
-    await queryClient.cancelQueries();
-    queryClient.clear();
     navigate({ to: paths.login });
   }
 };
@@ -105,70 +166,9 @@ const handleDisabled = async (
 const handlePresenceUpdated = (
   payload: PresenceUpdatedPayload,
   me: Me | null,
+  setPresence: (presence: Presence) => void,
 ) => {
   if (me && me.id === payload.userId) {
-    // useGatewayStore.getState().setLastSentPresence(payload.presence);
-    // usePresenceStore.setState({ presence: payload.presence });
+    setPresence(payload.presence);
   }
-};
-
-export const useUserGatewayEvents = () => {
-  const navigate = useNavigate();
-  const me = useAuthStore((state) => state.me);
-  const setMe = useAuthStore((state) => state.setMe);
-  const clearSession = useAuthStore((state) => state.clearSession);
-
-  useEffect(() => {
-    const unregisterEmailUpdated =
-      bonfireSdk.gateway.registerMessageHandler<EmailUpdatedPayload>(
-        userMessageTypes.emailUpdated,
-        (payload) => handleEmailUpdated(payload, me, setMe),
-      );
-
-    const unregisterUsernameUpdated =
-      bonfireSdk.gateway.registerMessageHandler<UsernameUpdatedPayload>(
-        userMessageTypes.usernameUpdated,
-        (payload) => handleUsernameUpdated(payload, me, setMe),
-      );
-
-    const unregisterPasswordUpdated = bonfireSdk.gateway.registerMessageHandler(
-      userMessageTypes.passwordUpdated,
-      () => handlePasswordUpdated(clearSession, navigate),
-    );
-
-    const unregisterPreferredPresenceUpdated =
-      bonfireSdk.gateway.registerMessageHandler<PreferredPresenceUpdatedPayload>(
-        userMessageTypes.preferredPresenceUpdated,
-        (payload) => handlePreferredPresenceUpdated(payload, me, setMe),
-      );
-
-    const unregisterProfileUpdated =
-      bonfireSdk.gateway.registerMessageHandler<ProfileUpdatedPayload>(
-        userMessageTypes.profileUpdated,
-        (payload) => handleProfileUpdated(payload, me, setMe),
-      );
-
-    const unregisterDisabled =
-      bonfireSdk.gateway.registerMessageHandler<DisabledPayload>(
-        userMessageTypes.disabled,
-        (payload) =>
-          handleDisabled(payload, me, clearSession, queryClient, navigate),
-      );
-
-    const unregisterPresenceUpdated =
-      bonfireSdk.gateway.registerMessageHandler<PresenceUpdatedPayload>(
-        userMessageTypes.presenceUpdated,
-        (payload) => handlePresenceUpdated(payload, me),
-      );
-
-    return () => {
-      unregisterEmailUpdated();
-      unregisterUsernameUpdated();
-      unregisterPasswordUpdated();
-      unregisterPreferredPresenceUpdated();
-      unregisterProfileUpdated();
-      unregisterDisabled();
-      unregisterPresenceUpdated();
-    };
-  }, [navigate, me, setMe, clearSession]);
 };

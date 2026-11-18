@@ -3,9 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, Stack, Typography } from "@mui/material";
 import { disableRequestSchema, type DisableRequest } from "@/bonfire-sdk";
-import { useAuthStore } from "@/features/auth";
 import { useScheduleDeleteAccount } from "@/features/user";
-import { queryClient } from "@/app";
 import { paths } from "@/constants";
 import { DialogHeader, Form } from "@/components";
 import { handleAipFieldViolations } from "@/utils";
@@ -82,19 +80,17 @@ const useDeleteAccountForm = () => {
     methods.reset(defaultValues);
   };
 
-  const { mutate, isPending } = useScheduleDeleteAccount();
+  const { mutate, isPending } = useScheduleDeleteAccount({
+    onSuccess: () => {
+      navigate({ to: paths.login });
+    },
+    onError: (err) => {
+      handleAipFieldViolations(err, methods);
+    },
+  });
 
   const onSubmit = (data: DisableRequest) => {
-    mutate(data, {
-      onSuccess: () => {
-        queryClient.clear();
-        useAuthStore.getState().clearSession();
-        navigate({ to: paths.login });
-      },
-      onError: (err) => {
-        handleAipFieldViolations(err, methods);
-      },
-    });
+    mutate(data);
   };
 
   return {

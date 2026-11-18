@@ -8,6 +8,7 @@ interface PresenceState {
   presence: Presence;
   init: () => void;
   close: () => void;
+  set: (presence: Presence) => void;
 }
 
 export const usePresenceStore = create<PresenceState>((set) => ({
@@ -31,4 +32,6 @@ export const usePresenceStore = create<PresenceState>((set) => ({
     presenceTracker.stop();
     set({ presence: presences.online });
   },
+
+  set: (presence) => set({ presence }),
 }));

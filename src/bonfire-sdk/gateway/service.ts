@@ -1,9 +1,14 @@
+import { logger as baseLogger } from "@/logger";
 import { BaseService, type ServiceCallOptions } from "../shared";
 import type { Presence } from "./presence";
 import {
   printTicketResponseSchema,
   type PrintTicketResponse,
 } from "./validation";
+
+const logger = baseLogger.child({
+  component: "GatewayService",
+});
 
 const endpoints = {
   ticket: "/gateway/ticket",
@@ -210,14 +215,15 @@ export class GatewayService extends BaseService {
       this.reconnectAttempts = 0;
       this.updateStatus(gatewayStatuses.connected);
       this.startWatchdog();
+      logger.info("Websocket connection established.");
     };
 
     this.ws.onmessage = (event) => {
       this.startWatchdog();
       try {
         const message: GatewayMessage = JSON.parse(event.data);
-        console.log("Received message", message);
         if (message && typeof message.t === "string") {
+          logger.info("Received Websocket message.", { message });
           this.handleMessage(message);
           this.messageListeners.forEach((listener) => listener(message));
         }
@@ -230,8 +236,10 @@ export class GatewayService extends BaseService {
 
     this.ws.onclose = () => {
       this.cleanupSocket();
+      logger.info("Closed Websocket connection.");
       if (!this.forcedClose) {
         this.handleReconnect(presence);
+        logger.info("Attempting to re-establish Websocket connection...");
       }
     };
   }

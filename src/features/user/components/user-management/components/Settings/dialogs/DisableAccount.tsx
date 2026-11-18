@@ -2,9 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, Stack, Typography } from "@mui/material";
-import { queryClient } from "@/app";
 import { disableRequestSchema, type DisableRequest } from "@/bonfire-sdk";
-import { useAuthStore } from "@/features/auth";
 import { useDisableAccount } from "@/features/user";
 import { paths } from "@/constants";
 import { DialogHeader, Form } from "@/components";
@@ -82,19 +80,17 @@ const useDisableAccountForm = () => {
     methods.reset(defaultValues);
   };
 
-  const { mutate, isPending } = useDisableAccount();
+  const { mutate, isPending } = useDisableAccount({
+    onSuccess: () => {
+      navigate({ to: paths.login });
+    },
+    onError: (err) => {
+      handleAipFieldViolations(err, methods);
+    },
+  });
 
   const onSubmit = (data: DisableRequest) => {
-    mutate(data, {
-      onSuccess: () => {
-        queryClient.clear();
-        useAuthStore.getState().clearSession();
-        navigate({ to: paths.login });
-      },
-      onError: (err) => {
-        handleAipFieldViolations(err, methods);
-      },
-    });
+    mutate(data);
   };
 
   return {

@@ -5,22 +5,6 @@ import { bonfireSdk } from "@/app";
 import { paths } from "@/constants";
 import { useAuthStore } from "../store";
 
-const handleSessionRevoked = (
-  clearSession: () => void,
-  navigate: UseNavigateResult<string>,
-) => {
-  clearSession();
-  navigate({ to: paths.login });
-};
-
-const handleSessionRevokedAll = (
-  clearSession: () => void,
-  navigate: UseNavigateResult<string>,
-) => {
-  clearSession();
-  navigate({ to: paths.login });
-};
-
 export const useAuthGatewayEvents = () => {
   const navigate = useNavigate();
   const clearSession = useAuthStore((state) => state.clearSession);
@@ -42,4 +26,20 @@ export const useAuthGatewayEvents = () => {
       unregisterSessionRevokedAll();
     };
   }, [clearSession, navigate]);
+};
+
+const handleSessionRevoked = (
+  clearSession: () => void,
+  navigate: UseNavigateResult<string>,
+) => {
+  clearSession();
+  navigate({ to: paths.login });
+};
+
+const handleSessionRevokedAll = (
+  clearSession: () => void,
+  navigate: UseNavigateResult<string>,
+) => {
+  clearSession();
+  navigate({ to: paths.login });
 };

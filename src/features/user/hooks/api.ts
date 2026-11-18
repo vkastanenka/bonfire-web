@@ -1,19 +1,17 @@
-import {
-  useMutation,
-  useQueryClient,
-  type UseMutationOptions,
-} from "@tanstack/react-query";
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import {
   type DisableRequest,
   type Me,
+  type Session,
   type UpdateEmailRequest,
   type UpdatePasswordRequest,
   type UpdatePreferredPresenceRequest,
   type UpdateProfileRequest,
   type UpdateUsernameRequest,
 } from "@/bonfire-sdk";
-import { bonfireSdk } from "@/app";
-import { useAuthStore } from "@/features/auth";
+import { bonfireSdk, queryClient } from "@/app";
+import { authKeys, useAuthStore } from "@/features/auth";
+import { broadcaster, broadcastTypes } from "@/features/gateway";
 
 export const userKeys = {
   all: ["user"] as const,
@@ -25,58 +23,6 @@ export const userKeys = {
   updatePassword: () => [...userKeys.all, "updatePassword"] as const,
   disable: () => [...userKeys.all, "disable"] as const,
   scheduleDelete: () => [...userKeys.all, "scheduleDelete"] as const,
-};
-
-const useMeMutation = <TVariables>(
-  mutationKey: readonly unknown[],
-  mutationFn: (variables: TVariables) => Promise<Me>,
-  optimisticUpdate: (me: Me, variables: TVariables) => Me,
-  options?: UseMutationOptions<Me, Error, TVariables, Me | null>,
-) => {
-  const setMe = useAuthStore((state) => state.setMe);
-  const { onMutate, onSuccess, onError, ...rest } = options ?? {};
-
-  return useMutation({
-    ...rest,
-    mutationKey,
-    mutationFn,
-    onMutate: async (variables, context) => {
-      const previousMe = useAuthStore.getState().me;
-      if (previousMe) setMe(optimisticUpdate(previousMe, variables));
-      await onMutate?.(variables, context);
-      return previousMe;
-    },
-    onSuccess: async (data, variables, previousMe, context) => {
-      setMe(data);
-      await onSuccess?.(data, variables, previousMe, context);
-    },
-    onError: async (error, variables, previousMe, context) => {
-      if (previousMe !== undefined) setMe(previousMe);
-      await onError?.(error, variables, previousMe, context);
-    },
-  });
-};
-
-const useSessionResetMutation = <TVariables>(
-  mutationKey: readonly unknown[],
-  mutationFn: (variables: TVariables) => Promise<unknown>,
-  options?: UseMutationOptions<unknown, Error, TVariables>,
-) => {
-  const queryClient = useQueryClient();
-  const clearSession = useAuthStore((state) => state.clearSession);
-  const { onSettled, ...rest } = options ?? {};
-
-  return useMutation({
-    ...rest,
-    mutationKey,
-    mutationFn,
-    onSettled: async (data, error, variables, onMutateResult, context) => {
-      await queryClient.cancelQueries();
-      queryClient.clear();
-      clearSession();
-      await onSettled?.(data, error, variables, onMutateResult, context);
-    },
-  });
 };
 
 export const useUpdateEmail = (
@@ -126,17 +72,29 @@ export const useUpdateProfile = (
 
 export const useUpdatePassword = (
   options?: UseMutationOptions<void, Error, UpdatePasswordRequest>,
-) =>
-  useMutation({
-    ...options,
+) => {
+  const { onSuccess, ...restOptions } = options ?? {};
+
+  return useMutation({
+    ...restOptions,
     mutationKey: userKeys.updatePassword(),
     mutationFn: (data) => bonfireSdk.user.updatePassword(data),
+    onSuccess: async (...args) => {
+      queryClient.setQueryData<Session[]>(
+        authKeys.listValidSessions(),
+        (oldSessions) =>
+          oldSessions?.filter((session) => session.isCurrent) ?? [],
+      );
+
+      await onSuccess?.(...args);
+    },
   });
+};
 
 export const useDisableAccount = (
   options?: UseMutationOptions<unknown, Error, DisableRequest>,
 ) =>
-  useSessionResetMutation(
+  useClearSessionMutation(
     userKeys.disable(),
     (data) => bonfireSdk.user.disable(data),
     options,
@@ -145,8 +103,58 @@ export const useDisableAccount = (
 export const useScheduleDeleteAccount = (
   options?: UseMutationOptions<unknown, Error, DisableRequest>,
 ) =>
-  useSessionResetMutation(
+  useClearSessionMutation(
     userKeys.scheduleDelete(),
     (data) => bonfireSdk.user.scheduleDelete(data),
     options,
   );
+
+const useMeMutation = <TVariables>(
+  mutationKey: readonly unknown[],
+  mutationFn: (variables: TVariables) => Promise<Me>,
+  optimisticUpdate: (me: Me, variables: TVariables) => Me,
+  options?: UseMutationOptions<Me, Error, TVariables, Me | null>,
+) => {
+  const setMe = useAuthStore((state) => state.setMe);
+  const { onMutate, onSuccess, onError, ...rest } = options ?? {};
+
+  return useMutation({
+    ...rest,
+    mutationKey,
+    mutationFn,
+    onMutate: async (variables, context) => {
+      const previousMe = useAuthStore.getState().me;
+      if (previousMe) setMe(optimisticUpdate(previousMe, variables));
+      await onMutate?.(variables, context);
+      return previousMe;
+    },
+    onSuccess: async (data, variables, previousMe, context) => {
+      setMe(data);
+      await onSuccess?.(data, variables, previousMe, context);
+    },
+    onError: async (error, variables, previousMe, context) => {
+      if (previousMe !== undefined) setMe(previousMe);
+      await onError?.(error, variables, previousMe, context);
+    },
+  });
+};
+
+const useClearSessionMutation = <TData = void, TVariables = void>(
+  mutationKey: readonly unknown[],
+  mutationFn: (variables: TVariables) => Promise<TData>,
+  options?: UseMutationOptions<TData, Error, TVariables>,
+) => {
+  const clearSession = useAuthStore((state) => state.clearSession);
+  const { onSuccess, ...rest } = options ?? {};
+
+  return useMutation({
+    ...rest,
+    mutationKey,
+    mutationFn,
+    onSuccess: async (...args) => {
+      clearSession();
+      broadcaster.post(broadcastTypes.sessionRevoked, undefined);
+      await onSuccess?.(...args);
+    },
+  });
+};

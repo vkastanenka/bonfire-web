@@ -1,43 +1,45 @@
-import { dispatcher } from "../gateway";
-import { useAuthStore } from "../auth";
 import { useEffect } from "react";
 import { useNavigate, type UseNavigateResult } from "@tanstack/react-router";
+import { authMessageTypes } from "@/bonfire-sdk";
+import { bonfireSdk } from "@/app";
 import { paths } from "@/constants";
-
-export const authMessageTypes = {
-  sessionRevoked: "auth.session_revoked",
-  sessionRevokedAll: "auth.session_revoked_all",
-} as const;
-
-const handleSessionRevoked = (navigate: UseNavigateResult<string>) => {
-  console.log("handleSessionRevoked");
-  useAuthStore.getState().clearSession();
-  navigate({ to: paths.login });
-};
-
-const handleSessionRevokedAll = (navigate: UseNavigateResult<string>) => {
-  console.log("handleSessionRevokedAll");
-  useAuthStore.getState().clearSession();
-  navigate({ to: paths.login });
-};
+import { useAuthStore } from "./store";
 
 export const useAuthGatewayEvents = () => {
   const navigate = useNavigate();
+  const clearSession = useAuthStore((state) => state.clearSession);
 
   useEffect(() => {
-    const unregisterSessionRevoked = dispatcher.register(
+    const unregisterSessionRevoked = bonfireSdk.gateway.registerMessageHandler(
       authMessageTypes.sessionRevoked,
-      () => handleSessionRevoked(navigate),
+      () => handleSessionRevoked(clearSession, navigate),
     );
 
-    const unregisterSessionRevokedAll = dispatcher.register(
-      authMessageTypes.sessionRevokedAll,
-      () => handleSessionRevokedAll(navigate),
-    );
+    const unregisterSessionRevokedAll =
+      bonfireSdk.gateway.registerMessageHandler(
+        authMessageTypes.sessionRevokedAll,
+        () => handleSessionRevokedAll(clearSession, navigate),
+      );
 
     return () => {
       unregisterSessionRevoked();
       unregisterSessionRevokedAll();
     };
-  }, [navigate]);
+  }, [clearSession, navigate]);
+};
+
+const handleSessionRevoked = (
+  clearSession: () => void,
+  navigate: UseNavigateResult<string>,
+) => {
+  clearSession();
+  navigate({ to: paths.login });
+};
+
+const handleSessionRevokedAll = (
+  clearSession: () => void,
+  navigate: UseNavigateResult<string>,
+) => {
+  clearSession();
+  navigate({ to: paths.login });
 };

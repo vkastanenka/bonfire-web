@@ -8,6 +8,7 @@ import { queryClient, requireAuth, bonfireSdk } from "@/app";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { usePresenceTracker } from "@/features/presence";
 import { Layout, useUserGatewayEvents, useAuthGatewayEvents } from "@/features";
+import { useEffect } from "react";
 
 export const authLoader = async () => {
   const data = await queryClient.ensureQueryData({
@@ -30,6 +31,14 @@ function AuthLayout() {
   useAuthGatewayEvents();
 
   const me = useAuthStore((state) => state.me);
+
+  useEffect(() => {
+    return () => {
+      if (!useAuthStore.getState().accessToken) {
+        queryClient.clear();
+      }
+    };
+  }, []);
 
   if (!me) {
     return null;

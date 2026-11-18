@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { bonfireSdk, queryClient } from "@/app";
+import { bonfireSdk } from "@/app";
 import type { GatewayMessage, GatewayStatus } from "@/bonfire-sdk";
 import { logger as baseLogger } from "@/logger";
 import { paths } from "@/constants";
@@ -9,8 +9,7 @@ import { broadcaster, broadcastTypes } from "./broadcaster";
 import { useGatewayStore } from "./store";
 
 const logger = baseLogger.child({
-  package: "Gateway",
-  module: "useGateway",
+  component: "useGateway",
 });
 
 const leaderLockName = "bonfire_leader_lock";
@@ -42,7 +41,7 @@ export function useGateway() {
             async () => {
               if (!isMounted || abortController.signal.aborted) return;
 
-              logger.info("Tab elected as LEADER. Initializing WebSocket...");
+              logger.info("Tab elected as leader.");
               init();
 
               await waitForVisibilityHidden(abortController.signal);
@@ -125,7 +124,6 @@ export const useBroadcaster = () => {
           break;
 
         case broadcastTypes.sessionRevoked:
-          queryClient.clear();
           useAuthStore.getState().clearSession();
           navigate({ to: paths.login });
           break;

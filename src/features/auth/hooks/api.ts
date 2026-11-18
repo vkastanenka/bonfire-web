@@ -1,7 +1,6 @@
 import {
   useMutation,
   useQuery,
-  useQueryClient,
   type UseMutationOptions,
   type UseQueryOptions,
 } from "@tanstack/react-query";
@@ -53,7 +52,7 @@ export const useLogin = (
   );
 
 export const useLogout = (options?: UseMutationOptions<void, Error, void>) =>
-  useCreateSessionResetMutation(
+  useClearSessionMutation(
     authKeys.logout(),
     () => bonfireSdk.auth.logout(),
     options,
@@ -132,7 +131,6 @@ export const useListValidSessions = (
 export const useRevokeSession = (
   options?: UseMutationOptions<void, Error, string>,
 ) => {
-  const queryClient = useQueryClient();
   const { onSuccess, ...restOptions } = options ?? {};
 
   return useMutation({
@@ -153,7 +151,7 @@ export const useRevokeSession = (
 export const useRevokeAllSessions = (
   options?: UseMutationOptions<void, Error, void>,
 ) =>
-  useCreateSessionResetMutation(
+  useClearSessionMutation(
     authKeys.revokeAllSessions(),
     () => bonfireSdk.auth.revokeAllSessions(),
     options,
@@ -179,23 +177,22 @@ const useCreateSessionMutation = <TVariables>(
   });
 };
 
-const useCreateSessionResetMutation = (
+const useClearSessionMutation = <TData = void, TVariables = void>(
   mutationKey: readonly unknown[],
-  mutationFn: () => Promise<void>,
-  options?: UseMutationOptions<void, Error, void>,
+  mutationFn: (variables: TVariables) => Promise<TData>,
+  options?: UseMutationOptions<TData, Error, TVariables>,
 ) => {
   const clearSession = useAuthStore((state) => state.clearSession);
-  const { onSettled, ...restOptions } = options ?? {};
+  const { onSettled, ...rest } = options ?? {};
 
   return useMutation({
-    ...restOptions,
+    ...rest,
     mutationKey,
     mutationFn,
-    onSettled: async (data, error, variables, onMutateResult, context) => {
-      queryClient.clear();
+    onSettled: async (...args) => {
       clearSession();
       broadcaster.post(broadcastTypes.sessionRevoked, undefined);
-      await onSettled?.(data, error, variables, onMutateResult, context);
+      await onSettled?.(...args);
     },
   });
 };
