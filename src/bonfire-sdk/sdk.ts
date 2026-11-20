@@ -6,6 +6,7 @@ import {
 import { AuthService } from "./auth";
 import { BootstrapService } from "./bootstrap";
 import { GatewayService } from "./gateway";
+import { RelationService } from "./relation";
 import { UserService } from "./user";
 import {
   createAuthInterceptors,
@@ -32,6 +33,7 @@ export class BonfireSdk {
   public readonly auth: AuthService;
   public readonly gateway: GatewayService;
   public readonly bootstrap: BootstrapService;
+  public readonly relation: RelationService;
   public readonly user: UserService;
 
   constructor(config: SdkConfig) {
@@ -46,6 +48,7 @@ export class BonfireSdk {
     this.auth = new AuthService(this.httpClient);
     this.bootstrap = new BootstrapService(this.httpClient);
     this.gateway = new GatewayService(this.httpClient, logOptions);
+    this.relation = new RelationService(this.httpClient);
     this.user = new UserService(this.httpClient);
 
     const logInterceptors = config.logger
