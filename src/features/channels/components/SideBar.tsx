@@ -70,6 +70,22 @@ export const SideBar = () => {
   );
 };
 
+interface SidebarItemProps {
+  children: React.ReactNode;
+}
+
+const SidebarItem = ({ children }: SidebarItemProps) => {
+  return (
+    <Stack
+      sx={{
+        p: (t) => t.tokens.spacing.group,
+      }}
+    >
+      {children}
+    </Stack>
+  );
+};
+
 const DirectMessagesButton = ({ channelId }: { channelId: string }) => {
   const channel = useChannelStore((state) => state.channels[channelId]);
   const memberIds = useChannelStore(
@@ -184,22 +200,6 @@ const DirectMessages = () => {
           <DirectMessagesButton key={channelId} channelId={channelId} />
         ))
       )}
-    </Stack>
-  );
-};
-
-interface SidebarItemProps {
-  children: React.ReactNode;
-}
-
-const SidebarItem = ({ children }: SidebarItemProps) => {
-  return (
-    <Stack
-      sx={{
-        p: (t) => t.tokens.spacing.group,
-      }}
-    >
-      {children}
     </Stack>
   );
 };
