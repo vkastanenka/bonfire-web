@@ -1,14 +1,19 @@
+import { useEffect } from "react";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { queryClient, requireAuth, bonfireSdk } from "@/app";
 import {
   bootstrapKeys,
+  Layout,
+  useAuthGatewayEvents,
   useAuthStore,
   useBroadcaster,
+  useChannelStore,
   useGateway,
+  usePresenceTracker,
+  useUserGatewayEvents,
+  useUserStore,
 } from "@/features";
-import { queryClient, requireAuth, bonfireSdk } from "@/app";
-import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { usePresenceTracker } from "@/features/presence";
-import { Layout, useUserGatewayEvents, useAuthGatewayEvents } from "@/features";
-import { useEffect } from "react";
+import { useRelationStore } from "@/features/relation";
 
 export const authLoader = async () => {
   const data = await queryClient.ensureQueryData({
@@ -16,8 +21,26 @@ export const authLoader = async () => {
     queryFn: () => bonfireSdk.bootstrap.bootstrap(),
   });
 
-  if (data?.me) {
-    useAuthStore.getState().setMe(data.me);
+  if (data) {
+    useAuthStore.getState().hydrateAuth({
+      me: data.me,
+      channelMemberships: data.userChannelMembers,
+      sidebarIds: data.sidebarIds,
+    });
+    useChannelStore.getState().hydrateChannels({
+      channels: data.channels,
+      channelMemberIds: data.channelMemberIds,
+    });
+    useRelationStore.getState().hydrateRelations({
+      outgoingPendingIds: data.outgoingPendingIds,
+      incomingPendingIds: data.incomingPendingIds,
+      friendIds: data.friendIds,
+      outgoingBlockIds: data.outgoingBlockIds,
+    });
+    useUserStore.getState().hydrateUsers({
+      users: data.peers,
+      userPresences: data.peerPresences,
+    });
   }
 
   return data;
