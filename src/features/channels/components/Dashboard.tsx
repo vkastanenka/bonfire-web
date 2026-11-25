@@ -10,7 +10,6 @@ export const Dashboard = ({ children }: { children: ReactNode }) => {
         borderTopStyle: "solid",
         borderColor: "divider",
         width: "100%",
-        p: 1,
       }}
     >
       {children}

@@ -1,1 +1,2 @@
-export * from "./avatar";
+export * from "./Avatar";
+export * from "./Header";

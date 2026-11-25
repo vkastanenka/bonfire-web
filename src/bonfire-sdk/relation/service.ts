@@ -5,7 +5,7 @@ import {
 } from "./validation";
 
 const endpoints = {
-  sendRequest: (id: string) => `/relations/requests/${id}`,
+  sendRequest: `/relations/requests`,
   acceptRequest: (id: string) => `/relations/requests/${id}/accept`,
   blockUser: (id: string) => `/relations/blocks/${id}`,
   deleteRelation: (id: string) => `/relations/${id}`,
@@ -13,13 +13,14 @@ const endpoints = {
 
 export class RelationService extends BaseService {
   public sendFriendRequest(
-    id: string,
+    username: string,
     options?: ServiceCallOptions,
   ): Promise<FriendAddedResponse | null> {
     return this.post({
       ...options,
-      url: endpoints.sendRequest(id),
+      url: endpoints.sendRequest,
       schema: friendAddedResponseSchema.nullable(),
+      data: { username },
     });
   }
 
