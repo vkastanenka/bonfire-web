@@ -16,8 +16,6 @@ export interface ChannelState {
 }
 
 const initialState = {
-  accessToken: null,
-  me: null,
   channels: {} as ChannelMap,
   channelMemberIds: {} as ChannelMemberIdsMap,
 };
