@@ -9,3 +9,8 @@ export const isMobileOS = (os: string): boolean => {
     normalized.includes("ipad")
   );
 };
+
+export const mergeUniqueIds = (
+  existingIds: string[],
+  ...newIds: string[]
+): string[] => Array.from(new Set([...existingIds, ...newIds]));

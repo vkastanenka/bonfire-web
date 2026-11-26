@@ -1,12 +1,13 @@
 import {
+  type FriendAddedPayload,
   type RelationPeerIdPayload,
   type RelationTransitionResponse,
-  type FriendAddedPayload,
   type User,
 } from "@/bonfire-sdk";
 import { useAuthStore } from "@/features/auth";
 import { useChannelStore } from "@/features/channels";
 import { useUserStore } from "@/features/user";
+import { mergeUniqueIds } from "@/utils";
 import { useRelationStore } from "./store";
 import {
   sortUserIdsByDisplayName,
@@ -39,7 +40,7 @@ export const applyOutgoingPendingAdded = (peerUser: User) => {
 
   relationStore.setOutgoingPendingIds(
     sortUserIdsByDisplayName(
-      [...relationStore.outgoingPendingIds, peerUser.id],
+      mergeUniqueIds(relationStore.outgoingPendingIds, peerUser.id),
       usersMap,
     ),
   );
@@ -57,7 +58,7 @@ export const applyIncomingPendingAdded = (peerUser: User) => {
 
   relationStore.setIncomingPendingIds(
     sortUserIdsByDisplayName(
-      [...relationStore.incomingPendingIds, peerUser.id],
+      mergeUniqueIds(relationStore.incomingPendingIds, peerUser.id),
       usersMap,
     ),
   );
@@ -92,7 +93,7 @@ export const applyFriendAdded = ({
     const channelStore = useChannelStore.getState();
     const existingMemberIds = channelStore.channelMemberIds[channel.id] ?? [];
     const sortedMemberIds = sortUserIdsByDisplayNameWithMe(
-      [...existingMemberIds, membership.userId, peerUser.id],
+      mergeUniqueIds(existingMemberIds, membership.userId, peerUser.id),
       me,
       usersMap,
     );
@@ -109,7 +110,7 @@ export const applyFriendAdded = ({
 
   relationStore.setFriendIds(
     sortUserIdsByDisplayName(
-      [...relationStore.friendIds, peerUser.id],
+      mergeUniqueIds(relationStore.friendIds, peerUser.id),
       usersMap,
     ),
   );
@@ -119,6 +120,9 @@ export const applyFriendAdded = ({
   relationStore.setOutgoingPendingIds(
     relationStore.outgoingPendingIds.filter((id) => id !== peerUser.id),
   );
+  relationStore.setOutgoingBlockIds(
+    relationStore.outgoingBlockIds.filter((id) => id !== peerUser.id),
+  );
 };
 
 export const applyUserBlocked = ({ peerId }: RelationPeerIdPayload) => {
@@ -127,7 +131,7 @@ export const applyUserBlocked = ({ peerId }: RelationPeerIdPayload) => {
 
   relationStore.setOutgoingBlockIds(
     sortUserIdsByDisplayName(
-      [...relationStore.outgoingBlockIds, peerId],
+      mergeUniqueIds(relationStore.outgoingBlockIds, peerId),
       users,
     ),
   );

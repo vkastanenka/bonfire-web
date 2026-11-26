@@ -30,11 +30,7 @@ export interface FriendAddedStateInput {
 }
 
 export const useSendFriendRequest = (
-  options?: UseMutationOptions<
-    RelationTransitionResponse | null,
-    Error,
-    string
-  >,
+  options?: UseMutationOptions<RelationTransitionResponse, Error, string>,
 ) => {
   const { onSuccess, ...restOptions } = options ?? {};
 

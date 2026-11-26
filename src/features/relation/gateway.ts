@@ -24,7 +24,7 @@ export const useRelationGatewayEvents = () => {
 
     const unregisterFriendRequestReceived =
       bonfireSdk.gateway.registerMessageHandler<FriendRequestPayload>(
-        relationMessageTypes.friendRequestSent,
+        relationMessageTypes.friendRequestReceived,
         (payload) => applyIncomingPendingAdded(payload.peerUser),
       );
 
