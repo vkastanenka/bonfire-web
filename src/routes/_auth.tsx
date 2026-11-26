@@ -12,8 +12,9 @@ import {
   usePresenceTracker,
   useUserGatewayEvents,
   useUserStore,
+  useRelationGatewayEvents,
+  useRelationStore,
 } from "@/features";
-import { useRelationStore } from "@/features/relation";
 
 export const authLoader = async () => {
   const data = await queryClient.ensureQueryData({
@@ -52,6 +53,7 @@ function AuthLayout() {
   useGateway();
   useUserGatewayEvents();
   useAuthGatewayEvents();
+  useRelationGatewayEvents();
 
   const me = useAuthStore((state) => state.me);
 

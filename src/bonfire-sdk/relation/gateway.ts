@@ -4,26 +4,28 @@ import type { User } from "../user";
 
 export const relationMessageTypes = {
   friendRequestSent: "relation.friend_request_sent",
+  friendRequestReceived: "relation.friend_request_received",
   friendRequestDeleted: "relation.friend_request_deleted",
   friendAdded: "relation.friend_added",
   friendDeleted: "relation.friend_deleted",
   userBlocked: "relation.user_blocked",
+  blockDeleted: "relation.block_deleted",
 } as const;
 
 export type RelationMessageType =
   (typeof relationMessageTypes)[keyof typeof relationMessageTypes];
 
-export interface FriendRequestSentPayload {
-  user: User;
+export interface FriendRequestPayload {
+  peerUser: User;
 }
 
 export interface FriendAddedPayload {
-  user: User;
-  presence: Presence;
   channel?: Channel;
-  member?: Member;
+  membership?: Member;
+  peerUser: User;
+  peerPresence: Presence;
 }
 
-export interface RelationUserIDPayload {
-  userId: string;
+export interface RelationPeerIdPayload {
+  peerId: string;
 }
