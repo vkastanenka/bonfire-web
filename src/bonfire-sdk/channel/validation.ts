@@ -25,6 +25,7 @@ export const muteDurationSchema = z.enum(muteDurations);
 export const channelSchema = z.object({
   id: z.uuid(),
   type: channelTypeSchema,
+  ownerId: z.uuid().optional(),
   name: z.string().trim().min(1).max(100).optional(),
   iconUrl: urlSchema.optional(),
   lastMessageId: z.uuid().optional(),

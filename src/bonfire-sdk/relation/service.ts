@@ -1,7 +1,7 @@
 import { BaseService, type ServiceCallOptions } from "../shared";
 import {
-  friendAddedResponseSchema,
-  type FriendAddedResponse,
+  relationTransitionResponseSchema,
+  type RelationTransitionResponse,
 } from "./validation";
 
 const endpoints = {
@@ -15,11 +15,11 @@ export class RelationService extends BaseService {
   public sendFriendRequest(
     username: string,
     options?: ServiceCallOptions,
-  ): Promise<FriendAddedResponse | null> {
+  ): Promise<RelationTransitionResponse> {
     return this.post({
       ...options,
       url: endpoints.sendRequest,
-      schema: friendAddedResponseSchema.nullable(),
+      schema: relationTransitionResponseSchema,
       data: { username },
     });
   }
@@ -27,11 +27,11 @@ export class RelationService extends BaseService {
   public acceptFriendRequest(
     id: string,
     options?: ServiceCallOptions,
-  ): Promise<FriendAddedResponse> {
+  ): Promise<RelationTransitionResponse> {
     return this.post({
       ...options,
       url: endpoints.acceptRequest(id),
-      schema: friendAddedResponseSchema,
+      schema: relationTransitionResponseSchema,
     });
   }
 

@@ -3,11 +3,11 @@ import { presenceSchema } from "../gateway";
 import { channelSchema, memberSchema } from "../channel";
 import { userSchema } from "../user";
 
-export const friendAddedResponseSchema = z.object({
-  channel: channelSchema,
-  member: memberSchema,
+export const relationTransitionResponseSchema = z.object({
+  channel: channelSchema.optional(),
+  membership: memberSchema.optional(),
   peerUser: userSchema,
-  peerPresence: presenceSchema,
+  peerPresence: presenceSchema.optional(),
 });
 
-export type FriendAddedResponse = z.infer<typeof friendAddedResponseSchema>;
+export type RelationTransitionResponse = z.infer<typeof relationTransitionResponseSchema>;
