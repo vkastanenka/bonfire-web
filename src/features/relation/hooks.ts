@@ -4,6 +4,7 @@ import {
   type Member,
   type Presence,
   type RelationTransitionResponse,
+  type SendFriendRequest,
   type User,
 } from "@/bonfire-sdk";
 import { bonfireSdk } from "@/app";
@@ -30,15 +31,19 @@ export interface FriendAddedStateInput {
 }
 
 export const useSendFriendRequest = (
-  options?: UseMutationOptions<RelationTransitionResponse, Error, string>,
+  options?: UseMutationOptions<
+    RelationTransitionResponse,
+    Error,
+    SendFriendRequest
+  >,
 ) => {
   const { onSuccess, ...restOptions } = options ?? {};
 
   return useMutation({
     ...restOptions,
     mutationKey: relationKeys.sendRequest(),
-    mutationFn: (username: string) =>
-      bonfireSdk.relation.sendFriendRequest(username),
+    mutationFn: (data: SendFriendRequest) =>
+      bonfireSdk.relation.sendFriendRequest(data),
     onSuccess: async (data, username, onMutateResult, context) => {
       applyTransitionRequestSuccess(data);
       await onSuccess?.(data, username, onMutateResult, context);

@@ -2,6 +2,7 @@ import { BaseService, type ServiceCallOptions } from "../shared";
 import {
   relationTransitionResponseSchema,
   type RelationTransitionResponse,
+  type SendFriendRequest,
 } from "./validation";
 
 const endpoints = {
@@ -13,14 +14,14 @@ const endpoints = {
 
 export class RelationService extends BaseService {
   public sendFriendRequest(
-    username: string,
+    data: SendFriendRequest,
     options?: ServiceCallOptions,
   ): Promise<RelationTransitionResponse> {
     return this.post({
       ...options,
       url: endpoints.sendRequest,
       schema: relationTransitionResponseSchema,
-      data: { username },
+      data,
     });
   }
 

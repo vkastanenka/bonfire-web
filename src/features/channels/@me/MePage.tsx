@@ -1,11 +1,34 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Box, Button, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Stack,
+  Tooltip,
+  Typography,
+  IconButton,
+} from "@mui/material";
 import EmojiPeopleIcon from "@mui/icons-material/EmojiPeople";
-import { Header } from "@/features/components";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
+import { Avatar, Header } from "@/features/components";
 import { useUserStore } from "@/features/user";
-import { useRelationStore } from "@/features/relation";
-import { presences, type Presence, type User } from "@/bonfire-sdk";
+import {
+  useAcceptFriendRequest,
+  useDeleteRelation,
+  useRelationStore,
+  useSendFriendRequest,
+} from "@/features/relation";
+import {
+  presences,
+  sendFriendRequestSchema,
+  type Presence,
+  type SendFriendRequest,
+  type User,
+} from "@/bonfire-sdk";
 import { Form } from "@/components";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { handleAipFieldViolations } from "@/utils";
 
 const labels = {
   friends: "Friends",
@@ -18,6 +41,7 @@ const labels = {
   sent: "Sent",
   accept: "Accept",
   ignore: "Ignore",
+  cancel: "Cancel",
   youCanAdd: "You can add friends with their Bonfire username.",
   enterUsername: "Enter a username",
   sendRequest: "Send friend request",
@@ -212,7 +236,7 @@ const ScreenTitle = ({
 };
 
 const FriendScreenContainer = ({ children }: { children: ReactNode }) => {
-  return <Stack sx={{ p: 1 }}>{children}</Stack>;
+  return <Stack sx={{ p: 2, width: "100%", gap: 2 }}>{children}</Stack>;
 };
 
 const OnlineScreen = ({ friends }: { friends: UserPresenceEntry[] }) => {
@@ -241,34 +265,168 @@ const PendingScreen = ({
   return (
     <FriendScreenContainer>
       {incoming.length > 0 && (
-        <ScreenTitle relNumber={incoming.length}>{labels.received}</ScreenTitle>
+        <Stack sx={{ gap: 1 }}>
+          <ScreenTitle relNumber={incoming.length}>
+            {labels.received}
+          </ScreenTitle>
+          <Stack>
+            {incoming.map((user) => (
+              <FriendRequest
+                key={`incoming-friend-request-${user.username}`}
+                isIncoming
+                user={user}
+              />
+            ))}
+          </Stack>
+        </Stack>
       )}
       {outgoing.length > 0 && (
-        <ScreenTitle relNumber={outgoing.length}>{labels.sent}</ScreenTitle>
+        <Stack sx={{ gap: 1 }}>
+          <ScreenTitle relNumber={outgoing.length}>{labels.sent}</ScreenTitle>
+          <Stack>
+            {outgoing.map((user) => (
+              <FriendRequest
+                key={`outgoing-friend-request-${user.username}`}
+                user={user}
+              />
+            ))}
+          </Stack>
+        </Stack>
       )}
     </FriendScreenContainer>
   );
 };
 
-const AddScreen = () => {
+const FriendRequest = ({
+  user,
+  isIncoming,
+  ...props
+}: {
+  user: User;
+  isIncoming?: boolean;
+}) => {
+  const { mutate: mutateAccept, isPending: acceptIsPending } =
+    useAcceptFriendRequest();
+  const { mutate: mutateIgnore, isPending: ignoreIsPending } =
+    useDeleteRelation();
+
+  const accept = () => {
+    mutateAccept(user.id);
+  };
+
+  const ignore = () => {
+    mutateIgnore(user.id);
+  };
+
+  const isPending = acceptIsPending || ignoreIsPending;
+  const deleteLabel = isIncoming ? labels.ignore : labels.cancel;
+
   return (
-    <Stack sx={{ p: 2, gap: 1 }}>
-      <Typography variant="h6">{labels.addFriend}</Typography>
-      <Typography sx={{ fontWeight: 500 }}>{labels.youCanAdd}</Typography>
-      {/* <Form methods={methods} onSubmit={onSubmit} disabled={isPending}>
-        <Form.TextField {...formFields.username}></Form.TextField>
-        <Form.SubmitButton>{labels.sendRequest}</Form.SubmitButton>
-      </Form> */}
+    <Stack
+      direction="row"
+      sx={{
+        p: 1,
+        borderRadius: 2,
+        borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+        justifyContent: "space-between",
+        alignItems: "center",
+        transition: (theme) =>
+          theme.transitions.create(["background-color", "border-top-color"], {
+            duration: theme.transitions.duration.shorter,
+          }),
+        "&:hover": {
+          backgroundColor: "background.paper",
+          borderTopColor: "transparent",
+        },
+      }}
+      {...props}
+    >
+      <Stack direction="row" sx={{ gap: 1, alignItems: "center" }}>
+        <Avatar
+          username={user.username}
+          bgColor={user.bannerColor}
+          size="sm"
+        ></Avatar>
+        <Stack>
+          <Typography sx={{ fontWeight: "500" }}>{user.displayName}</Typography>
+          <Typography variant="caption">{user.username}</Typography>
+        </Stack>
+      </Stack>
+      <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
+        {isIncoming && (
+          <Tooltip arrow placement="top" title={labels.accept}>
+            <IconButton
+              onClick={accept}
+              disabled={isPending}
+              sx={{
+                "&:hover *": {
+                  color: "success.main",
+                },
+              }}
+            >
+              <CheckIcon aria-label={labels.accept} />
+            </IconButton>
+          </Tooltip>
+        )}
+        <Tooltip arrow placement="top" title={deleteLabel}>
+          <IconButton
+            onClick={ignore}
+            disabled={isPending}
+            sx={{
+              "&:hover *": {
+                color: "error.main",
+              },
+            }}
+          >
+            <CloseIcon aria-label={deleteLabel} />
+          </IconButton>
+        </Tooltip>
+      </Stack>
     </Stack>
   );
 };
 
-// const useSendFriendRequestForm = () => {
-//   const methods = useForm<LoginRequest>({
-//     resolver: zodResolver(loginRequestSchema),
-//     defaultValues: {
-//       email: "",
-//       password: "",
-//     },
-//   });
-// };
+const AddScreen = () => {
+  const { methods, onSubmit, isPending } = useSendFriendRequestForm();
+
+  return (
+    <Stack sx={{ p: 2, gap: 1 }}>
+      <Typography variant="h6">{labels.addFriend}</Typography>
+      <Typography sx={{ fontWeight: 500 }}>{labels.youCanAdd}</Typography>
+      <Form methods={methods} onSubmit={onSubmit} disabled={isPending}>
+        <Form.TextField {...formFields.username}></Form.TextField>
+        <Form.SubmitButton>{labels.sendRequest}</Form.SubmitButton>
+      </Form>
+    </Stack>
+  );
+};
+
+const useSendFriendRequestForm = () => {
+  // const navigate = useNavigate();
+
+  const methods = useForm<SendFriendRequest>({
+    resolver: zodResolver(sendFriendRequestSchema),
+    defaultValues: {
+      username: "",
+    },
+  });
+
+  const { mutate, isPending } = useSendFriendRequest();
+
+  const onSubmit = (data: SendFriendRequest) => {
+    mutate(data, {
+      // onSuccess: () => {
+      //   navigate({ to: paths.me });
+      // },
+      onError: (err) => {
+        handleAipFieldViolations(err, methods);
+      },
+    });
+  };
+
+  return {
+    methods,
+    onSubmit,
+    isPending,
+  };
+};

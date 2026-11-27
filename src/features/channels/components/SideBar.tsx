@@ -25,7 +25,7 @@ import { paths } from "@/constants";
 
 const labels = {
   noFriends: "No friends? No problem!",
-  addFriendsToChat: "Add friends to start chatting",
+  addFriendsToChat: "No visible channels",
   sendFriendRequest: "Send friend request",
   findOrStart: "Find or start a conversation",
   directMessages: "Direct Messages",
