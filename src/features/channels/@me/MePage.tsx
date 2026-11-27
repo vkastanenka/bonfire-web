@@ -47,6 +47,8 @@ const labels = {
   enterUsername: "Enter a username",
   sendRequest: "Send friend request",
   sentRequest: (username: string) => `Friend request sent to ${username}!`,
+  acceptedIncomingRequest: (username: string) =>
+    `Accepted incoming friend request from ${username}!`,
 } as const;
 
 const formFields = {
@@ -87,6 +89,17 @@ const resolveUsers = (ids: string[], users: Record<string, User>): User[] => {
     }
   }
   return result;
+};
+
+const getPreferredScreen = (
+  hasOnlineFriends: boolean,
+  hasFriends: boolean,
+  hasPending: boolean,
+): Screen => {
+  if (hasOnlineFriends) return screens.online;
+  if (hasFriends) return screens.all;
+  if (hasPending) return screens.pending;
+  return screens.add;
 };
 
 export const MePage = () => {
@@ -132,14 +145,9 @@ export const MePage = () => {
   const hasOnlineFriends = onlineFriends.length > 0;
   const hasPending = incomingUsers.length > 0 || outgoingUsers.length > 0;
 
-  const defaultScreen = useMemo<Screen>(() => {
-    if (hasOnlineFriends) return screens.online;
-    if (hasFriends) return screens.all;
-    if (hasPending) return screens.pending;
-    return screens.add;
-  }, [hasOnlineFriends, hasFriends, hasPending]);
-
-  const [selectedScreen, setSelectedScreen] = useState<Screen | null>(null);
+  const [selectedScreen, setSelectedScreen] = useState<Screen>(() =>
+    getPreferredScreen(hasOnlineFriends, hasFriends, hasPending),
+  );
 
   const isScreenAvailable = (candidate: Screen): boolean => {
     if (candidate === screens.online) return hasOnlineFriends;
@@ -148,10 +156,14 @@ export const MePage = () => {
     return candidate === screens.add;
   };
 
-  const activeScreen: Screen =
-    selectedScreen !== null && isScreenAvailable(selectedScreen)
-      ? selectedScreen
-      : defaultScreen;
+  const fallbackScreen = useMemo<Screen>(
+    () => getPreferredScreen(hasOnlineFriends, hasFriends, hasPending),
+    [hasOnlineFriends, hasFriends, hasPending],
+  );
+
+  const activeScreen: Screen = isScreenAvailable(selectedScreen)
+    ? selectedScreen
+    : fallbackScreen;
 
   return (
     <Box>
@@ -204,7 +216,9 @@ export const MePage = () => {
         {activeScreen === screens.pending && (
           <PendingScreen incoming={incomingUsers} outgoing={outgoingUsers} />
         )}
-        {activeScreen === screens.add && <AddScreen />}
+        {activeScreen === screens.add && (
+          <AddScreen onRequestSent={() => setSelectedScreen(screens.add)} />
+        )}
       </Box>
     </Box>
   );
@@ -388,8 +402,9 @@ const FriendRequest = ({
   );
 };
 
-const AddScreen = () => {
-  const { methods, onSubmit, isPending } = useSendFriendRequestForm();
+const AddScreen = ({ onRequestSent }: { onRequestSent: () => void }) => {
+  const { methods, onSubmit, isPending } =
+    useSendFriendRequestForm(onRequestSent);
 
   return (
     <Stack sx={{ p: 2, gap: 2 }}>
@@ -407,7 +422,7 @@ const AddScreen = () => {
   );
 };
 
-const useSendFriendRequestForm = () => {
+const useSendFriendRequestForm = (onRequestSent: () => void) => {
   const methods = useForm<SendFriendRequest>({
     resolver: zodResolver(sendFriendRequestSchema),
     defaultValues: {
@@ -420,10 +435,16 @@ const useSendFriendRequestForm = () => {
   const onSubmit = (data: SendFriendRequest) => {
     mutate(data, {
       onSuccess: (response, variables) => {
+        onRequestSent();
         methods.reset();
-        toast.success(
-          labels.sentRequest(response.peerUser?.username ?? variables.username),
-        );
+
+        const { channel, membership } = response;
+        const isNewFriend = Boolean(channel && membership);
+        const label = isNewFriend
+          ? labels.acceptedIncomingRequest
+          : labels.sentRequest;
+
+        toast.success(label(response.peerUser?.username ?? variables.username));
       },
       onError: (err) => {
         handleAipFieldViolations(err, methods);
