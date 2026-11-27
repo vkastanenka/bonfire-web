@@ -29,6 +29,7 @@ import { Form } from "@/components";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { handleAipFieldViolations } from "@/utils";
+import { toast } from "@/toast";
 
 const labels = {
   friends: "Friends",
@@ -45,6 +46,7 @@ const labels = {
   youCanAdd: "You can add friends with their Bonfire username.",
   enterUsername: "Enter a username",
   sendRequest: "Send friend request",
+  sentRequest: (username: string) => `Friend request sent to ${username}!`,
 } as const;
 
 const formFields = {
@@ -390,20 +392,22 @@ const AddScreen = () => {
   const { methods, onSubmit, isPending } = useSendFriendRequestForm();
 
   return (
-    <Stack sx={{ p: 2, gap: 1 }}>
-      <Typography variant="h6">{labels.addFriend}</Typography>
-      <Typography sx={{ fontWeight: 500 }}>{labels.youCanAdd}</Typography>
+    <Stack sx={{ p: 2, gap: 2 }}>
+      <Stack>
+        <Typography variant="h6">{labels.addFriend}</Typography>
+        <Typography sx={{ fontWeight: 500 }}>{labels.youCanAdd}</Typography>
+      </Stack>
       <Form methods={methods} onSubmit={onSubmit} disabled={isPending}>
         <Form.TextField {...formFields.username}></Form.TextField>
-        <Form.SubmitButton>{labels.sendRequest}</Form.SubmitButton>
+        <Form.SubmitButton sx={{ alignSelf: "flex-start" }}>
+          {labels.sendRequest}
+        </Form.SubmitButton>
       </Form>
     </Stack>
   );
 };
 
 const useSendFriendRequestForm = () => {
-  // const navigate = useNavigate();
-
   const methods = useForm<SendFriendRequest>({
     resolver: zodResolver(sendFriendRequestSchema),
     defaultValues: {
@@ -415,9 +419,12 @@ const useSendFriendRequestForm = () => {
 
   const onSubmit = (data: SendFriendRequest) => {
     mutate(data, {
-      // onSuccess: () => {
-      //   navigate({ to: paths.me });
-      // },
+      onSuccess: (response, variables) => {
+        methods.reset();
+        toast.success(
+          labels.sentRequest(response.peerUser?.username ?? variables.username),
+        );
+      },
       onError: (err) => {
         handleAipFieldViolations(err, methods);
       },
